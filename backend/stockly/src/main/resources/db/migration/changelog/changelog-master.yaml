@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/migration/schemas/V1__init_schema.sql
+  - include:
+      file: db/migration/schemas/V2__create_users_table.sql
