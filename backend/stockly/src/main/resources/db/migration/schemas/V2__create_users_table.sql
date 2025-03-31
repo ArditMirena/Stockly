@@ -6,7 +6,7 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     enabled BOOLEAN NOT NULL,
     verification_code VARCHAR(50),
-    verification_timestamp TIMESTAMP,
+    verification_expiration TIMESTAMP,
     role_id BIGINT NOT NULL,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 )
