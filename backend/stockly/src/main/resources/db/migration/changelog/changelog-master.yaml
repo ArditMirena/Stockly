@@ -3,3 +3,17 @@ databaseChangeLog:
       file: db/migration/schemas/V1__init_schema.sql
   - include:
       file: db/migration/schemas/V2__create_users_table.sql
+  - include:
+      file: db/migration/schemas/V3__company_table.sql
+  - include:
+      file: db/migration/schemas/V4__product_category_table.sql
+  - include:
+      file: db/migration/schemas/V5__products_table.sql
+  - include:
+      file: db/migration/schemas/V6__product_dimensions_table.sql
+  - include:
+      file: db/migration/schemas/V7__product_tags_table.sql
+  - include:
+      file: db/migration/schemas/V8__product_reviews_table.sql
+  - include:
+      file: db/migration/schemas/V9__product_images_table.sql

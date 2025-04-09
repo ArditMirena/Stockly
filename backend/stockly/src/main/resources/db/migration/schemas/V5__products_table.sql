@@ -1,0 +1,22 @@
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category_id BIGINT REFERENCES product_category(id),
+    price DECIMAL(10, 2) NOT NULL,
+    discount_percentage DECIMAL(5, 2),
+    rating DECIMAL(3, 2),
+    stock INTEGER NOT NULL,
+    sku VARCHAR(50) UNIQUE NOT NULL,
+    weight DECIMAL(10, 2),
+    warranty_information TEXT,
+    shipping_information TEXT,
+    availability_status VARCHAR(50) NOT NULL,
+    return_policy TEXT,
+    minimum_order_quantity INTEGER,
+    barcode VARCHAR(20),
+    qr_code_url TEXT,
+    thumbnail_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+)

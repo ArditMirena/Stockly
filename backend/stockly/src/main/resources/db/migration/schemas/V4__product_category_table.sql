@@ -1,0 +1,4 @@
+CREATE TABLE product_category (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+)
