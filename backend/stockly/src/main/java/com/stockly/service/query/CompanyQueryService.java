@@ -1,13 +1,17 @@
 package com.stockly.service.query;
 
-import com.stockly.model.Company;
+import com.stockly.dto.CompanyDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CompanyQueryService {
-    List<Company> getAllCompanies();
-    Optional<Company> getCompanyById(Long id);
-    Optional<Company> getCompanyByEmail(String email);
-    List<Company> getCompaniesByType(String companyType); // New method
+    CompanyDTO getCompanyById(Long id);
+    CompanyDTO getCompanyByEmail(String email);
+    List<CompanyDTO> getAllCompanies();
+    Page<CompanyDTO> getAllCompanies(Pageable pageable);
+    List<CompanyDTO> getCompaniesByType(String companyType);
+    boolean companyExistsByEmail(String email);
+    boolean companyExistsByName(String companyName);
 }

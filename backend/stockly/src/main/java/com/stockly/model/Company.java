@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Table(name = "company")
 @Getter
@@ -34,10 +36,17 @@ public class Company {
     @Column(name = "company_type")
     private String companyType;
 
-    // New attributes
     @Column(name = "business_type")
     private String businessType; // For Buyer
 
     @Column(name = "warehouse_id")
     private Long warehouseId; // For Supplier
+
+    // Relationship with orders (Buyer)
+    @OneToMany(mappedBy = "buyer")
+    private List<Order> ordersAsBuyer;
+
+    // Relationship with orders (Supplier)
+    @OneToMany(mappedBy = "supplier")
+    private List<Order> ordersAsSupplier;
 }
