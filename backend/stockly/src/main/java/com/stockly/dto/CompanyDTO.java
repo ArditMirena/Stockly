@@ -6,6 +6,7 @@ import lombok.Setter;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
 
 
 @Getter
@@ -24,4 +25,7 @@ public class CompanyDTO {
 
     private String address;
     private String companyType;
+
+    private List<OrderDTO> ordersAsBuyer;
+    private List<OrderDTO> ordersAsSupplier;
 }

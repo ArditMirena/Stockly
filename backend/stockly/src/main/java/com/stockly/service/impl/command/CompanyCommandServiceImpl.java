@@ -1,50 +1,64 @@
 package com.stockly.service.impl.command;
 
-import com.stockly.factory.CompanyTypeStrategyFactory;
+import com.stockly.dto.CompanyDTO;
+import com.stockly.exception.ResourceNotFoundException;
+import com.stockly.exception.OperationNotAllowedException;
+import com.stockly.mapper.CompanyMapper;
 import com.stockly.model.Company;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.service.command.CompanyCommandService;
-import com.stockly.strategy.CompanyTypeStrategy;
-import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class CompanyCommandServiceImpl implements CompanyCommandService {
 
     private final CompanyRepository companyRepository;
-
-    public CompanyCommandServiceImpl(CompanyRepository companyRepository) {
-        this.companyRepository = companyRepository;
-    }
+    private final CompanyMapper companyMapper;
 
     @Override
-    public Company createCompany(Company company, String businessType, Long warehouseId) {
-        // Dynamically apply the correct strategy based on companyType
-        CompanyTypeStrategy strategy = CompanyTypeStrategyFactory.getStrategy(
-                company.getCompanyType(),
-                businessType,
-                warehouseId
-        );
-        strategy.applyAttributes(company);
+    @Transactional
+    public Company createCompany(CompanyDTO companyDTO) {
+        if (companyRepository.existsByEmail(companyDTO.getEmail())) {
+            throw new OperationNotAllowedException("Email already in use");
+        }
+
+        if (companyRepository.existsByCompanyName(companyDTO.getCompanyName())) {
+            throw new OperationNotAllowedException("Company name already in use");
+        }
+
+        Company company = companyMapper.createNewCompanyFromDto(companyDTO);
         return companyRepository.save(company);
     }
 
     @Override
-    public Company updateCompany(Long id, Company company) {
-        return companyRepository.findById(id).map(existingCompany -> {
-            existingCompany.setCompanyName(company.getCompanyName());
-            existingCompany.setManager(company.getManager());
-            existingCompany.setEmail(company.getEmail());
-            existingCompany.setPhoneNumber(company.getPhoneNumber());
-            existingCompany.setAddress(company.getAddress());
-            existingCompany.setCompanyType(company.getCompanyType());
-            return companyRepository.save(existingCompany);
-        }).orElseThrow(() -> new RuntimeException("Company not found with id " + id));
+    @Transactional
+    public Company updateCompany(Long id, CompanyDTO companyDTO) {
+        Company existingCompany = companyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + id));
+
+        if (!existingCompany.getEmail().equals(companyDTO.getEmail()) &&
+                companyRepository.existsByEmail(companyDTO.getEmail())) {
+            throw new OperationNotAllowedException("Email already in use by another company");
+        }
+
+        companyMapper.updateEntityFromDto(companyDTO, existingCompany);
+        return companyRepository.save(existingCompany);
     }
 
     @Override
+    @Transactional
     public void deleteCompany(Long id) {
-        companyRepository.deleteById(id);
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + id));
+
+        // Check if company has any orders before deletion
+        if (!company.getOrdersAsBuyer().isEmpty() || !company.getOrdersAsSupplier().isEmpty()) {
+            throw new OperationNotAllowedException("Cannot delete company with existing orders");
+        }
+
+        companyRepository.delete(company);
     }
 }
