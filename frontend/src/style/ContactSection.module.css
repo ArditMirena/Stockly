@@ -1,0 +1,78 @@
+.wrapper {
+  margin: 100px 0px 0px 0px;
+  min-height: 400px;
+  background-image: linear-gradient(
+    -60deg,
+    var(--mantine-color-green-4) 0%,
+    var(--mantine-color-green-7) 100%
+  );
+  border-radius: var(--mantine-radius-md);
+  padding: calc(var(--mantine-spacing-xl) * 2.5);
+}
+
+.title {
+  font-family:
+    Greycliff CF,
+    var(--mantine-font-family);
+  color: var(--mantine-color-white);
+  text-align: start;
+  line-height: 1;
+}
+
+.description {
+  max-width: 300px;
+  text-align: start;
+}
+
+.form {
+  background-color: var(--mantine-color-white);
+  padding: var(--mantine-spacing-xl);
+  border-radius: var(--mantine-radius-md);
+  box-shadow: var(--mantine-shadow-lg);
+  text-align: left;
+}
+
+.social {
+  color: var(--mantine-color-white);
+}
+
+.input {
+  background-color: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-black);
+
+  &::placeholder {
+    color: var(--mantine-color-gray-5);
+  }
+}
+
+.inputLabel {
+  color: var(--mantine-color-black);
+  display: block;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: flex-start;
+  color: white;
+}
+
+.iconTitle {
+  font-weight: 700;
+  font-size: 10px !important;
+  text-transform: uppercase;
+  text-align: start;
+}
+
+.iconDescription {
+  font-size: 12px !important;
+  color: var(--mantine-color-dimmed);
+}
+
+.social {
+  color: white;
+  transition: all 0.2s ease;
+}
+.social:hover {
+  color: #fcc419;
+}

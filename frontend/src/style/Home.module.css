@@ -1,0 +1,48 @@
+.inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 4rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.content {
+  max-width: 40rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+.highlight {
+  background: linear-gradient(90deg, #00b341, #a3e635);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.image {
+  width: 100%;
+  max-width: 500px;
+}
+
+.badge {
+  margin-bottom: 1.5rem;
+  background-color: rgba(166, 235, 97, 0.1);
+  color: #00b341;
+}
+
+.primaryButton {
+  background-color: #00b341;
+}
+
+.featureCard {
+  transition: transform 0.3s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-5px);
+}
