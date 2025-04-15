@@ -6,6 +6,7 @@ import com.stockly.mapper.OrderMapper;
 import com.stockly.model.Order;
 import com.stockly.repository.OrderRepository;
 import com.stockly.service.query.OrderQueryService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     private final OrderMapper orderMapper;
 
     @Override
+    @Transactional
     public OrderDTO getOrderById(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
