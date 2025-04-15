@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -104,4 +103,10 @@ public class Product {
 
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems = new ArrayList<>();
+
+
+    @ManyToMany(mappedBy = "products")
+    private Set<Warehouse> warehouses;
+
+
 }

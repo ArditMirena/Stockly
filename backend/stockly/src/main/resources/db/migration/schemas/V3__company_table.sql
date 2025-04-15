@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS company (
+CREATE TABLE company (
     id BIGSERIAL PRIMARY KEY,
     company_name VARCHAR(255) NOT NULL UNIQUE,
     manager_id BIGINT,
