@@ -8,17 +8,21 @@ import '@mantine/notifications/styles.css';
 
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
+import { Provider } from 'react-redux';
+import store from './redux/store';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider
-      theme={{
-        fontFamily: 'Inter, sans-serif',
-        primaryColor: 'green',
-      }}
-    >
-      <Notifications />
-      <App />
-    </MantineProvider>
+    <Provider store={store}>
+      <MantineProvider
+        theme={{
+          fontFamily: 'Inter, sans-serif',
+          primaryColor: 'green',
+        }}
+      >
+        <Notifications />
+        <App />
+      </MantineProvider>
+    </Provider>
   </StrictMode>
 );

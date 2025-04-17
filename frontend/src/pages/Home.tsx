@@ -1,71 +1,118 @@
 import { Link } from "react-router-dom";
-import {
+import { 
   Container,
   Title,
   Text,
   Button,
-  Paper,
   Group,
-  Stack,
-  rem,
+  List,
+  Paper,
+  ThemeIcon,
+  Badge,
+  Image,
+  rem 
 } from '@mantine/core';
+import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold } from "react-icons/pi";
+import classes from '../style/Home.module.css';
+import ContactSection from "../components/ContactSection";
 
 const Home = () => {
   return (
     <Container size="lg" py="xl">
-      <Paper shadow="xl" radius="md" p="xl" withBorder>
-        <Stack align="center" style={{ spacing: '40px' }} >
-          <Title order={1} style={{ textAlign: 'center' }}>
-            Welcome to <Text span color="limegreen" inherit>Stockly</Text>
+      <div className={classes.inner}>
+        <div className={classes.content}>
+          <Badge variant="filled" size="lg" className={classes.badge}>
+            Inventory Intelligence
+          </Badge>
+          
+          <Title className={classes.title}>
+            Transform your <span className={classes.highlight}>supply chain</span> with 
+            <br />AI-powered optimization
           </Title>
-
-          <Text size="lg" color="dimmed" style={{ textAlign: 'center' }}>
-            Your intelligent inventory optimization solution
+          
+          <Text 
+            c="dimmed" 
+            mt="md" 
+            size="lg"
+            style={{ alignItems: 'flex-start', textAlign: 'left' }}>
+            Stockly helps businesses reduce inventory costs by up to 30% while improving 
+            availability through predictive analytics and smart automation.
           </Text>
 
-          <Text style={{ textAlign: 'center' }}>
-            Stockly helps businesses streamline inventory management, 
-            reduce waste, and optimize supply chains with powerful analytics.
-          </Text>
+          <List
+            mt={30}
+            spacing="sm"
+            size="lg"
+            style={{ alignItems: 'flex-start', textAlign: 'left' }}
+            icon={
+              <ThemeIcon size={24} radius="xl" color="#fcc419">
+                <PiCheckBold size={16} />
+              </ThemeIcon>
+            }
+          >
+            <List.Item>
+              <b>Real-time visibility</b> – Track inventory across all locations and channels
+            </List.Item>
+            <List.Item>
+              <b>Predictive analytics</b> – Forecast demand with 95% accuracy
+            </List.Item>
+            <List.Item>
+              <b>Automated replenishment</b> – Never miss a sale due to stockouts
+            </List.Item>
+          </List>
 
-          <Group align="center" justify="center" mt="xl">
+          <Group mt={40}>
             <Button
               component={Link}
               to="/login"
               size="md"
-              radius="xl"
-              variant="filled"
+              radius="md"
             >
               Get Started
             </Button>
             <Button
-              component="a"
-              href="#features"
-              size="md"
-              radius="xl"
               variant="outline"
+              size="md"
+              radius="md"
             >
-              Learn More
+              See How It Works
             </Button>
           </Group>
-        </Stack>
-      </Paper>
+        </div>
+        <Image className={classes.image} />
+      </div>
 
       {/* Features Section */}
-      <Group mt={rem(50)} grow>
-        <Paper shadow="md" p="md" radius="md" withBorder>
-          <Title order={3} mb="sm">Real-time Tracking</Title>
-          <Text>Monitor inventory levels across all locations in real-time</Text>
+      <Title order={2} ta="center" mt={rem(80)} mb="lg">
+        Powerful Features for <Text span c="limegreen" inherit>Smart Inventory</Text>
+      </Title>
+      
+      <Group mt={rem(40)} grow>
+        <Paper shadow="md" p="xl" radius="md" withBorder className={classes.featureCard}>
+          <ThemeIcon size={60} radius="md" mb="md" color="#fcc419">
+            <PiChartLineBold size={30} />
+          </ThemeIcon>
+          <Title order={3} mb="sm">Demand Forecasting</Title>
+          <Text>AI-powered predictions to optimize stock levels and reduce waste</Text>
         </Paper>
-        <Paper shadow="md" p="md" radius="md" withBorder>
+        
+        <Paper shadow="md" p="xl" radius="md" withBorder className={classes.featureCard}>
+          <ThemeIcon size={60} radius="md" mb="md" color="#fcc419">
+            <PiBellRingingBold size={30} />
+          </ThemeIcon>
           <Title order={3} mb="sm">Smart Alerts</Title>
-          <Text>Get notified before you run out of stock</Text>
+          <Text>Automated notifications for low stock, excess inventory, and anomalies</Text>
         </Paper>
-        <Paper shadow="md" p="md" radius="md" withBorder>
-          <Title order={3} mb="sm">Analytics</Title>
-          <Text>Powerful insights to optimize your supply chain</Text>
+        
+        <Paper shadow="md" p="xl" radius="md" withBorder className={classes.featureCard}>
+          <ThemeIcon size={60} radius="md" mb="md" color="#fcc419">
+            <PiArrowsClockwiseBold size={30} />
+          </ThemeIcon>
+          <Title order={3} mb="sm">Automated Replenishment</Title>
+          <Text>Set rules for automatic purchase orders when stock reaches threshold</Text>
         </Paper>
       </Group>
+      <ContactSection />
     </Container>
   );
 };
