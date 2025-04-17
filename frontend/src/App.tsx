@@ -3,6 +3,8 @@ import './App.css'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import AdminLayout from './components/layouts/AdminLayout'
+import AdminHome from './pages/admin/AdminHome'
 
 function App() {
   return (
@@ -11,6 +13,11 @@ function App() {
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<Login />} />
         <Route path='/register' element={<Register />} />
+
+        {/* Admin Routes */}
+        <Route path='/admin' element={<AdminLayout />}>
+          <Route path='/admin/home' element={<AdminHome />} />
+        </Route>
       </Routes>
     </Router>
   )

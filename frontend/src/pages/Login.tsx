@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Anchor,
   Button,
@@ -9,60 +12,115 @@ import {
   Stack,
   Text,
   TextInput,
+  ActionIcon
 } from '@mantine/core';
-import { PiGoogleLogoBold, PiFacebookLogoBold } from "react-icons/pi";
+import { PiGoogleLogoBold, PiFacebookLogoBold, PiArrowLineUpLeftBold  } from "react-icons/pi";
 import { Link } from 'react-router-dom';
+import { LoginData, login } from '../redux/authSlice';
+import { AppDispatch, RootState } from '../redux/store';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 const Login = () => {
+  const [error, setError] = useState<string | null>(null);
+  const { isLoading } = useSelector((state: RootState) => state.auth);
+  const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const schema = yup.object().shape({
+    email: yup.string().email('Invalid email').required('Email is required'),
+    password: yup.string().required('Password is required')
+  })
+
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginData>({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = (data: LoginData) => {
+    setError(null);
+
+    dispatch(login(data))
+      .unwrap()
+      .then(() => {
+        navigate('/admin/home');
+      })
+      .catch(() => {
+        setError('Login failed. Please check your credentials and try again.');
+      });
+  };
+
   return (
-    <Container size={420} my={40}>
-      <Paper shadow="xl" radius="md" p="xl" withBorder>
-        <Text size="lg" fw={500}>
-          Welcome back to <span><Link to={"/"} style={{textDecoration: 'none', color: 'limegreen'}}>Stockly</Link></span>
-        </Text>
+    <>
+      <ActionIcon 
+        size={40} 
+        component={Link} 
+        to="/"
+        style={{
+          position: 'fixed',
+          top: '30px',
+          left: '30px',
+          zIndex: 1000
+        }}
+      >
+        <PiArrowLineUpLeftBold style={{ width: '80%', height: '80%' }} />
+      </ActionIcon>
+      <Container size={420} my={40}>
+        <Paper shadow="xl" radius="md" p="xl" withBorder>
+          <Text size="lg" fw={500}>
+            Welcome back to <span><Link to={"/"} style={{textDecoration: 'none', color: 'limegreen'}}>Stockly</Link></span>
+          </Text>
 
-        <Group grow mb="md" mt="md">
-          <Button variant="default" radius="xl" disabled>
-            <PiGoogleLogoBold   size={20} />
-            &nbsp;
-            Google
-          </Button>
-          <Button variant="default" radius="xl" disabled>
-            <PiFacebookLogoBold   size={40} />
-            &nbsp;
-            Facebook
-          </Button>
-        </Group>
-
-        <Divider label="Or continue with email" labelPosition="center" my="lg" />
-
-        <form style={{ textAlign: 'left' }}>
-          <Stack>
-            <TextInput
-              required
-              label="Email"
-              placeholder="hello@stockly.com"
-              radius="md"
-            />
-            <PasswordInput
-              required
-              label="Password"
-              placeholder="Your password"
-              radius="md"
-            />
-          </Stack>
-
-          <Group justify="space-between" mt="xl">
-            <Anchor component={Link} to="/register" c="dimmed" size="xs">
-              Don’t have an account? Register
-            </Anchor>
-            <Button type="submit" radius="xl">
-              Login
+          <Group grow mb="md" mt="md">
+            <Button variant="default" radius="md" disabled>
+              <PiGoogleLogoBold   size={20} />
+              &nbsp;
+              Google
+            </Button>
+            <Button variant="default" radius="md" disabled>
+              <PiFacebookLogoBold   size={40} />
+              &nbsp;
+              Facebook
             </Button>
           </Group>
-        </form>
-      </Paper>
-    </Container>
+
+          <Divider label="Or continue with email" labelPosition="center" my="lg" />
+
+          <form style={{ textAlign: 'left' }} onSubmit={handleSubmit(onSubmit)}>
+            <Stack>
+              <TextInput
+                label="Email"
+                placeholder="hello@stockly.com"
+                radius="md"
+                {...register("email")}
+                error={errors.email?.message}
+              />
+              <PasswordInput
+                label="Password"
+                placeholder="Your password"
+                radius="md"
+                {...register("password")}
+                error={errors.password?.message}
+              />
+              {error && (
+                <Text c="red" size="sm" mt="sm">
+                  {error}
+                </Text>
+              )}
+            </Stack>
+
+            <Group justify="space-between" mt="xl">
+              <Anchor component={Link} to="/register" c="dimmed" size="xs">
+                Don’t have an account? Register
+              </Anchor>
+              <Button type="submit" radius="md" disabled={isLoading}>
+                {isLoading ? "Loging in..." : "Login"}
+              </Button>
+            </Group>
+          </form>
+        </Paper>
+      </Container>
+    </>
   );
 };
 

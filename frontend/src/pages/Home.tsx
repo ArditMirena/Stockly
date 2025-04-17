@@ -66,14 +66,14 @@ const Home = () => {
               component={Link}
               to="/login"
               size="md"
-              radius="xl"
+              radius="md"
             >
               Get Started
             </Button>
             <Button
               variant="outline"
               size="md"
-              radius="xl"
+              radius="md"
             >
               See How It Works
             </Button>
