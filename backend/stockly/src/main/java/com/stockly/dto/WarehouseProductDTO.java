@@ -1,33 +1,37 @@
 package com.stockly.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+
+@Data
+@Builder
+@Getter
+@Setter
 public class WarehouseProductDTO {
 
-    private Long dtoWarehouseId;  // The ID of the warehouse (specific for DTO)
-    private Long dtoProductId;    // The ID of the product (specific for DTO)
-    private String dtoAvailability;  // The availability status (specific for DTO)
+    private Long id;
 
-    // Getters and Setters
-    public Long getDtoWarehouseId() {
-        return dtoWarehouseId;
-    }
+    private Long warehouseId;
 
-    public void setDtoWarehouseId(Long dtoWarehouseId) {
-        this.dtoWarehouseId = dtoWarehouseId;
-    }
+    private String warehouseName;
 
-    public Long getDtoProductId() {
-        return dtoProductId;
-    }
+    @NotNull(message = "Product ID is required")
+    private Long productId;
 
-    public void setDtoProductId(Long dtoProductId) {
-        this.dtoProductId = dtoProductId;
-    }
+    @Positive(message = "Quantity must be positive")
+    private Integer quantity;
 
-    public String getDtoAvailability() {
-        return dtoAvailability;
-    }
+    private String availability;
 
-    public void setDtoAvailability(String dtoAvailability) {
-        this.dtoAvailability = dtoAvailability;
-    }
+
+    private String productTitle;
+    private String productSku;
+    private String productThumbnail;
+    private BigDecimal unitPrice;
 }

@@ -105,8 +105,8 @@ public class Product {
     private List<OrderItem> orderItems = new ArrayList<>();
 
 
-    @ManyToMany(mappedBy = "products")
-    private Set<Warehouse> warehouses;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WarehouseProduct> warehouseProducts = new ArrayList<>();
 
 
 }

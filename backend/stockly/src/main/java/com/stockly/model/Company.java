@@ -30,8 +30,9 @@ public class Company {
     @Column(name = "phone_number", unique = true)
     private String phoneNumber;
 
-    @Column(name = "address")
-    private String address;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    private Address address;
 
     @Column(name = "company_type")
     private String companyType;
@@ -39,8 +40,8 @@ public class Company {
     @Column(name = "business_type")
     private String businessType; // For Buyer
 
-    @Column(name = "warehouse_id")
-    private Long warehouseId; // For Supplier
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Warehouse> warehouses; // For Supplier
 
     // Relationship with orders (Buyer)
     @OneToMany(mappedBy = "buyer")

@@ -28,16 +28,16 @@ public class WarehouseProductCommandServiceImpl implements WarehouseProductComma
 
     public void assignProductToWarehouse(WarehouseProductDTO warehouseProductDTO) {
         // Fetch Warehouse and Product based on DTO data
-        Warehouse warehouse = warehouseRepository.findById(warehouseProductDTO.getDtoWarehouseId())
+        Warehouse warehouse = warehouseRepository.findById(warehouseProductDTO.getId())
                 .orElseThrow(() -> new RuntimeException("Warehouse not found"));
-        Product product = productRepository.findById(warehouseProductDTO.getDtoProductId())
+        Product product = productRepository.findById(warehouseProductDTO.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
         // Create a new WarehouseProduct entity and set the values
         WarehouseProduct warehouseProduct = new WarehouseProduct();
         warehouseProduct.setWarehouse(warehouse);
         warehouseProduct.setProduct(product);
-        warehouseProduct.setAvailability(warehouseProductDTO.getDtoAvailability());
+        warehouseProduct.setAvailability(warehouseProductDTO.getAvailability());
 
         // Save the new WarehouseProduct entity to the repository
         warehouseProductRepository.save(warehouseProduct);
