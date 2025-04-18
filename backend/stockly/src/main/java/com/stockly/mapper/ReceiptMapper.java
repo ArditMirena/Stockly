@@ -27,7 +27,7 @@ public class ReceiptMapper {
                 .companyName(company.getCompanyName())
                 .email(company.getEmail())
                 .phoneNumber(company.getPhoneNumber())
-                .address(company.getAddress())
+                .address(company.getAddress().getStreet())
                 .companyType(company.getCompanyType())
                 .build();
     }

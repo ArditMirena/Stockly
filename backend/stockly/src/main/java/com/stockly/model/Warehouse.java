@@ -3,7 +3,9 @@ package com.stockly.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -20,68 +22,17 @@ public class Warehouse {
 
     private String name;
 
-    private String address;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id", referencedColumnName = "id")
+    private Address address;
 
-    @Column(name = "manager_id")
-    private Long managerId;
-
-    @Column(name = "availability_status")
-    private String availabilityStatus;
-
-    @ManyToMany
-    @JoinTable(
-            name = "warehouse_products",
-            joinColumns = @JoinColumn(name = "warehouse_id"),
-            inverseJoinColumns = @JoinColumn(name = "product_id")
-    )
-    private Set<Product> products = new HashSet<>();
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
 
 
-    public String getAddress() {
-        return address;
-    }
+    @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WarehouseProduct> warehouseProducts = new ArrayList<>();
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
 
-    public String getAvailabilityStatus() {
-        return availabilityStatus;
-    }
-
-    public void setAvailabilityStatus(String availabilityStatus) {
-        this.availabilityStatus = availabilityStatus;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getManagerId() {
-        return managerId;
-    }
-
-    public void setManagerId(Long managerId) {
-        this.managerId = managerId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Set<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(Set<Product> products) {
-        this.products = products;
-    }
 }

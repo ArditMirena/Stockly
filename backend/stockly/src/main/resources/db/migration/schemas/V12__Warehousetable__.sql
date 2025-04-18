@@ -1,7 +1,10 @@
 CREATE TABLE warehouses (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    address VARCHAR(255) NOT NULL,
-    manager_id BIGINT,
-    availability_status VARCHAR(255)
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
+
+    address_id BIGINT UNIQUE,
+    company_id BIGINT,
+
+    CONSTRAINT fk_warehouse_address FOREIGN KEY (address_id) REFERENCES address(id),
+    CONSTRAINT fk_warehouse_company FOREIGN KEY (company_id) REFERENCES company(id)
 );

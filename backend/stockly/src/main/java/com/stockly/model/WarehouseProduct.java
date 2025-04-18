@@ -1,16 +1,21 @@
 package com.stockly.model;
 
+import com.stockly.model.enums.AvailabilityStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "warehouse_products")
+@Getter
+@Setter
 public class WarehouseProduct {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id", nullable = false)
@@ -20,44 +25,28 @@ public class WarehouseProduct {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Column(nullable = false)
+    private Integer quantity;
+
     @Column(name = "availability", nullable = false)
     private String availability;
 
-    // Optionally, if you want to add a unique identifier for this table, you can add an id field.
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-
-    public String getAvailability() {
-        return availability;
+    public void updateAvailability() {
+        if (quantity == null || quantity <= 0) {
+            this.availability = AvailabilityStatus.OUT_OF_STOCK.name();
+        } else if (quantity <= 20) {
+            this.availability = AvailabilityStatus.LOW_IN_STOCK.name();
+        } else {
+            this.availability = AvailabilityStatus.IN_STOCK.name();
+        }
     }
 
-    public void setAvailability(String availability) {
-        this.availability = availability;
+
+    // Automatically update availability when quantity is set
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+        updateAvailability();
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public Warehouse getWarehouse() {
-        return warehouse;
-    }
-
-    public void setWarehouse(Warehouse warehouse) {
-        this.warehouse = warehouse;
-    }
 }

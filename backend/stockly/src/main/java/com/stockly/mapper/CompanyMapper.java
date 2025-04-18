@@ -1,13 +1,22 @@
 package com.stockly.mapper;
 
+import com.stockly.dto.AddressDTO;
 import com.stockly.dto.CompanyDTO;
+import com.stockly.model.Address;
+import com.stockly.model.City;
 import com.stockly.model.Company;
+import com.stockly.repository.CityRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
 @Component
+@RequiredArgsConstructor
 public class CompanyMapper {
+
+    private final AddressMapper addressMapper;
+    private final CityRepository cityRepository;
 
     public CompanyDTO toDto(Company company) {
         if (company == null) {
@@ -19,10 +28,13 @@ public class CompanyMapper {
         dto.setCompanyName(company.getCompanyName());
         dto.setEmail(company.getEmail());
         dto.setPhoneNumber(company.getPhoneNumber());
-        dto.setAddress(company.getAddress());
         dto.setCompanyType(company.getCompanyType());
 
-        // Relationships are typically not mapped in DTOs for command operations
+        if(company.getAddress() != null) {
+            dto.setAddress(addressMapper.toDto(company.getAddress()));
+        }
+
+
         return dto;
     }
 
@@ -40,21 +52,29 @@ public class CompanyMapper {
         Objects.requireNonNull(dto, "CompanyDTO cannot be null");
         Objects.requireNonNull(entity, "Company cannot be null");
 
-        // Never update ID from DTO
+
         if (dto.getCompanyName() != null) {
             entity.setCompanyName(dto.getCompanyName());
         }
+
         if (dto.getEmail() != null) {
             entity.setEmail(dto.getEmail());
         }
+
         if (dto.getPhoneNumber() != null) {
             entity.setPhoneNumber(dto.getPhoneNumber());
         }
-        if (dto.getAddress() != null) {
-            entity.setAddress(dto.getAddress());
-        }
+
         if (dto.getCompanyType() != null) {
             entity.setCompanyType(dto.getCompanyType());
+        }
+
+        if (dto.getAddress() != null) {
+            City city = cityRepository.findById(dto.getAddress().getCityId())
+                    .orElseThrow(() -> new IllegalArgumentException("City not found"));
+
+            Address address = addressMapper.toEntity(dto.getAddress(), city);
+            entity.setAddress(address);
         }
     }
 

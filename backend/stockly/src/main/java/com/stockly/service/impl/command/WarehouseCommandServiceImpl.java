@@ -1,6 +1,7 @@
 package com.stockly.service.impl.command;
 
 import com.stockly.dto.WarehouseDTO;
+import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.mapper.WarehouseMapper;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
@@ -25,6 +26,23 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     @Override
     public WarehouseDTO createWarehouse(WarehouseDTO warehouseDTO) {
         Warehouse warehouse = warehouseMapper.toEntity(warehouseDTO);
+
+        if (warehouseDTO.getProducts() != null) {
+            for (WarehouseProductDTO productDTO : warehouseDTO.getProducts()) {
+                Product product = productRepository.findById(productDTO.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Product not found with id: " + productDTO.getProductId()));
+
+                WarehouseProduct warehouseProduct = new WarehouseProduct();
+                warehouseProduct.setWarehouse(warehouse);
+                warehouseProduct.setProduct(product);
+                warehouseProduct.setQuantity(productDTO.getQuantity());
+
+                // Add the WarehouseProduct to the warehouse
+                warehouse.getWarehouseProducts().add(warehouseProduct);
+            }
+        }
+
+
         Warehouse saved = warehouseRepository.save(warehouse);
         return warehouseMapper.toDto(saved);
     }
