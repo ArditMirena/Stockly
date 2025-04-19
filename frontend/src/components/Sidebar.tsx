@@ -48,7 +48,7 @@ const tabs = {
   ],
 };
 
-export function Sidebar() {
+export function Sidebar({ children }: { children: React.ReactNode }) {
   const [section, setSection] = useState<'account' | 'general'>('account');
   const [active, setActive] = useState('Billing');
   const [navOpened, { toggle: toggleNav }] = useDisclosure(true); 
@@ -148,6 +148,7 @@ export function Sidebar() {
         >
           <PiArrowsOutLineHorizontalBold size={30} />
         </Button>
+        {children}
       </AppShell.Main>
     </AppShell>
   );

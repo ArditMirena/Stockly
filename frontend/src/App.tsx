@@ -16,7 +16,8 @@ function App() {
 
         {/* Admin Routes */}
         <Route path='/admin' element={<AdminLayout />}>
-          <Route path='/admin/home' element={<AdminHome />} />
+          <Route index element={<AdminHome />} />
+          <Route path='home' element={<AdminHome />} />
         </Route>
       </Routes>
     </Router>
