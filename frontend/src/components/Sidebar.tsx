@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { 
   PiBellRingingBold,
   PiReceiptBold,
@@ -17,7 +17,8 @@ import {
   PiFileBold,
   PiUserSwitchBold,
   PiSignOutBold,
-  PiArrowsOutLineHorizontalBold
+  PiArrowsOutLineHorizontalBold,
+  PiTeaBagBold
 } from "react-icons/pi";
 import { 
   SegmentedControl,
@@ -43,33 +44,44 @@ const tabs = {
     { link: '', label: 'Receipts', icon: PiReadCvLogoBold },
     { link: '', label: 'Reviews', icon: PiChatCenteredTextBold },
     { link: '', label: 'Messages', icon: PiChatsBold },
-    { link: '', label: 'Customers', icon: PiUsersBold },
+    { link: '/admin/users', label: 'Users', icon: PiUsersBold },
     { link: '', label: 'Files', icon: PiFileBold },
+    { link: '/admin/products', label: 'Products', icon: PiTeaBagBold }
   ],
 };
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
   const [section, setSection] = useState<'account' | 'general'>('account');
-  const [active, setActive] = useState('Billing');
   const [navOpened, { toggle: toggleNav }] = useDisclosure(true); 
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const links = tabs[section].map((item) => (
-    <a
-      className={classes.link}
-      data-active={item.label === active || undefined}
-      href={item.link}
-      key={item.label}
-      onClick={(event) => {
-        event.preventDefault();
-        setActive(item.label);
-      }}
-    >
-      <item.icon className={classes.linkIcon} />
-      <span>{item.label}</span>
-    </a>
-  ));
+  // Determine which section should be active based on current route
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/users')) {
+      setSection('general');
+    }
+  }, [location.pathname]);
+
+  const links = tabs[section].map((item) => {
+    // Skip rendering if the link is empty
+    if (!item.link) return null;
+    
+    return (
+      <NavLink
+        className={({ isActive }) => 
+          `${classes.link} ${isActive ? classes.linkActive : ''}`
+        }
+        to={item.link}
+        key={item.label}
+        end
+      >
+        <item.icon className={classes.linkIcon} />
+        <span>{item.label}</span>
+      </NavLink>
+    );
+  }).filter(Boolean); // Remove null entries
 
   const handleSignOut = async () => {
     try {

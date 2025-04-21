@@ -1,6 +1,9 @@
 package com.stockly.service.impl.command;
 
 import com.stockly.dto.RegisterUserDTO;
+import com.stockly.dto.UserDTO;
+import com.stockly.exception.ResourceNotFoundException;
+import com.stockly.mapper.UserMapper;
 import com.stockly.model.Role;
 import com.stockly.model.RoleEnum;
 import com.stockly.model.User;
@@ -9,6 +12,7 @@ import com.stockly.repository.UserRepository;
 import com.stockly.service.command.EmailService;
 import com.stockly.service.command.UserCommandService;
 import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,18 +21,13 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
 public class UserCommandServiceImpl implements UserCommandService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-
-    public UserCommandServiceImpl(UserRepository userRepository, RoleRepository roleRepository, EmailService emailService, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.emailService = emailService;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    private final UserMapper userMapper;
 
     public User createAdministrator(RegisterUserDTO input){
         Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.ADMIN);
@@ -47,6 +46,36 @@ public class UserCommandServiceImpl implements UserCommandService {
         sendVerificationEmail(user);
 
         return userRepository.save(user);
+    }
+
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User with ID " + id + " not found."));
+
+        if (userDTO.getUsername() != null) {
+            user.setUsername(userDTO.getUsername());
+        }
+
+        if (userDTO.getEmail() != null) {
+            user.setEmail(userDTO.getEmail());
+        }
+
+        if (userDTO.getRole() != null) {
+            RoleEnum roleEnum = RoleEnum.valueOf(userDTO.getRole().toUpperCase());
+            Role role = roleRepository.findByName(roleEnum)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid role: " + userDTO.getRole()));
+            user.setRole(role);
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        return userMapper.toDTO(updatedUser);
+    }
+
+    public void deleteUser(Long id){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User with ID " + id + " not found."));
+        userRepository.delete(user);
     }
 
     public void sendVerificationEmail(User user){
