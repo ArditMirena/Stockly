@@ -15,9 +15,11 @@ import {
 import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold } from "react-icons/pi";
 import classes from '../style/Home.module.css';
 import ContactSection from "../components/ContactSection";
+import { Footer } from "../components/Footer.tsx";
 
 const Home = () => {
   return (
+    <>
     <Container size="lg" py="xl">
       <div className={classes.inner}>
         <div className={classes.content}>
@@ -114,6 +116,8 @@ const Home = () => {
       </Group>
       <ContactSection />
     </Container>
+      < Footer />
+    </>
   );
 };
 
