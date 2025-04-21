@@ -1,24 +1,50 @@
 package com.stockly.service.impl.query;
 
+import com.stockly.dto.UserDTO;
+import com.stockly.mapper.UserMapper;
 import com.stockly.model.User;
 import com.stockly.repository.UserRepository;
 import com.stockly.service.query.UserQueryService;
+import com.stockly.specification.UserSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserQueryServiceImpl implements UserQueryService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public UserQueryServiceImpl(UserRepository userRepository) {
+    public UserQueryServiceImpl(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         List<User> users = new ArrayList<>();
         userRepository.findAll().forEach(users::add);
-        return users;
+        return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
+    }
+
+    public Page<UserDTO> getAllUsersWithPagination(PageRequest pageRequest) {
+        Page<User> users = userRepository.findAll(pageRequest);
+
+        List<UserDTO> userDTOs = users.stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(userDTOs, pageRequest, users.getTotalElements());
+    }
+
+    public List<UserDTO> searchUsers(String searchTerm) {
+        final Specification<User> specification = UserSpecification.unifiedSearch(searchTerm);
+        final List<User> users = userRepository.findAll(specification);
+        return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
 }

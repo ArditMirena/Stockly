@@ -16,6 +16,7 @@
     "@mantine/hooks": "^7.17.4",
     "@mantine/notifications": "^7.17.4",
     "@reduxjs/toolkit": "^2.6.1",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
     "js-cookie": "^3.0.5",
@@ -31,8 +32,8 @@
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@types/js-cookie": "^3.0.6",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
     "@types/yup": "^0.32.0",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.21.0",
