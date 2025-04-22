@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.List;
 
 @Entity
@@ -37,6 +38,12 @@ public class Company {
     @Column(name = "company_type")
     private String companyType;
 
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
     @Column(name = "business_type")
     private String businessType; // For Buyer
 
@@ -50,4 +57,16 @@ public class Company {
     // Relationship with orders (Supplier)
     @OneToMany(mappedBy = "supplier")
     private List<Order> ordersAsSupplier;
+
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
+    }
 }
