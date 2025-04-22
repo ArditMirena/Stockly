@@ -6,9 +6,13 @@ import com.stockly.mapper.CompanyMapper;
 import com.stockly.model.Company;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.service.query.CompanyQueryService;
+import com.stockly.specification.CompanySpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,11 +46,6 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public Page<CompanyDTO> getAllCompanies(Pageable pageable) {
-        return companyRepository.findAll(pageable)
-                .map(companyMapper::toDto);
-    }
 
     @Override
     public List<CompanyDTO> getCompaniesByType(String companyType) {
@@ -63,5 +62,23 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
     @Override
     public boolean companyExistsByName(String companyName) {
         return companyRepository.existsByCompanyName(companyName);
+    }
+
+    @Override
+    public List<CompanyDTO> searchCompanies(String searchTerm) {
+        final Specification<Company> specification = CompanySpecification.unifiedSearch(searchTerm);
+        final List<Company> companies = companyRepository.findAll(specification);
+        return companies.stream().map(companyMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<CompanyDTO> getAllCompaniesWithPagination(PageRequest pageRequest) {
+        Page<Company> companies = companyRepository.findAll(pageRequest);
+
+        List<CompanyDTO> companyDTOS = companies.stream()
+                .map(companyMapper::toDto)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(companyDTOS, pageRequest, companies.getTotalElements());
     }
 }

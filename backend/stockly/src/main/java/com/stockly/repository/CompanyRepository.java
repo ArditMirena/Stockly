@@ -1,6 +1,7 @@
 package com.stockly.repository;
 
 import com.stockly.model.Company;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +14,5 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     boolean existsByEmail(String email);
     boolean existsByCompanyName(String companyName);
     List<Company> findByCompanyType(String companyType);
+    List<Company> findAll(Specification<Company> specification);
 }

@@ -29,6 +29,9 @@ public class CompanyMapper {
         dto.setEmail(company.getEmail());
         dto.setPhoneNumber(company.getPhoneNumber());
         dto.setCompanyType(company.getCompanyType());
+        dto.setCreatedAt(company.getCreatedAt());
+        dto.setUpdatedAt(company.getUpdatedAt());
+
 
         if(company.getAddress() != null) {
             dto.setAddress(addressMapper.toDto(company.getAddress()));
@@ -67,6 +70,14 @@ public class CompanyMapper {
 
         if (dto.getCompanyType() != null) {
             entity.setCompanyType(dto.getCompanyType());
+        }
+
+        if (dto.getCreatedAt() != null) {
+            entity.setCreatedAt(dto.getCreatedAt());
+        }
+
+        if (dto.getUpdatedAt() != null) {
+            entity.setUpdatedAt(dto.getUpdatedAt());
         }
 
         if (dto.getAddress() != null) {

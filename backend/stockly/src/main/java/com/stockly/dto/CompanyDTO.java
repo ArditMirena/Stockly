@@ -6,6 +6,7 @@ import lombok.Setter;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.util.List;
 
 
@@ -25,6 +26,9 @@ public class CompanyDTO {
 
     private AddressDTO address;
     private String companyType;
+
+    private Instant createdAt;
+    private Instant updatedAt;
 
     private List<OrderDTO> ordersAsBuyer;
     private List<OrderDTO> ordersAsSupplier;
