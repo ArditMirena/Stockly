@@ -5,7 +5,9 @@ import com.stockly.dto.CompanyDTO;
 import com.stockly.model.Address;
 import com.stockly.model.City;
 import com.stockly.model.Company;
+import com.stockly.model.User;
 import com.stockly.repository.CityRepository;
+import com.stockly.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +19,8 @@ public class CompanyMapper {
 
     private final AddressMapper addressMapper;
     private final CityRepository cityRepository;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
 
     public CompanyDTO toDto(Company company) {
         if (company == null) {
@@ -29,6 +33,7 @@ public class CompanyMapper {
         dto.setEmail(company.getEmail());
         dto.setPhoneNumber(company.getPhoneNumber());
         dto.setCompanyType(company.getCompanyType());
+        dto.setManager(company.getManager().getId());
         dto.setCreatedAt(company.getCreatedAt());
         dto.setUpdatedAt(company.getUpdatedAt());
 
@@ -70,6 +75,12 @@ public class CompanyMapper {
 
         if (dto.getCompanyType() != null) {
             entity.setCompanyType(dto.getCompanyType());
+        }
+
+        if (dto.getManager() != null) {
+            User manager = userRepository.findById(dto.getManager())
+                    .orElseThrow(() -> new IllegalArgumentException("Manager not found with ID: " + dto.getManager()));
+            entity.setManager(manager);
         }
 
         if (dto.getCreatedAt() != null) {

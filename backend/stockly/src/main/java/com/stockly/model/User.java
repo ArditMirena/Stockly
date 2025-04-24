@@ -1,5 +1,6 @@
 package com.stockly.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,6 +46,10 @@ public class User implements UserDetails {
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     private Role role;
+
+    @OneToMany(mappedBy = "manager")
+    @JsonIgnore
+    private List<Company> companies;
 
     public User(String username, String email, String password) {
         this.username = username;
