@@ -5,11 +5,14 @@ import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.exception.OperationNotAllowedException;
 import com.stockly.mapper.AddressMapper;
 import com.stockly.mapper.CompanyMapper;
+import com.stockly.mapper.UserMapper;
 import com.stockly.model.Address;
 import com.stockly.model.City;
 import com.stockly.model.Company;
+import com.stockly.model.User;
 import com.stockly.repository.CityRepository;
 import com.stockly.repository.CompanyRepository;
+import com.stockly.repository.UserRepository;
 import com.stockly.service.command.CompanyCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,10 +26,12 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
     private final AddressMapper addressMapper;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public Company createCompany(CompanyDTO companyDTO) {
+    public CompanyDTO createCompany(CompanyDTO companyDTO) {
         if (companyRepository.existsByEmail(companyDTO.getEmail())) {
             throw new OperationNotAllowedException("Email already in use");
         }
@@ -46,10 +51,17 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
 
         Address address = addressMapper.toEntity(companyDTO.getAddress(), city);
 
+        User manager = userRepository.findById(companyDTO.getManager())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: "+companyDTO.getManager()));
+
+////SHOULD RETURN COMPANYDTO NOT COMPANY
+
+
         Company company = companyMapper.createNewCompanyFromDto(companyDTO);
         company.setAddress(address);
-
-        return companyRepository.save(company);
+        assignCompanyToUser(manager, company);
+        Company saved = companyRepository.save(company);
+        return companyMapper.toDto(saved);
     }
 
     @Override
@@ -65,6 +77,22 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
 
         companyMapper.updateEntityFromDto(companyDTO, existingCompany);
         return companyRepository.save(existingCompany);
+    }
+
+    @Override
+    @Transactional
+    public void assignCompanyToUser(User user, Company company){
+        String newType = company.getCompanyType();
+
+        boolean hasMixedTypes = user.getRole().equals(newType);
+
+        if(hasMixedTypes){
+            throw new IllegalStateException("User can only manage companies of type: "+
+                    user.getRole());
+        }
+
+        company.setManager(user);
+        companyRepository.save(company);
     }
 
     @Override
