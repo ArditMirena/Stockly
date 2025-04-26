@@ -73,31 +73,45 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     @Autowired
     private WarehouseProductRepository warehouseProductRepository;
 
-    public void assignProductToWarehouse(Long warehouseId, Long productId, String dtoAvailability) {
+//    public void assignProductToWarehouse(Long warehouseId, Long productId, String dtoAvailability) {
+//        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+//                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+//
+//        Product product = productRepository.findById(productId)
+//                .orElseThrow(() -> new RuntimeException("Product not found"));
+//
+//        WarehouseProduct wp = new WarehouseProduct();
+//        wp.setWarehouse(warehouse);
+//        wp.setProduct(product);
+//        wp.setAvailability("available"); // or set this based on some logic or parameter
+//
+//        warehouseProductRepository.save(wp);
+//    }
+
+    @Override
+    public void assignProductToWarehouse(Long warehouseId, Long productId, Integer quantity) {
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+                .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + warehouseId));
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-        WarehouseProduct wp = new WarehouseProduct();
-        wp.setWarehouse(warehouse);
-        wp.setProduct(product);
-        wp.setAvailability("available"); // or set this based on some logic or parameter
+        // Try to find existing warehouse-product relationship
+        WarehouseProduct existing = warehouseProductRepository.findByWarehouseAndProduct(warehouse, product);
 
-        warehouseProductRepository.save(wp);
+        if (existing != null) {
+            // Update quantity if relationship exists
+            existing.setQuantity(existing.getQuantity() + quantity);
+            warehouseProductRepository.save(existing);
+        } else {
+            // Create new relationship if it doesn't exist
+            WarehouseProduct warehouseProduct = new WarehouseProduct();
+            warehouseProduct.setWarehouse(warehouse);
+            warehouseProduct.setProduct(product);
+            warehouseProduct.setQuantity(quantity);
+            warehouse.getWarehouseProducts().add(warehouseProduct);
+            warehouseProductRepository.save(warehouseProduct);
+        }
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

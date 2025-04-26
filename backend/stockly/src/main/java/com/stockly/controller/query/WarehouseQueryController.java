@@ -39,4 +39,10 @@ public class WarehouseQueryController {
         List<Product> products = warehouseProductService.getProductsByWarehouseAndAvailability(warehouseId, availability);
         return ResponseEntity.ok(products);
     }
+
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<List<WarehouseDTO>> getWarehousesByCompany(@PathVariable Long companyId) {
+        List<WarehouseDTO> warehouses = warehouseQueryService.getWarehousesByCompanyId(companyId);
+        return ResponseEntity.ok(warehouses);
+    }
 }

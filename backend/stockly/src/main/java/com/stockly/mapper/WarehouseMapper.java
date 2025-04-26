@@ -1,13 +1,18 @@
 package com.stockly.mapper;
 
 import com.stockly.dto.WarehouseDTO;
+import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.model.Address;
 import com.stockly.model.City;
 import com.stockly.model.Warehouse;
+import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.CityRepository;
 import com.stockly.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -16,6 +21,7 @@ public class WarehouseMapper {
     private final AddressMapper addressMapper;
     private final CompanyRepository companyRepository;
     private final CityRepository cityRepository;
+    private final WarehouseProductMapper warehouseProductMapper;
 
     public WarehouseDTO toDto(Warehouse warehouse) {
         if (warehouse == null) {
@@ -25,8 +31,15 @@ public class WarehouseMapper {
         WarehouseDTO dto = new WarehouseDTO();
         dto.setId(warehouse.getId());
         dto.setName(warehouse.getName());
+        dto.setCompanyId(warehouse.getCompany().getId());
 
-        if (warehouse.getAddress() != null) {}
+        if(warehouse.getWarehouseProducts() != null &&
+                !warehouse.getWarehouseProducts().isEmpty()) {
+            List<WarehouseProductDTO> warehouseProducts = warehouse.getWarehouseProducts().stream()
+                    .map(warehouseProductMapper::toDTO)
+                    .collect(Collectors.toList());
+            dto.setProducts(warehouseProducts);
+        }
 
         if (warehouse.getAddress() != null) {
             dto.setAddress(addressMapper.toDto(warehouse.getAddress()));

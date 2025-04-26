@@ -53,13 +53,20 @@ public class WarehouseCommandController {
         warehouseCommandService.deleteWarehouse(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-    @PostMapping("/assign-product")
-    public ResponseEntity<String> assignProductToWarehouse(@RequestBody WarehouseProductDTO warehouseProductDTO) {
-        // Use the injected service to assign the product to the warehouse
-        warehouseProductCommandService.assignProductToWarehouse(warehouseProductDTO);
-        return ResponseEntity.ok("Product assigned to warehouse successfully.");
-    }
+//    @PostMapping("/assign-product")
+//    public ResponseEntity<String> assignProductToWarehouse(@RequestBody WarehouseProductDTO warehouseProductDTO) {
+//        // Use the injected service to assign the product to the warehouse
+//        warehouseCommandService.assignProductToWarehouse(warehouseProductDTO);
+//        return ResponseEntity.ok("Product assigned to warehouse successfully.");
+//    }
 
+    @PostMapping("/assign-product/{productId}/{quantity}/towarehouse/{warehouseId}")
+    public ResponseEntity<Void> assignProductToWarehouse(@PathVariable Long productId,
+                                                                 @PathVariable Integer quantity,
+                                                                 @PathVariable Long warehouseId) {
+        warehouseCommandService.assignProductToWarehouse(productId, warehouseId, quantity);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
 
 
