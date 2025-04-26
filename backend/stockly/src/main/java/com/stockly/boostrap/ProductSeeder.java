@@ -74,16 +74,16 @@ public class ProductSeeder implements ApplicationListener<ContextRefreshedEvent>
             product.setDescription(dto.getDescription());
             product.setCategory(category);
             product.setPrice(BigDecimal.valueOf(dto.getPrice()));
-            product.setDiscountPercentage(BigDecimal.valueOf(dto.getDiscountPercentage()));
+            product.setDiscountPercentage(BigDecimal.valueOf(dto.getDiscountPercentage()));//qita
             product.setRating(BigDecimal.valueOf(dto.getRating()));
-            product.setStock(dto.getStock());
+            product.setStock(dto.getStock()); //qita
             product.setSku(dto.getSku());
             product.setWeight(dto.getWeight());
             product.setWarrantyInformation(dto.getWarrantyInformation());
             product.setShippingInformation(dto.getShippingInformation());
-            product.setAvailabilityStatus(dto.getAvailabilityStatus());
+            product.setAvailabilityStatus(dto.getAvailabilityStatus()); //status
             product.setReturnPolicy(dto.getReturnPolicy());
-            product.setMinimumOrderQuantity(dto.getMinimumOrderQuantity());
+            product.setMinimumOrderQuantity(dto.getMinimumOrderQuantity()); //qita
             product.setBarcode(dto.getMeta().getBarcode());
             product.setQrCode(dto.getMeta().getQrCode());
             product.setCreatedAt(dto.getMeta().getCreatedAt());
