@@ -18,7 +18,8 @@ import {
   PiUserSwitchBold,
   PiSignOutBold,
   PiArrowsOutLineHorizontalBold,
-  PiTeaBagBold
+  PiTeaBagBold,
+  PiFactoryBold
 } from "react-icons/pi";
 import { 
   SegmentedControl,
@@ -46,7 +47,8 @@ const tabs = {
     { link: '', label: 'Messages', icon: PiChatsBold },
     { link: '/admin/users', label: 'Users', icon: PiUsersBold },
     { link: '', label: 'Files', icon: PiFileBold },
-    { link: '/admin/products', label: 'Products', icon: PiTeaBagBold }
+    { link: '/admin/products', label: 'Products', icon: PiTeaBagBold },
+    { link: '/admin/companies', label: 'Companies', icon: PiFactoryBold}
   ],
 };
 
