@@ -1,6 +1,7 @@
 package com.stockly.repository;
 
 import com.stockly.model.Product;
+import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,4 +20,6 @@ public interface WarehouseProductRepository extends JpaRepository<WarehouseProdu
     // Custom method to find a WarehouseProduct by warehouseId and productId
     @Query("SELECT wp FROM WarehouseProduct wp WHERE wp.warehouse.id = :warehouseId AND wp.product.id = :productId")
     Optional<WarehouseProduct> findByWarehouseIdAndProductId(@Param("warehouseId") Long warehouseId, @Param("productId") Long productId);
+
+    WarehouseProduct findByWarehouseAndProduct(Warehouse warehouse, Product product);
 }

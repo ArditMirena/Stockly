@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface WarehouseQueryService {
     List<WarehouseDTO> getAllWarehouses();
     Optional<WarehouseDTO> getWarehouseById(Long id);
+    List<WarehouseDTO> getWarehousesByCompanyId(Long companyId);
 }

@@ -33,4 +33,11 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
         return warehouseRepository.findById(id)
                 .map(warehouseMapper::toDto);
     }
+
+    @Override
+    public List<WarehouseDTO> getWarehousesByCompanyId(Long companyId) {
+        return warehouseRepository.findByCompanyId(companyId).stream()
+                .map(warehouseMapper::toDto)
+                .collect(Collectors.toList());
+    }
 }

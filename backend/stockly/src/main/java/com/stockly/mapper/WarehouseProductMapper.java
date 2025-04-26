@@ -4,10 +4,14 @@ import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
+@RequiredArgsConstructor
 public class WarehouseProductMapper {
 
-    public static WarehouseProductDTO toDTO(WarehouseProduct warehouseProduct) {
+    public WarehouseProductDTO toDTO(WarehouseProduct warehouseProduct) {
         if (warehouseProduct == null) return null;
 
         return WarehouseProductDTO.builder()
