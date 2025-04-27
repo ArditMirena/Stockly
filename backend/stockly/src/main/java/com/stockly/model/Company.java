@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -49,7 +50,7 @@ public class Company {
     private String businessType; // For Buyer
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Warehouse> warehouses; // For Supplier
+    private List<Warehouse> warehouses = new ArrayList<>(); // For Supplier
 
     // Relationship with orders (Buyer)
     @OneToMany(mappedBy = "buyer")
@@ -60,14 +61,37 @@ public class Company {
     private List<Order> ordersAsSupplier;
 
 
+    private void determineCompanyType() {
+        if (!warehouses.isEmpty()) {
+            this.companyType = "SUPPLIER";
+        } else if (businessType != null && !businessType.isEmpty()) {
+            this.companyType = "BUYER";
+        } else {
+            this.companyType = null;
+        }
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
+        determineCompanyType();
+    }
+
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
+        determineCompanyType();
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = Instant.now();
+        determineCompanyType();
+    }
+
+    @PostLoad
+    protected void onLoad() {
+        determineCompanyType();
     }
 }
