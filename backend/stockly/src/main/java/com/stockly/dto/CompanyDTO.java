@@ -26,6 +26,7 @@ public class CompanyDTO {
 
     private AddressDTO address;
     private String companyType;
+    private String businessType;
     private Long manager;
 
     private Instant createdAt;
