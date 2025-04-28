@@ -2,10 +2,13 @@ package com.stockly.service.impl.command;
 
 import com.stockly.dto.WarehouseDTO;
 import com.stockly.dto.WarehouseProductDTO;
+import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.WarehouseMapper;
+import com.stockly.model.Company;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
+import com.stockly.repository.CompanyRepository;
 import com.stockly.repository.ProductRepository;
 import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.repository.WarehouseRepository;
@@ -22,10 +25,16 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
 
     private final WarehouseRepository warehouseRepository;
     private final WarehouseMapper warehouseMapper;
+    private final CompanyRepository companyRepository;
 
     @Override
     public WarehouseDTO createWarehouse(WarehouseDTO warehouseDTO) {
         Warehouse warehouse = warehouseMapper.toEntity(warehouseDTO);
+
+        Company company = companyRepository.findById(warehouseDTO.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+
+        warehouse.setCompany(company);
 
         if (warehouseDTO.getProducts() != null) {
             for (WarehouseProductDTO productDTO : warehouseDTO.getProducts()) {
@@ -42,8 +51,12 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
             }
         }
 
+        company.addWarehouse(warehouse);
 
         Warehouse saved = warehouseRepository.save(warehouse);
+
+        companyRepository.saveAndFlush(company);
+
         return warehouseMapper.toDto(saved);
     }
 

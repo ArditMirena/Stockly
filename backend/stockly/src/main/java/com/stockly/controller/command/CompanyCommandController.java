@@ -22,7 +22,7 @@ public class CompanyCommandController {
     }
 
     @PutMapping("/{id}")
-    public Company updateCompany(@PathVariable Long id, @RequestBody @Valid CompanyDTO companyDTO) {
+    public CompanyDTO updateCompany(@PathVariable Long id, @RequestBody @Valid CompanyDTO companyDTO) {
         return companyCommandService.updateCompany(id, companyDTO);
     }
 

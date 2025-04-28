@@ -1,6 +1,8 @@
 package com.stockly.repository;
 
 import com.stockly.model.Company;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,4 +17,5 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     boolean existsByCompanyName(String companyName);
     List<Company> findByCompanyType(String companyType);
     List<Company> findAll(Specification<Company> specification);
+    Page<Company> findByCompanyType(String companyType, Pageable pageable);
 }

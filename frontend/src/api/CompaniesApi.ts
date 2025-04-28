@@ -64,6 +64,20 @@ export const companiesApi = createApi({
         getCompanies: builder.query<Company[], void> ({
             query: () => `/companies`,
         }),
+        getCompaniesByType: builder.query<Company[], string>({
+            query: (companyType) => `/companies/type/${companyType}`,
+        }),
+        getCompaniesByTypeWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams & { companyType?: string }>({
+            query: (params) => ({
+                url: '/companies/page',
+                params: {
+                    offset: params?.offset || 0,
+                    pageSize: params?.pageSize || 10,
+                    sortBy: params?.sortBy || 'id',
+                    companyType: params?.companyType
+                }
+            })
+        }),
         getCompaniesWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams>({
             query: (params) => ({
                 url: '/companies/page',
@@ -115,5 +129,7 @@ export const {
     useAddCompanyMutation,
     useUpdateCompanyMutation,
     useDeleteCompanyMutation,
+    useGetCompaniesByTypeQuery,
+    useGetCompaniesByTypeWithPaginationQuery,
     useSearchCompaniesQuery
 } = companiesApi;

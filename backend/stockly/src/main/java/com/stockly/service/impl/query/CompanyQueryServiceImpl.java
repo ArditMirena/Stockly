@@ -81,4 +81,9 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
 
         return new PageImpl<>(companyDTOS, pageRequest, companies.getTotalElements());
     }
+
+    public Page<CompanyDTO> getCompaniesByTypeWithPagination(String companyType, Pageable pageable) {
+        return companyRepository.findByCompanyType(companyType, pageable)
+                .map(companyMapper::toDto);
+    }
 }
