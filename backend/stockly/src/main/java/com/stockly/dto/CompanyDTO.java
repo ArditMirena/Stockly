@@ -1,5 +1,6 @@
 package com.stockly.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.Email;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +32,9 @@ public class CompanyDTO {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<WarehouseDTO> warehouses;
 
     private List<OrderDTO> ordersAsBuyer;
     private List<OrderDTO> ordersAsSupplier;

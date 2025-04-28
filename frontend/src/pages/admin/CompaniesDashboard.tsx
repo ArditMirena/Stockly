@@ -13,12 +13,14 @@ import {
     Text,
     TextInput,
     Badge,
+    Menu,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { PiTrashBold, PiMagnifyingGlassBold } from 'react-icons/pi';
+import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold } from 'react-icons/pi';
 import DashboardTable, { Column } from '../../components/DashboardTable';
 import {
     useGetCompaniesWithPaginationQuery,
+    useGetCompaniesByTypeWithPaginationQuery,
     useSearchCompaniesQuery,
     useDeleteCompanyMutation,
     Company
@@ -28,16 +30,24 @@ const CompaniesDashboard = () => {
     const [page, setPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
+    const [companyTypeFilter, setCompanyTypeFilter] = useState<string | null>(null);
     const pageSize = 10;
 
     const {
         data: paginatedResponse,
         isLoading: isPaginatedLoading,
-    } = useGetCompaniesWithPaginationQuery({
-        offset: page,
-        pageSize,
-        sortBy: 'id',
-    });
+    } = companyTypeFilter
+        ? useGetCompaniesByTypeWithPaginationQuery({
+            offset: page,
+            pageSize,
+            sortBy: 'id',
+            companyType: companyTypeFilter
+        })
+        : useGetCompaniesWithPaginationQuery({
+            offset: page,
+            pageSize,
+            sortBy: 'id',
+        });
 
     const {
         data: searchedCompanies,
@@ -137,16 +147,39 @@ const CompaniesDashboard = () => {
             <Stack>
                 <Group justify="space-between">
                     <Title order={3}>Companies Dashboard</Title>
-                    <TextInput
-                        placeholder="Search companies..."
-                        leftSection={<PiMagnifyingGlassBold size={16} />}
-                        w={250}
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setPage(0);
-                            setSearchTerm(e.currentTarget.value);
-                        }}
-                    />
+                    <Group>
+                        <Menu shadow="md" width={200}>
+                            <Menu.Target>
+                                <Button
+                                    rightSection={<PiCaretDownBold size={14} />}
+                                    variant="outline"
+                                >
+                                    {companyTypeFilter ? `${companyTypeFilter}S` : 'All Companies'}
+                                </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Item onClick={() => setCompanyTypeFilter(null)}>
+                                    All Companies
+                                </Menu.Item>
+                                <Menu.Item onClick={() => setCompanyTypeFilter('BUYER')}>
+                                    Buyers
+                                </Menu.Item>
+                                <Menu.Item onClick={() => setCompanyTypeFilter('SUPPLIER')}>
+                                    Suppliers
+                                </Menu.Item>
+                            </Menu.Dropdown>
+                        </Menu>
+                        <TextInput
+                            placeholder="Search companies..."
+                            leftSection={<PiMagnifyingGlassBold size={16} />}
+                            w={250}
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setPage(0);
+                                setSearchTerm(e.currentTarget.value);
+                            }}
+                        />
+                    </Group>
                 </Group>
 
                 <Divider />

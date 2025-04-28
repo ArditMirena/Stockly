@@ -61,7 +61,15 @@ public class Company {
     private List<Order> ordersAsSupplier;
 
 
-    private void determineCompanyType() {
+    public void addWarehouse(Warehouse warehouse) {
+        if (warehouse != null) {
+            warehouse.setCompany(this);
+            warehouses.add(warehouse);
+            determineCompanyType();
+        }
+    }
+
+    public void determineCompanyType() {
         if (!warehouses.isEmpty()) {
             this.companyType = "SUPPLIER";
         } else if (businessType != null && !businessType.isEmpty()) {
