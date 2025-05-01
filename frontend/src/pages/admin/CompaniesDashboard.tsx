@@ -15,15 +15,16 @@ import {
     Badge,
     Menu,
 } from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
 import { useDebouncedValue } from '@mantine/hooks';
-import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold } from 'react-icons/pi';
+import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold, PiWarehouseBold } from 'react-icons/pi';
 import DashboardTable, { Column } from '../../components/DashboardTable';
 import {
     useGetCompaniesWithPaginationQuery,
     useGetCompaniesByTypeWithPaginationQuery,
     useSearchCompaniesQuery,
     useDeleteCompanyMutation,
-    Company
+    Company, AddressDTO
 } from '../../api/CompaniesApi';
 
 const CompaniesDashboard = () => {
@@ -32,6 +33,7 @@ const CompaniesDashboard = () => {
     const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
     const [companyTypeFilter, setCompanyTypeFilter] = useState<string | null>(null);
     const pageSize = 10;
+    const navigate = useNavigate();
 
     const {
         data: paginatedResponse,
@@ -68,6 +70,12 @@ const CompaniesDashboard = () => {
         }
     };
 
+    const handleSupplierClick = (companyId: number, companyName: string) => {
+        navigate('/admin/warehouses', {
+            state: { preselectedCompany: { id: companyId, name: companyName } }
+        });
+    };
+
     const columns: Column<Company>[] = [
         {
             accessorKey: 'id',
@@ -94,16 +102,6 @@ const CompaniesDashboard = () => {
             cell: (info) => info.getValue(),
         },
         {
-            accessorKey: 'companyType',
-            header: 'Type',
-            enableSorting: false,
-            cell: (info) => (
-                <Badge color={info.getValue() === 'SUPPLIER' ? 'blue' : 'green'}>
-                    {info.getValue()}
-                </Badge>
-            ),
-        },
-        {
             accessorKey: 'address',
             header: 'Address',
             enableSorting: false,
@@ -119,21 +117,24 @@ const CompaniesDashboard = () => {
             cell: (info) => new Date(info.getValue()).toLocaleDateString(),
         },
         {
-            accessorKey: 'id',
-            header: 'Actions',
+            accessorKey: 'companyType',
+            header: 'Type',
             enableSorting: false,
-            cell: ({ getValue }) => (
-                <Group justify="center">
-                    <ActionIcon
-                        color="red"
-                        variant="light"
-                        onClick={() => {
-                            setDeleteId(getValue());
-                            setConfirmOpen(true);
-                        }}
-                    >
-                        <PiTrashBold size={18} />
-                    </ActionIcon>
+            cell: (info) => (
+                <Group gap="xs">
+                    <Badge color={info.getValue() === 'SUPPLIER' ? 'blue' : 'green'}>
+                        {info.getValue()}
+                    </Badge>
+                    {info.getValue() === 'SUPPLIER' && (
+                        <Button
+                            variant="subtle"
+                            color="blue"
+                            size="compact-sm"
+                            onClick={() => handleSupplierClick(info.row.original.id, info.row.original.companyName)}
+                        >
+                            Warehouses
+                        </Button>
+                    )}
                 </Group>
             ),
         },

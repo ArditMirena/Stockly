@@ -6,12 +6,10 @@ import com.stockly.exception.OperationNotAllowedException;
 import com.stockly.mapper.AddressMapper;
 import com.stockly.mapper.CompanyMapper;
 import com.stockly.mapper.UserMapper;
-import com.stockly.model.Address;
-import com.stockly.model.City;
-import com.stockly.model.Company;
-import com.stockly.model.User;
+import com.stockly.model.*;
 import com.stockly.repository.CityRepository;
 import com.stockly.repository.CompanyRepository;
+import com.stockly.repository.RoleRepository;
 import com.stockly.repository.UserRepository;
 import com.stockly.service.command.CompanyCommandService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +26,7 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
     private final AddressMapper addressMapper;
     private final UserMapper userMapper;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     @Transactional
@@ -78,12 +77,16 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
     @Override
     @Transactional
     public void assignCompanyToUser(User user, Company company) {
-        if (!user.getRole().equals(company.getCompanyType())) {
+        Role role = roleRepository.findById(user.getRole().getId()).orElseThrow(() -> new RuntimeException("Role not found"));
+        String userRole = role.getName().toString();
+
+        if (!userRole.equals(company.getCompanyType()) && !(userRole.equals("ADMIN") || userRole.equals("SUPER_ADMIN"))) {
             throw new IllegalStateException("User can only manage companies of type: " + user.getRole());
         }
 
-        company.setManager(user);
-        companyRepository.saveAndFlush(company);
+            company.setManager(user);
+            companyRepository.saveAndFlush(company);
+
     }
 
     @Override
