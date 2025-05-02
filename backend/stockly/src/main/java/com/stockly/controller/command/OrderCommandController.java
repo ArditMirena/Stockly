@@ -1,11 +1,14 @@
 package com.stockly.controller.command;
 
 import com.stockly.dto.OrderDTO;
+import com.stockly.dto.request.OrderRequest;
 import com.stockly.model.Order;
 import com.stockly.service.command.OrderCommandService;
+import com.stockly.service.impl.command.OrderProcessingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderCommandController {
 
     private final OrderCommandService orderCommandService;
+    private final OrderProcessingService orderProcessingService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -40,5 +44,11 @@ public class OrderCommandController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteOrder(@PathVariable Long id) {
         orderCommandService.deleteOrder(id);
+    }
+
+    @PostMapping("/process")
+    public ResponseEntity<OrderDTO> processOrder(@Valid @RequestBody OrderRequest request) {
+        OrderDTO orderDTO = orderProcessingService.processOrder(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderDTO);
     }
 }

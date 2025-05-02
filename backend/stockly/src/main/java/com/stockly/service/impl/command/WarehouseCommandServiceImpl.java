@@ -2,6 +2,7 @@ package com.stockly.service.impl.command;
 
 import com.stockly.dto.WarehouseDTO;
 import com.stockly.dto.WarehouseProductDTO;
+import com.stockly.exception.BusinessException;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.WarehouseMapper;
 import com.stockly.model.Company;
@@ -109,15 +110,21 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-        // Try to find existing warehouse-product relationship
-        WarehouseProduct existing = warehouseProductRepository.findByWarehouseAndProduct(warehouse, product);
+        WarehouseProduct existing = warehouseProductRepository.findByWarehouseAndProduct(warehouse, product)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + warehouseId));
 
         if (existing != null) {
-            // Update quantity if relationship exists
-            existing.setQuantity(existing.getQuantity() + quantity);
+            // Handle both positive (adding stock) and negative (deducting stock) quantities
+            int newQuantity = existing.getQuantity() + quantity;
+            if (newQuantity < 0) {
+                throw new BusinessException("Cannot deduct more than available quantity");
+            }
+            existing.setQuantity(newQuantity);
             warehouseProductRepository.save(existing);
         } else {
-            // Create new relationship if it doesn't exist
+            if (quantity < 0) {
+                throw new BusinessException("Cannot deduct from non-existent inventory");
+            }
             WarehouseProduct warehouseProduct = new WarehouseProduct();
             warehouseProduct.setWarehouse(warehouse);
             warehouseProduct.setProduct(product);
