@@ -21,5 +21,5 @@ public interface WarehouseProductRepository extends JpaRepository<WarehouseProdu
     @Query("SELECT wp FROM WarehouseProduct wp WHERE wp.warehouse.id = :warehouseId AND wp.product.id = :productId")
     Optional<WarehouseProduct> findByWarehouseIdAndProductId(@Param("warehouseId") Long warehouseId, @Param("productId") Long productId);
 
-    WarehouseProduct findByWarehouseAndProduct(Warehouse warehouse, Product product);
+    Optional<WarehouseProduct> findByWarehouseAndProduct(Warehouse warehouse, Product product);
 }
