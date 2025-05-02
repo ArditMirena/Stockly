@@ -4,6 +4,7 @@ import com.stockly.dto.OrderDTO;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.OrderMapper;
 import com.stockly.model.Order;
+import com.stockly.model.enums.OrderStatus;
 import com.stockly.repository.OrderRepository;
 import com.stockly.service.query.OrderQueryService;
 import jakarta.transaction.Transactional;
@@ -92,4 +93,49 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     public Long countOrdersByStatus(String status) {
         return orderRepository.countByStatus(status);
     }
+
+
+
+
+
+
+    @Override
+    public Page<OrderDTO> searchOrders(
+            Long buyerId,
+            Long supplierId,
+            String status,
+            Date startDate,
+            Date endDate,
+            Pageable pageable
+    ) {
+        OrderStatus orderStatus = null;
+        if (status != null) {
+            try {
+                orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid order status: " + status);
+            }
+        }
+
+        return orderRepository.searchOrders(
+                buyerId,
+                supplierId,
+                orderStatus,
+                startDate,
+                endDate,
+                pageable
+        ).map(orderMapper::toDto);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }

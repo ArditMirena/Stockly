@@ -1,6 +1,9 @@
 package com.stockly.repository;
 
 import com.stockly.model.Order;
+import com.stockly.model.enums.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -44,4 +47,39 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Count orders by status
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     Long countByStatus(@Param("status") String status);
+
+
+
+
+    // New: Advanced search with pagination
+    @Query("SELECT o FROM Order o WHERE " +
+            "(:buyerId IS NULL OR o.buyer.id = :buyerId) AND " +
+            "(:supplierId IS NULL OR o.supplier.id = :supplierId) AND " +
+            "(:status IS NULL OR o.status = :status) AND " +
+            "(:startDate IS NULL OR o.orderDate >= :startDate) AND " +
+            "(:endDate IS NULL OR o.orderDate <= :endDate)")
+    Page<Order> searchOrders(
+            @Param("buyerId") Long buyerId,
+            @Param("supplierId") Long supplierId,
+            @Param("status") OrderStatus status,
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate,
+            Pageable pageable
+    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
