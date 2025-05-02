@@ -1,7 +1,6 @@
 package com.stockly.service.query;
 
 import com.stockly.dto.OrderDTO;
-import com.stockly.model.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,4 +18,38 @@ public interface OrderQueryService {
     List<OrderDTO> getOrdersBetweenDates(Date startDate, Date endDate);
     BigDecimal getTotalRevenueBySupplier(Long supplierId);
     Long countOrdersByStatus(String status);
+
+
+
+    Page<OrderDTO> searchOrders(
+            Long buyerId,
+            Long supplierId,
+            String status,
+            Date startDate,
+            Date endDate,
+            Pageable pageable
+    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

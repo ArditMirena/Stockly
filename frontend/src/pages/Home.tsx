@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { 
+import {
   Container,
   Title,
   Text,
@@ -10,9 +10,9 @@ import {
   ThemeIcon,
   Badge,
   Image,
-  rem 
+  rem
 } from '@mantine/core';
-import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold } from "react-icons/pi";
+import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold, PiPackageBold } from "react-icons/pi";
 import classes from '../style/Home.module.css';
 import ContactSection from "../components/ContactSection";
 import { Footer } from "../components/Footer.tsx";
@@ -26,18 +26,18 @@ const Home = () => {
           <Badge variant="filled" size="lg" className={classes.badge}>
             Inventory Intelligence
           </Badge>
-          
+
           <Title className={classes.title}>
-            Transform your <span className={classes.highlight}>supply chain</span> with 
+            Transform your <span className={classes.highlight}>supply chain</span> with
             <br />AI-powered optimization
           </Title>
-          
-          <Text 
-            c="dimmed" 
-            mt="md" 
+
+          <Text
+            c="dimmed"
+            mt="md"
             size="lg"
             style={{ alignItems: 'flex-start', textAlign: 'left' }}>
-            Stockly helps businesses reduce inventory costs by up to 30% while improving 
+            Stockly helps businesses reduce inventory costs by up to 30% while improving
             availability through predictive analytics and smart automation.
           </Text>
 
@@ -73,11 +73,14 @@ const Home = () => {
               Get Started
             </Button>
             <Button
+              component={Link}
+              to="/admin/orders"
               variant="outline"
               size="md"
               radius="md"
+              leftSection={<PiPackageBold />}
             >
-              See How It Works
+              View Orders
             </Button>
           </Group>
         </div>
@@ -88,7 +91,7 @@ const Home = () => {
       <Title order={2} ta="center" mt={rem(80)} mb="lg">
         Powerful Features for <Text span c="limegreen" inherit>Smart Inventory</Text>
       </Title>
-      
+
       <Group mt={rem(40)} grow>
         <Paper shadow="md" p="xl" radius="md" withBorder className={classes.featureCard}>
           <ThemeIcon size={60} radius="md" mb="md" color="#fcc419">
@@ -97,7 +100,7 @@ const Home = () => {
           <Title order={3} mb="sm">Demand Forecasting</Title>
           <Text>AI-powered predictions to optimize stock levels and reduce waste</Text>
         </Paper>
-        
+
         <Paper shadow="md" p="xl" radius="md" withBorder className={classes.featureCard}>
           <ThemeIcon size={60} radius="md" mb="md" color="#fcc419">
             <PiBellRingingBold size={30} />
@@ -105,7 +108,7 @@ const Home = () => {
           <Title order={3} mb="sm">Smart Alerts</Title>
           <Text>Automated notifications for low stock, excess inventory, and anomalies</Text>
         </Paper>
-        
+
         <Paper shadow="md" p="xl" radius="md" withBorder className={classes.featureCard}>
           <ThemeIcon size={60} radius="md" mb="md" color="#fcc419">
             <PiArrowsClockwiseBold size={30} />
@@ -116,7 +119,7 @@ const Home = () => {
       </Group>
       <ContactSection />
     </Container>
-      < Footer />
+      <Footer />
     </>
   );
 };

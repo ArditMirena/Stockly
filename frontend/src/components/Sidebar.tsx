@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import { useDispatch } from 'react-redux';
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { 
+import {
   PiBellRingingBold,
   PiReceiptBold,
   PiFingerprintBold,
@@ -20,9 +20,9 @@ import {
   PiArrowsOutLineHorizontalBold,
   PiTeaBagBold,
   PiFactoryBold,
-  PiWarehouseBold
+  PiPackageBold
 } from "react-icons/pi";
-import { 
+import {
   SegmentedControl,
   Text,
   Button,
@@ -42,39 +42,36 @@ const tabs = {
     { link: '', label: 'Other Settings', icon: PiGearBold },
   ],
   general: [
-    { link: '', label: 'Orders', icon: PiShoppingCartBold },
+    { link: '/admin/users', label: 'Users', icon: PiUsersBold },
+    { link: '/admin/products', label: 'Products', icon: PiTeaBagBold },
+    { link: '/admin/companies', label: 'Companies', icon: PiFactoryBold },
+    { link: '/admin/orders', label: 'Orders', icon: PiPackageBold },
     { link: '', label: 'Receipts', icon: PiReadCvLogoBold },
     { link: '', label: 'Reviews', icon: PiChatCenteredTextBold },
     { link: '', label: 'Messages', icon: PiChatsBold },
-    { link: '/admin/users', label: 'Users', icon: PiUsersBold },
     { link: '', label: 'Files', icon: PiFileBold },
-    { link: '/admin/products', label: 'Products', icon: PiTeaBagBold },
-    { link: '/admin/companies', label: 'Companies', icon: PiFactoryBold},
-    { link: '/admin/warehouses', label: 'Warehouses', icon: PiWarehouseBold}
   ],
 };
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
   const [section, setSection] = useState<'account' | 'general'>('account');
-  const [navOpened, { toggle: toggleNav }] = useDisclosure(true); 
+  const [navOpened, { toggle: toggleNav }] = useDisclosure(true);
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine which section should be active based on current route
   useEffect(() => {
-    if (location.pathname.startsWith('/admin/users')) {
+    if (location.pathname.startsWith('/admin')) {
       setSection('general');
     }
   }, [location.pathname]);
 
   const links = tabs[section].map((item) => {
-    // Skip rendering if the link is empty
     if (!item.link) return null;
-    
+
     return (
       <NavLink
-        className={({ isActive }) => 
+        className={({ isActive }) =>
           `${classes.link} ${isActive ? classes.linkActive : ''}`
         }
         to={item.link}
@@ -85,7 +82,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
         <span>{item.label}</span>
       </NavLink>
     );
-  }).filter(Boolean); // Remove null entries
+  }).filter(Boolean);
 
   const handleSignOut = async () => {
     try {
@@ -151,8 +148,8 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       )}
 
       <AppShell.Main>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={toggleNav}
           style={{
             position: 'fixed',
