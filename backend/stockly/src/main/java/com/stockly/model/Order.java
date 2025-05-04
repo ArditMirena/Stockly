@@ -1,5 +1,6 @@
 package com.stockly.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -49,9 +50,12 @@ public class Order {
     @Column(name = "updated_at")
     private Date updatedAt;
 
-
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Shipment> shipments = new ArrayList<>();
 
     // Helper method to add items
     public void addItem(OrderItem item) {

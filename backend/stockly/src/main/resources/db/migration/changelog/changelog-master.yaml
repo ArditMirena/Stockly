@@ -33,3 +33,5 @@ databaseChangeLog:
       file: db/migration/schemas/V12__Warehousetable__.sql
   - include:
       file: db/migration/schemas/V13__warehouse_products__.sql
+  - include:
+      file: db/migration/schemas/V18__shipments_table.sql

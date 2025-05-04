@@ -24,6 +24,9 @@ public class Country {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "iso_code", length = 3, nullable = true, unique = true)
+    private String isoCode;
+
     @OneToMany(mappedBy = "country", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<City> cities;
