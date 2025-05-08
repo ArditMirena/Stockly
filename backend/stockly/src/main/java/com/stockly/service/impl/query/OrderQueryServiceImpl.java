@@ -98,7 +98,6 @@ public class OrderQueryServiceImpl implements OrderQueryService {
 
 
 
-
     @Override
     public Page<OrderDTO> searchOrders(
             Long buyerId,
