@@ -26,10 +26,10 @@ databaseChangeLog:
   - include:
       file: db/migration/schemas/V9__product_images_table.sql
   - include:
+      file: db/migration/schemas/V12__Warehousetable__.sql
+  - include:
       file: db/migration/schemas/V10_orders_table.sql
   - include:
       file: db/migration/schemas/V11__order_items.sql
-  - include:
-      file: db/migration/schemas/V12__Warehousetable__.sql
   - include:
       file: db/migration/schemas/V13__warehouse_products__.sql

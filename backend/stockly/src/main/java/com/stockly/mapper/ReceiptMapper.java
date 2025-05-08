@@ -3,15 +3,20 @@ package com.stockly.mapper;
 import com.stockly.dto.*;
 import com.stockly.model.*;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ReceiptMapper {
 
     public static ReceiptDTO toReceiptDTO(OrderDTO order, CompanyDTO buyer, CompanyDTO supplier) {
+        Instant instant = order.getOrderDate();
+        Date date = Date.from(instant);
+
         return ReceiptDTO.builder()
                 .orderId(order.getId())
-                .orderDate(order.getOrderDate())
+                .orderDate(date)
                 .deliveryDate(order.getDeliveryDate())
                 .totalPrice(order.getTotalPrice())
                 .status(order.getStatus().toString())

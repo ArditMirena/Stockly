@@ -20,6 +20,8 @@ public class WarehouseProductMapper {
                 .warehouseName(warehouseProduct.getWarehouse().getName())
                 .productId(warehouseProduct.getProduct().getId())
                 .productTitle(warehouseProduct.getProduct().getTitle())
+                .createdAt(warehouseProduct.getCreatedAt())
+                .updatedAt(warehouseProduct.getUpdatedAt())
                 .quantity(warehouseProduct.getQuantity())
                 .unitPrice(warehouseProduct.getProduct().getPrice())
                 .build();

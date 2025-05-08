@@ -3,6 +3,11 @@ package com.stockly.model;
 import com.stockly.model.enums.AvailabilityStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -31,6 +36,13 @@ public class WarehouseProduct {
     @Column(name = "availability", nullable = false)
     private String availability;
 
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private Instant updatedAt;
 
     public void updateAvailability() {
         if (quantity == null || quantity <= 0) {

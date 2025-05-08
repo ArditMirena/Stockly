@@ -19,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -103,18 +105,17 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
 //    }
 
     @Override
-    public void assignProductToWarehouse(Long warehouseId, Long productId, Integer quantity) {
+    public void assignProductToWarehouse(Long productId, Integer quantity, Long warehouseId) {
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + warehouseId));
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-        WarehouseProduct existing = warehouseProductRepository.findByWarehouseAndProduct(warehouse, product)
-                .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + warehouseId));
+        Optional<WarehouseProduct> optionalExisting = warehouseProductRepository.findByWarehouseAndProduct(warehouse, product);
 
-        if (existing != null) {
-            // Handle both positive (adding stock) and negative (deducting stock) quantities
+        if (optionalExisting.isPresent()) {
+            WarehouseProduct existing = optionalExisting.get();
             int newQuantity = existing.getQuantity() + quantity;
             if (newQuantity < 0) {
                 throw new BusinessException("Cannot deduct more than available quantity");
@@ -133,5 +134,4 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
             warehouseProductRepository.save(warehouseProduct);
         }
     }
-
 }

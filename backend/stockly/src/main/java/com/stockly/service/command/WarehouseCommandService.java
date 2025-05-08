@@ -7,6 +7,6 @@ public interface WarehouseCommandService {
     WarehouseDTO updateWarehouse(Long id, WarehouseDTO warehouseDTO);
     void deleteWarehouse(Long id);
 
-    void assignProductToWarehouse(Long warehouseId, Long productId, Integer quantity);
+    void assignProductToWarehouse(Long productId, Integer quantity, Long warehouseId);
 
 }

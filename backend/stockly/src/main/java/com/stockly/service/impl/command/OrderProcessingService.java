@@ -78,6 +78,7 @@ public class OrderProcessingService {
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setBuyerId(request.getBuyerId());
         orderDTO.setSupplierId(warehouse.getCompany().getId());
+        orderDTO.setWarehouseId(warehouse.getId());
         orderDTO.setStatus("PROCESSING");
 
         List<OrderItemDTO> itemDTOs = request.getItems().stream()
@@ -104,9 +105,9 @@ public class OrderProcessingService {
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
             warehouseCommandService.assignProductToWarehouse(
-                    warehouse.getId(),
                     product.getId(),
-                    -item.getQuantity() // Negative quantity to deduct from inventory
+                    -item.getQuantity(),
+                    warehouse.getId()
             );
         }
     }
