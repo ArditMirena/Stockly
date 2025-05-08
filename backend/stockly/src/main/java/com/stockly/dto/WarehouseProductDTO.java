@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -29,7 +30,8 @@ public class WarehouseProductDTO {
 
     private String availability;
 
-
+    private Instant createdAt;
+    private Instant updatedAt;
     private String productTitle;
     private String productSku;
     private String productThumbnail;

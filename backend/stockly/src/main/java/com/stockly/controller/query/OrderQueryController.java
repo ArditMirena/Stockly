@@ -1,6 +1,10 @@
 package com.stockly.controller.query;
 
 import com.stockly.dto.OrderDTO;
+import com.stockly.dto.OrderExportDTO;
+import com.stockly.repository.OrderRepository;
+import com.stockly.repository.WarehouseProductRepository;
+import com.stockly.service.impl.query.StockCalculationService;
 import com.stockly.service.query.OrderQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,8 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -20,6 +26,9 @@ import java.util.List;
 public class OrderQueryController {
 
     private final OrderQueryService orderQueryService;
+    private final OrderRepository orderRepository;
+    private final WarehouseProductRepository warehouseProductRepository;
+    private final StockCalculationService stockCalculationService;
 
     @GetMapping("/{id}")
     public OrderDTO getOrderById(@PathVariable Long id) {
@@ -58,6 +67,65 @@ public class OrderQueryController {
         return orderQueryService.getTotalRevenueBySupplier(supplierId);
     }
 
+
+
+//    @GetMapping("/export")
+//    public List<OrderExportDTO> exportOrders() {
+//        // Get complete stock history
+//        List<WarehouseStockDTO> stockHistory = stockCalculationService.calculateStockHistory();
+//
+//        // Create timeline of stock levels
+//        Map<Pair<Long, Long>, TreeMap<Instant, Integer>> stockTimeline = new HashMap<>();
+//
+//        for (WarehouseStockDTO dto : stockHistory) {
+//            Pair<Long, Long> key = Pair.of(dto.productId(), dto.warehouseId());
+//            stockTimeline.computeIfAbsent(key, k -> new TreeMap<>())
+//                    .put(dto.timestamp(), dto.currentStock());
+//        }
+//
+//        // Process orders
+//        return orderRepository.findAll().stream()
+//                .flatMap(order -> order.getItems().stream()
+//                        .map(item -> {
+//                            Pair<Long, Long> key = Pair.of(
+//                                    item.getProduct().getId(),
+//                                    order.getWarehouse().getId()
+//                            );
+//
+//                            // Correct stock level lookup
+//                            Integer stockBeforeOrder = Optional.ofNullable(stockTimeline.get(key))
+//                                    .map(timeline -> {
+//                                        Map.Entry<Instant, Integer> entry = timeline.floorEntry(order.getOrderDate());
+//                                        return entry != null ? entry.getValue() : 0;
+//                                    })
+//                                    .orElse(0);
+//
+//                            return new OrderExportDTO(
+//                                    item.getProduct().getId(),
+//                                    order.getWarehouse().getId(),
+//                                    order.getOrderDate(),
+//                                    item.getQuantity(),
+//                                    stockBeforeOrder
+//                            );
+//                        })
+//                )
+//                .collect(Collectors.toList());
+//    }
+
+
+    @GetMapping("/export")
+    public List<OrderExportDTO> exportOrders() {
+        Instant startDate = Instant.now().minus(30, ChronoUnit.DAYS);
+        return orderRepository.findOrdersForExport(startDate).stream()
+                .map(projection -> new OrderExportDTO(
+                        projection.getProductId(),
+                        projection.getWarehouseId(),
+                        projection.getOrderDate(),
+                        projection.getQuantity(),
+                        projection.getCurrentStock()
+                ))
+                .collect(Collectors.toList());
+    }
 
     @GetMapping("/search")
     public ResponseEntity<Page<OrderDTO>> searchOrders(

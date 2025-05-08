@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,10 @@ public class OrderMapper {
 
         if (order.getSupplier() != null) {
             dto.setSupplierId(order.getSupplier().getId());
+        }
+
+        if(order.getWarehouse() != null) {
+            dto.setWarehouseId(order.getWarehouse().getId());
         }
 
         if (order.getItems() != null && !order.getItems().isEmpty()) {
@@ -87,6 +92,12 @@ public class OrderMapper {
             order.setSupplier(supplier);
         }
 
+        if (dto.getWarehouseId() != null) {
+            Warehouse warehouse = new Warehouse();
+            warehouse.setId(dto.getWarehouseId());
+            order.setWarehouse(warehouse);
+        }
+
         // Handle order items if present in DTO
         if (dto.getItems() != null) {
             // Clear existing items if any
@@ -120,8 +131,8 @@ public class OrderMapper {
         Order order = toEntity(dto);
         order.setId(null); // Ensure new entity
 
-        if (order.getOrderDate() == null) {
-            order.setOrderDate(new Date());
+        if (order.getOrderDate() != null) {
+            order.setOrderDate(dto.getOrderDate());
         }
 
         if (order.getStatus() == null) {

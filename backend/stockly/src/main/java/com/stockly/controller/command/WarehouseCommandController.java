@@ -64,7 +64,7 @@ public class WarehouseCommandController {
     public ResponseEntity<Void> assignProductToWarehouse(@PathVariable Long productId,
                                                                  @PathVariable Integer quantity,
                                                                  @PathVariable Long warehouseId) {
-        warehouseCommandService.assignProductToWarehouse(productId, warehouseId, quantity);
+        warehouseCommandService.assignProductToWarehouse(productId, quantity, warehouseId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

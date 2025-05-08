@@ -4,13 +4,11 @@ import com.stockly.dto.OrderDTO;
 import com.stockly.dto.OrderItemDTO;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.OrderMapper;
-import com.stockly.model.Company;
-import com.stockly.model.Order;
-import com.stockly.model.OrderItem;
-import com.stockly.model.Product;
+import com.stockly.model.*;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.repository.OrderRepository;
 import com.stockly.repository.ProductRepository;
+import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.OrderCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +24,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final OrderMapper orderMapper;
     private final CompanyRepository companyRepository;
     private final ProductRepository productRepository;
+    private final WarehouseRepository warehouseRepository;
 
     @Override
     @Transactional
@@ -52,6 +51,12 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             supplier.setOrdersAsBuyer(null);
             supplier.setOrdersAsSupplier(null);
             order.setSupplier(supplier);
+        }
+
+        if (dto.getWarehouseId() != null) {
+            Warehouse warehouse = warehouseRepository.findById(dto.getWarehouseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: " + dto.getWarehouseId()));
+            order.setWarehouse(warehouse);
         }
 
         // Process order items

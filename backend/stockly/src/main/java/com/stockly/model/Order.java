@@ -7,8 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import com.stockly.model.enums.OrderStatus;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -35,7 +38,8 @@ public class Order {
     private Company supplier;
 
     @Column(name = "order_date")
-    private Date orderDate;
+    @CreationTimestamp
+    private Instant orderDate;
 
     @Column(name = "delivery_date")
     private Date deliveryDate;
@@ -48,7 +52,12 @@ public class Order {
     private BigDecimal totalPrice;
 
     @Column(name = "updated_at")
+    @UpdateTimestamp
     private Date updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();

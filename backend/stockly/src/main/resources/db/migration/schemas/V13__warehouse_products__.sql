@@ -7,6 +7,9 @@ CREATE TABLE warehouse_products (
     quantity INTEGER NOT NULL,
     availability VARCHAR(50) NOT NULL,
 
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
     CONSTRAINT fk_wp_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
     CONSTRAINT fk_wp_product FOREIGN KEY (product_id) REFERENCES products(id)
 );
