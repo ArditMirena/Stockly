@@ -4,6 +4,7 @@ import com.stockly.dto.OrderDTO;
 import com.stockly.dto.request.OrderRequest;
 import com.stockly.model.Order;
 import com.stockly.service.command.OrderCommandService;
+import com.stockly.service.command.ReceiptCommandService;
 import com.stockly.service.impl.command.OrderProcessingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class OrderCommandController {
 
     private final OrderCommandService orderCommandService;
     private final OrderProcessingService orderProcessingService;
+    private final ReceiptCommandService receiptCommandService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -49,6 +51,12 @@ public class OrderCommandController {
     @PostMapping("/process")
     public ResponseEntity<OrderDTO> processOrder(@Valid @RequestBody OrderRequest request) {
         OrderDTO orderDTO = orderProcessingService.processOrder(request);
+        try {
+            receiptCommandService.sendAndPersistReceipt(orderDTO.getId());
+        } catch (Exception e) {
+            // Log it but don’t fail the order creation
+            e.printStackTrace();
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(orderDTO);
     }
 }

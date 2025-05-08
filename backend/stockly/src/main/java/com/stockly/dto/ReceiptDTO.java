@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
 public class ReceiptDTO {
     private Long orderId;
 
-    private Date orderDate;
+    private Instant orderDate;
     private Date deliveryDate;
     private String status;
 
