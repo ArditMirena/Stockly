@@ -12,7 +12,7 @@ import {
   Image,
   rem
 } from '@mantine/core';
-import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold, PiPackageBold } from "react-icons/pi";
+import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold } from "react-icons/pi";
 import classes from '../style/Home.module.css';
 import ContactSection from "../components/ContactSection";
 import { Footer } from "../components/Footer.tsx";
@@ -73,14 +73,11 @@ const Home = () => {
               Get Started
             </Button>
             <Button
-              component={Link}
-              to="/admin/orders"
               variant="outline"
               size="md"
               radius="md"
-              leftSection={<PiPackageBold />}
             >
-              View Orders
+              See How It Works
             </Button>
           </Group>
         </div>

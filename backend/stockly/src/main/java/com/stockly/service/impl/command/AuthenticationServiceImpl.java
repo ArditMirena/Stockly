@@ -8,9 +8,12 @@ import com.stockly.model.RoleEnum;
 import com.stockly.model.User;
 import com.stockly.repository.RoleRepository;
 import com.stockly.repository.UserRepository;
+import com.stockly.responses.AuthResponse;
+import com.stockly.service.JwtService;
 import com.stockly.service.command.EmailService;
 import com.stockly.service.command.AuthenticationService;
 import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,26 +24,14 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final JwtService jwtService;
     private final RoleRepository roleRepository;
-
-    public AuthenticationServiceImpl(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager,
-            EmailService emailService,
-            RoleRepository roleRepository
-    ){
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.emailService = emailService;
-        this.roleRepository = roleRepository;
-    }
 
     public User signup(RegisterUserDTO input) {
         Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.USER);
@@ -61,21 +52,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return userRepository.save(user);
     }
 
-
-    public User authenticate(LoginUserDTO input) {
+    @Override
+    public AuthResponse authenticate(LoginUserDTO input) {
         User user = userRepository.findByEmail(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if(!user.isEnabled()) {
             throw new RuntimeException("User account is not verified. Please verify your account!");
         }
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        input.getEmail(),
-                        input.getPassword()
-                )
-        );
-        return user;
+
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+
+        return new AuthResponse(accessToken, refreshToken, "Login successful");
+    }
+
+    @Override
+    public AuthResponse refreshAccessToken(String refreshToken) {
+        if(!jwtService.isTokenValid(refreshToken, null)) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+
+        String email = jwtService.extractUsername(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String accessToken = jwtService.generateToken(user);
+        String newRefreshToken = jwtService.generateRefreshToken(user);
+
+        return new AuthResponse(accessToken, newRefreshToken, "Refresh successful");
     }
 
     public void verifyUser(VerifyUserDTO input){

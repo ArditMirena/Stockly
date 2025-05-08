@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { PiGoogleLogoBold, PiFacebookLogoBold, PiArrowLineUpLeftBold  } from "react-icons/pi";
 import { Link } from 'react-router-dom';
-import { LoginData, login } from '../redux/authSlice';
+import { LoginData, login, fetchCurrentUser } from '../redux/authSlice';
 import { AppDispatch, RootState } from '../redux/store';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
@@ -42,8 +42,13 @@ const Login = () => {
 
     dispatch(login(data))
       .unwrap()
-      .then(() => {
-        navigate('/admin/home');
+      dispatch(fetchCurrentUser())
+        .unwrap()
+        .then(() => {
+          navigate('/admin/home');
+        })
+        .catch(() => {
+          setError('Failed to load user details.');
       })
       .catch(() => {
         setError('Login failed. Please check your credentials and try again.');

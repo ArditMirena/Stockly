@@ -16,9 +16,7 @@ import {
   Menu,
 } from '@mantine/core';
 import { PiTrashBold, PiPencilSimpleBold } from 'react-icons/pi';
-import { useGetOrdersQuery, useDeleteOrderMutation } from '../../api/ordersApi';
-import { CreateOrderModal } from "../CreateOrderModal";
-import UpdateOrderModal from '../UpdateOrderModal';
+import { useGetOrdersQuery, useDeleteOrderMutation, OrderDTO } from '../../api/OrdersApi';
 
 const OrdersDashboard = () => {
   const { data: orders, isLoading, isError } = useGetOrdersQuery();
@@ -116,22 +114,9 @@ const OrdersDashboard = () => {
           </Table.Tbody>
         </Table>
 
-        <CreateOrderModal
-          opened={createModalOpen}
-          onClose={() => setCreateModalOpen(false)}
-        />
+       
 
         {/* Update Order Modal */}
-        {selectedOrder && (
-          <UpdateOrderModal
-            opened={updateModalOpen}
-            onClose={() => {
-              setUpdateModalOpen(false);
-              setSelectedOrder(null);
-            }}
-            order={selectedOrder}
-          />
-        )}
 
         {/* Delete Confirmation Modal */}
         <Modal

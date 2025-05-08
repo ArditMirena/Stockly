@@ -1,13 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-const baseQuery = fetchBaseQuery({
-    baseUrl: 'http://localhost:8080/api/v1',
-    credentials: 'include',
-});
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from '../utils/axiosBaseQuery';
 
 export interface User {
     id: number;
     username: string;
+    usernameF: null | string;
     email: string;
     role: string;
 }
@@ -46,14 +43,18 @@ interface PaginationParams {
 
 export const usersApi = createApi ({
     reducerPath: 'usersApi',
-    baseQuery,
+    baseQuery: axiosBaseQuery(),
     endpoints: (builder) => ({
         getUsers: builder.query<User[], void> ({
-            query: () => `/users`,
+            query: () => ({
+                url: `/users`,
+                method: 'GET'
+            }),
         }),
         getUsersWithPagination: builder.query<PaginatedUserResponse, PaginationParams> ({
             query: (params) => ({
                 url: `/users/page`,
+                method: 'GET',
                 params: {
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
@@ -77,6 +78,7 @@ export const usersApi = createApi ({
         searchUsers: builder.query<User[], string | void>({
             query: (searchTerm = "") => ({
               url: `/users/search`,
+              method: 'GET',
               params: {
                 searchTerm,
               },

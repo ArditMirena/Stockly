@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
-import { User, Role } from '../api/UsersApi';
+import { User } from '../api/UsersApi';
 
 const token: string | null = Cookies.get('token') || null;
 
@@ -73,6 +73,15 @@ export const verify = createAsyncThunk('auth/verify', async (verifyUserData: Ver
   }
 });
 
+export const fetchCurrentUser = createAsyncThunk('users/me', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get('/users/me');
+    return response.data;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data || 'Unable to fetch user info');
+  }
+});
+
 export const logoutAsync = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
   try {
     await api.post(`/auth/logout`);
@@ -105,22 +114,11 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action) => {
+      .addCase(login.fulfilled, (state) => {
         state.isLoading = false;
-        state.token = action.payload.token;
-
-        try {
-          const decoded: { sub: number; username: string; email: string; usernameF: string; role: Role } = jwtDecode(action.payload.token);
-          state.user = {
-            id: decoded.sub,
-            username: decoded.username,
-            email: decoded.email,
-            usernameF: decoded.usernameF,
-            role: decoded.role,
-          };
-        } catch (error) {
-          state.user = null;
-        }
+        state.token = null;
+        state.error = null;
+        state.user = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -137,6 +135,13 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.user = null;
+        state.error = action.payload as string;
+      })      
       .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
         state.token = null;

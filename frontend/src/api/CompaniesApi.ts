@@ -1,9 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-const baseQuery = fetchBaseQuery({
-    baseUrl: 'http://localhost:8080/api/',
-    credentials: 'include',
-});
+import { createApi  } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from '../utils/axiosBaseQuery';
 
 export interface AddressDTO {
     id?: number;
@@ -59,17 +55,24 @@ interface PaginationParams {
 
 export const companiesApi = createApi({
     reducerPath: 'companiesApi',
-    baseQuery,
+    baseQuery: axiosBaseQuery(),
     endpoints: (builder) => ({
         getCompanies: builder.query<Company[], void> ({
-            query: () => `/companies`,
+            query: () => ({
+                url: `/companies`,
+                method: 'GET'
+            }),
         }),
         getCompaniesByType: builder.query<Company[], string>({
-            query: (companyType) => `/companies/type/${companyType}`,
+            query: (companyType) => ({
+                url: `/companies/type/${companyType}`,
+                method: 'GET'
+            }),
         }),
         getCompaniesByTypeWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams & { companyType?: string }>({
             query: (params) => ({
                 url: '/companies/page',
+                method: 'GET',
                 params: {
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
@@ -81,6 +84,7 @@ export const companiesApi = createApi({
         getCompaniesWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams>({
             query: (params) => ({
                 url: '/companies/page',
+                method: 'GET',
                 params: {
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
@@ -89,7 +93,10 @@ export const companiesApi = createApi({
             })
         }),
         getCompanyById: builder.query<Company, number> ({
-            query: (id) => `/companies/${id}`,
+            query: (id) => ({
+                url: `/companies/${id}`,
+                method: 'GET'
+            }),
         }),
         addCompany: builder.mutation<Company, Partial<Company>> ({
             query: (company) => ({
@@ -114,6 +121,7 @@ export const companiesApi = createApi({
         searchCompanies: builder.query<Company[], string | void>({
             query: (searchTerm = "") => ({
                 url: `/companies/search`,
+                method: 'GET',
                 params: {
                     searchTerm,
                 },

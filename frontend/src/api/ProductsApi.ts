@@ -1,9 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-const baseQuery = fetchBaseQuery({
-    baseUrl: 'http://localhost:8080/api/v1',
-    credentials: 'include',
-});
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "../utils/axiosBaseQuery";
 
 export interface ProductImage {
   imageUrl: string;
@@ -90,14 +86,18 @@ interface PaginationParams {
 
 export const productsApi = createApi ({
   reducerPath: 'productsApi',
-  baseQuery,
+  baseQuery: axiosBaseQuery(),
   endpoints: (builder) => ({
       getProducts: builder.query<Product[], void> ({
-          query: () => `/products`,
+          query: () => ({
+            url: `/products`,
+            method: 'GET'
+          }),
       }),
       getProductsWithPagination: builder.query<PaginatedProductResponse, PaginationParams>({
           query: (params) => ({
               url: '/products/page',
+              method: 'GET',
               params: {
                   offset: params?.offset || 0,
                   pageSize: params?.pageSize || 10,
@@ -106,7 +106,10 @@ export const productsApi = createApi ({
           })
       }),
       getProductById: builder.query<Product, number> ({
-          query: (id) => `/products/${id}`,
+          query: (id) => ({
+            url: `/products/${id}`,
+            method: 'GET'
+          }),
       }),
       addProduct: builder.mutation<Product, Partial<Product>> ({
           query: (product) => ({
@@ -131,6 +134,7 @@ export const productsApi = createApi ({
       searchProducts: builder.query<Product[], string | void>({
           query: (searchTerm = "") => ({
             url: `/products/search`,
+            method: 'GET',
             params: {
               searchTerm,
             },

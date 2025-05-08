@@ -1,9 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-const baseQuery = fetchBaseQuery({
-    baseUrl: 'http://localhost:8080/api/v1',
-    credentials: 'include',
-});
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "../utils/axiosBaseQuery";
 
 export interface AddressDTO {
     street: string;
@@ -59,11 +55,12 @@ interface SearchParams {
 
 export const warehousesApi = createApi({
     reducerPath: 'warehousesApi',
-    baseQuery,
+    baseQuery: axiosBaseQuery(),
     endpoints: (builder) => ({
         getAllWarehousesWithPagination: builder.query<PaginatedWarehouseResponse, PaginationParams>({
             query: (params) => ({
                 url: '/warehouses/page',
+                method: 'GET',
                 params: {
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
@@ -75,6 +72,7 @@ export const warehousesApi = createApi({
         searchWarehouses: builder.query<WarehouseDTO[], SearchParams>({
             query: ({ searchTerm, companyId }) => ({
                 url: '/warehouses/search',
+                method: 'GET',
                 params: {
                     searchTerm,
                     companyId

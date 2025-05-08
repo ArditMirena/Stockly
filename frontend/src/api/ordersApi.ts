@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "../utils/axiosBaseQuery";
 
 interface OrderItemDTO {
   id?: number;
@@ -11,7 +12,7 @@ interface OrderItemDTO {
   totalPrice?: number;
 }
 
-interface OrderDTO {
+export interface OrderDTO {
   id?: number;
   buyerId: number;
   supplierId: number;
@@ -54,25 +55,16 @@ interface PaginationParams {
   sortBy?: string;
 }
 
-const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:8081/api/v1/',
-  credentials: 'include',
-  prepareHeaders: (headers) => {
-    const token = localStorage.getItem('jwtToken');
-    if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
-    }
-    return headers;
-  }
-});
-
 export const ordersApi = createApi({
   reducerPath: 'ordersApi',
-  baseQuery,
+  baseQuery: axiosBaseQuery(),
   tagTypes: ['Order'],
   endpoints: (builder) => ({
     getOrders: builder.query<OrderDTO[], void>({
-      query: () => '/orders',
+      query: () => ({
+        url: '/orders',
+        method: 'GET'
+      }),
       transformResponse: (response: OrderDTO[] | { data: OrderDTO[] }) =>
         Array.isArray(response) ? response : response.data,
       providesTags: (result) =>
@@ -81,6 +73,7 @@ export const ordersApi = createApi({
     getPaginatedOrders: builder.query<PaginatedOrderResponse, PaginationParams>({
       query: (params) => ({
         url: '/orders/page',
+        method: 'GET',
         params: {
           offset: params?.offset || 0,
           pageSize: params?.pageSize || 10,
@@ -90,7 +83,10 @@ export const ordersApi = createApi({
       providesTags: ['Order'],
     }),
     getOrderById: builder.query<OrderDTO, number>({
-      query: (id) => `/orders/${id}`,
+      query: (id) => ({
+        url: `/orders/${id}`,
+        method: 'GET'
+      }),
       providesTags: (result, error, id) => [{ type: 'Order', id }],
     }),
     createOrder: builder.mutation<OrderDTO, Partial<OrderDTO>>({
@@ -133,6 +129,7 @@ export const ordersApi = createApi({
     searchOrders: builder.query<OrderDTO[], string>({
       query: (searchTerm) => ({
         url: '/orders/search',
+        method: 'GET',
         params: { searchTerm },
       }),
       transformResponse: (response: OrderDTO[] | { data: OrderDTO[] }) =>

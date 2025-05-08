@@ -4,28 +4,24 @@ import com.stockly.dto.LoginUserDTO;
 import com.stockly.dto.RegisterUserDTO;
 import com.stockly.dto.VerifyUserDTO;
 import com.stockly.model.User;
+import com.stockly.responses.AuthResponse;
 import com.stockly.service.JwtService;
 import com.stockly.service.command.AuthenticationService;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthenticationCommandController {
-    private final JwtService jwtService;
     private final AuthenticationService authenticationService;
-
-    public AuthenticationCommandController(JwtService jwtService, AuthenticationService authenticationService) {
-        this.jwtService = jwtService;
-        this.authenticationService = authenticationService;
-    }
 
     @PostMapping("/signup")
     public ResponseEntity<User> register(@RequestBody RegisterUserDTO registerUserDto) {
@@ -34,23 +30,62 @@ public class AuthenticationCommandController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticate(@RequestBody LoginUserDTO loginUserDto) {
-        User authenticatedUser = authenticationService.authenticate(loginUserDto);
+    public ResponseEntity<?> authenticate(@RequestBody LoginUserDTO loginUserDto, HttpServletResponse response) {
+        AuthResponse tokens = authenticationService.authenticate(loginUserDto);
 
-        String jwtToken = jwtService.generateToken(authenticatedUser);
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/api/v1/auth/refresh")
+                .maxAge(Duration.ofDays(7))
+                .sameSite("Strict")
+                .build();
 
-        ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwtToken)
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", tokens.getAccessToken())
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("None")
-                .maxAge(24 * 60 * 60)
+                .maxAge(Duration.ofMinutes(60))
+                .sameSite("Lax")
                 .build();
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(Map.of("token", jwtToken, "message", "Login successful"));
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+
+        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), null, "Login successful"));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken,
+                                                        HttpServletResponse response) {
+        if (refreshToken == null) {
+            throw new RuntimeException("Refresh token is missing");
+        }
+
+        AuthResponse tokens = authenticationService.refreshAccessToken(refreshToken);
+
+        ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", tokens.getAccessToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(Duration.ofMinutes(15))
+                .sameSite("Lax")
+                .build();
+
+        ResponseCookie newRefreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/api/v1/auth/refresh")
+                .maxAge(Duration.ofDays(7))
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, newAccessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, newRefreshCookie.toString());
+
+        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), null, "Token refreshed"));
+    }
+
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyUser(@RequestBody VerifyUserDTO verifyUserDto) {
@@ -73,17 +108,25 @@ public class AuthenticationCommandController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        ResponseCookie jwtCookie = ResponseCookie.from("jwt", null)
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        ResponseCookie clearRefresh = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(true)
-                .path("/")
-                .sameSite("None")
+                .path("/api/v1/auth/refresh")
                 .maxAge(0)
                 .build();
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(Map.of("message", "Logged out successfully"));
+        ResponseCookie clearAccess = ResponseCookie.from("accessToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
+
+        return ResponseEntity.ok("Logged out successfully");
     }
+
 }
