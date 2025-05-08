@@ -69,50 +69,6 @@ public class OrderQueryController {
 
 
 
-//    @GetMapping("/export")
-//    public List<OrderExportDTO> exportOrders() {
-//        // Get complete stock history
-//        List<WarehouseStockDTO> stockHistory = stockCalculationService.calculateStockHistory();
-//
-//        // Create timeline of stock levels
-//        Map<Pair<Long, Long>, TreeMap<Instant, Integer>> stockTimeline = new HashMap<>();
-//
-//        for (WarehouseStockDTO dto : stockHistory) {
-//            Pair<Long, Long> key = Pair.of(dto.productId(), dto.warehouseId());
-//            stockTimeline.computeIfAbsent(key, k -> new TreeMap<>())
-//                    .put(dto.timestamp(), dto.currentStock());
-//        }
-//
-//        // Process orders
-//        return orderRepository.findAll().stream()
-//                .flatMap(order -> order.getItems().stream()
-//                        .map(item -> {
-//                            Pair<Long, Long> key = Pair.of(
-//                                    item.getProduct().getId(),
-//                                    order.getWarehouse().getId()
-//                            );
-//
-//                            // Correct stock level lookup
-//                            Integer stockBeforeOrder = Optional.ofNullable(stockTimeline.get(key))
-//                                    .map(timeline -> {
-//                                        Map.Entry<Instant, Integer> entry = timeline.floorEntry(order.getOrderDate());
-//                                        return entry != null ? entry.getValue() : 0;
-//                                    })
-//                                    .orElse(0);
-//
-//                            return new OrderExportDTO(
-//                                    item.getProduct().getId(),
-//                                    order.getWarehouse().getId(),
-//                                    order.getOrderDate(),
-//                                    item.getQuantity(),
-//                                    stockBeforeOrder
-//                            );
-//                        })
-//                )
-//                .collect(Collectors.toList());
-//    }
-
-
     @GetMapping("/export")
     public List<OrderExportDTO> exportOrders() {
         Instant startDate = Instant.now().minus(30, ChronoUnit.DAYS);
