@@ -21,8 +21,8 @@ public class ShipmentCommandController {
 
     private final ShipmentCommandService shipmentCommandService;
 
-    @PostMapping("/order/{id}")
-    public ResponseEntity<ShipmentDTO> createShipment(@Valid @PathVariable Long orderId) throws EasyPostException {
+    @PostMapping()
+    public ResponseEntity<ShipmentDTO> createShipment(@RequestParam Long orderId) throws EasyPostException {
         ShipmentDTO shipmentDTO = shipmentCommandService.createShipment(orderId);
         return new ResponseEntity<>(shipmentDTO, HttpStatus.CREATED);
     }

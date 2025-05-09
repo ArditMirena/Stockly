@@ -6,7 +6,6 @@ import com.easypost.model.Address;
 import com.easypost.model.Shipment;
 import com.easypost.service.EasyPostClient;
 import com.stockly.model.Order;
-import com.stockly.repository.AddressRepository;
 import com.stockly.repository.OrderRepository;
 import com.stockly.model.*;
 import com.stockly.service.EasyPostService;
@@ -48,7 +47,7 @@ public class EasyPostServiceImpl implements EasyPostService {
         shipmentParams.put("to_address", to);
         shipmentParams.put("parcel", parcel);
 
-        com.easypost.model.Shipment epShipment = client.shipment.create(shipmentParams);
+        Shipment epShipment = client.shipment.create(shipmentParams);
 
         List<Rate> rates = epShipment.getRates();
         if (rates == null || rates.isEmpty()) {
@@ -59,6 +58,9 @@ public class EasyPostServiceImpl implements EasyPostService {
         Map<String, Object> buyParams = new HashMap<>();
         buyParams.put("rate", selectedRate);
         epShipment = client.shipment.buy(epShipment.getId(), buyParams);
+
+        order.setShipmentId(epShipment.getId());
+        orderRepository.save(order);
 
         return epShipment;
     }

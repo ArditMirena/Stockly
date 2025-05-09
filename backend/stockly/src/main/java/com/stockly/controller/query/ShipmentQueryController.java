@@ -6,10 +6,7 @@ import com.stockly.dto.TrackerDTO;
 import com.stockly.service.query.ShipmentQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/shipments")
@@ -23,9 +20,15 @@ public class ShipmentQueryController {
         return ResponseEntity.ok(shipmentDTO);
     }
 
-    @GetMapping("/track/{id}")
-    public ResponseEntity<TrackerDTO> trackShipment(@PathVariable String id) throws EasyPostException {
-        TrackerDTO trackerDTO = shipmentQueryService.trackShipment(id);
+    @GetMapping("/track")
+    public ResponseEntity<TrackerDTO> trackShipment(@RequestParam String trackId) throws EasyPostException {
+        TrackerDTO trackerDTO = shipmentQueryService.trackShipment(trackId);
         return ResponseEntity.ok(trackerDTO);
+    }
+
+    @GetMapping("/order")
+    public ResponseEntity<ShipmentDTO> getShipmentByOrderId(@RequestParam Long orderId) throws EasyPostException {
+        ShipmentDTO shipmentDTO = shipmentQueryService.getShipmentByOrderId(orderId);
+        return ResponseEntity.ok(shipmentDTO);
     }
 }

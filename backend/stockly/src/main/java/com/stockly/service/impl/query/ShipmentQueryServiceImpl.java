@@ -55,7 +55,7 @@ public class ShipmentQueryServiceImpl implements ShipmentQueryService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        String shipmentId = order; // Assumes this exists in the Order entity
+        String shipmentId = order.getShipmentId(); // Assumes this exists in the Order entity
         if (shipmentId == null) {
             throw new IllegalStateException("Order does not have an associated shipment");
         }

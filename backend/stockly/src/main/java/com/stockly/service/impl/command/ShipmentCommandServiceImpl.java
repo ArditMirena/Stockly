@@ -53,7 +53,6 @@ public class ShipmentCommandServiceImpl implements ShipmentCommandService {
         }
     }
 
-
     private ShipmentDTO mapToDTO(Shipment shipment) {
         ShipmentDTO dto = new ShipmentDTO();
         dto.setId(shipment.getId());
