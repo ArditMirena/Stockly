@@ -1,25 +1,49 @@
 import { PiChartLineBold } from 'react-icons/pi';
 import { Center, Group, Paper, RingProgress, SimpleGrid, Text } from '@mantine/core';
+import { useEffect, useState } from 'react';
 
 const icons = {
   cl: PiChartLineBold
 };
 
 const data = [
-  { label: 'Products', stats: '456,578', progress: 65, color: 'green', icon: 'cl' },
-  { label: 'New users', stats: '2,550', progress: 72, color: 'blue', icon: 'cl' },
-  {
-    label: 'Orders',
-    stats: '4,735',
-    progress: 30,
-    color: 'red',
-    icon: 'cl',
-  },
+  { label: 'Products', stats: 456578, progress: 65, color: 'green', icon: 'cl' },
+  { label: 'New users', stats: 2550, progress: 72, color: 'blue', icon: 'cl' },
+  { label: 'Orders', stats: 4735, progress: 30, color: 'red', icon: 'cl' },
 ] as const;
 
 export function StatsRing() {
-  const stats = data.map((stat) => {
+  const [displayedStats, setDisplayedStats] = useState(
+    data.map(() => 0)
+  );
+
+  useEffect(() => {
+    const duration = 2000;
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / duration, 1);
+      
+      const newDisplayedStats = data.map((stat) => {
+        return Math.floor(stat.stats * progress);
+      });
+      
+      setDisplayedStats(newDisplayedStats);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, []);
+
+  const stats = data.map((stat, index) => {
     const Icon = icons[stat.icon];
+    
+    const formattedStats = displayedStats[index].toLocaleString();
+    
     return (
       <Paper withBorder radius="md" p="lg" key={stat.label}>
         <Group>
@@ -40,7 +64,7 @@ export function StatsRing() {
               {stat.label}
             </Text>
             <Text fw={700} size="xl">
-              {stat.stats}
+              {formattedStats}
             </Text>
           </div>
         </Group>

@@ -1,23 +1,20 @@
 package com.stockly.service.impl;
 
 import com.easypost.exception.EasyPostException;
+import com.easypost.model.*;
 import com.easypost.model.Address;
-import com.easypost.model.Parcel;
-import com.easypost.model.Rate;
-import com.easypost.model.Tracker;
+import com.easypost.model.Shipment;
 import com.easypost.service.EasyPostClient;
-import com.stockly.model.*;
+import com.stockly.model.Order;
 import com.stockly.repository.AddressRepository;
 import com.stockly.repository.OrderRepository;
-import com.stockly.repository.ShipmentRepository;
+import com.stockly.model.*;
 import com.stockly.service.EasyPostService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +27,6 @@ public class EasyPostServiceImpl implements EasyPostService {
     private String easypostApiKey;
 
     private final OrderRepository orderRepository;
-    private final ShipmentRepository shipmentRepository;
-    private final AddressRepository addressRepository;
 
     @Transactional
     public Shipment createShipmentFromOrder(Long orderId) throws EasyPostException {
@@ -65,29 +60,7 @@ public class EasyPostServiceImpl implements EasyPostService {
         buyParams.put("rate", selectedRate);
         epShipment = client.shipment.buy(epShipment.getId(), buyParams);
 
-        // Persist to DB
-        Shipment shipment = Shipment.builder()
-                .order(order)
-                .fromAddress(supplierCompany.getAddress())
-                .toAddress(buyerCompany.getAddress())
-                .carrier(selectedRate.getCarrier())
-                .trackingNumber(epShipment.getTrackingCode())
-                .labelUrl(epShipment.getPostageLabel().getLabelUrl())
-                .status("CREATED")
-                .estimatedDeliveryDate(null)
-                .shippingCost(new BigDecimal(selectedRate.getRate()))
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .easypostShipmentId(epShipment.getId())
-                .build();
-
-        return shipmentRepository.save(shipment);
-    }
-
-    public Tracker getTrackingInfo(String easypostShipmentId) throws EasyPostException {
-        EasyPostClient client = new EasyPostClient(easypostApiKey);
-        com.easypost.model.Shipment epShipment = client.shipment.retrieve(easypostShipmentId);
-        return epShipment.getTracker();
+        return epShipment;
     }
 
     private Address createEasyPostAddress(EasyPostClient client, Company company, com.stockly.model.Address appAddress) throws EasyPostException {
