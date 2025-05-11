@@ -13,12 +13,13 @@ interface OrderItemDTO {
 }
 
 export interface OrderDTO {
-  id?: number;
+  id: number;
   buyerId: number;
   supplierId: number;
   orderDate: string;
   deliveryDate: string;
   status: string;
+  shipmentId: string;
   totalPrice: number;
   items: OrderItemDTO[];
 }
@@ -65,14 +66,10 @@ export const ordersApi = createApi({
         url: '/orders',
         method: 'GET'
       }),
-      transformResponse: (response: OrderDTO[] | { data: OrderDTO[] }) =>
-        Array.isArray(response) ? response : response.data,
-      providesTags: (result) =>
-        result ? [...result.map(({ id }) => ({ type: 'Order' as const, id })), 'Order'] : ['Order'],
     }),
     getPaginatedOrders: builder.query<PaginatedOrderResponse, PaginationParams>({
       query: (params) => ({
-        url: '/orders/page',
+        url: '/orders',
         method: 'GET',
         params: {
           offset: params?.offset || 0,
@@ -80,14 +77,12 @@ export const ordersApi = createApi({
           sortBy: params?.sortBy || 'id'
         }
       }),
-      providesTags: ['Order'],
     }),
     getOrderById: builder.query<OrderDTO, number>({
       query: (id) => ({
         url: `/orders/${id}`,
         method: 'GET'
       }),
-      providesTags: (result, error, id) => [{ type: 'Order', id }],
     }),
     createOrder: builder.mutation<OrderDTO, Partial<OrderDTO>>({
       query: (order) => ({
@@ -95,7 +90,6 @@ export const ordersApi = createApi({
         method: 'POST',
         body: order,
       }),
-      invalidatesTags: ['Order'],
     }),
     updateOrder: builder.mutation<OrderDTO, { id: number, order: Partial<OrderDTO> }>({
       query: ({ id, order }) => ({
@@ -103,28 +97,24 @@ export const ordersApi = createApi({
         method: 'PUT',
         body: order,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }],
     }),
     updateOrderStatus: builder.mutation<void, { id: number, status: string }>({
       query: ({ id, status }) => ({
         url: `/orders/${id}/status/${status}`,
         method: 'PATCH',
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }],
     }),
     cancelOrder: builder.mutation<void, number>({
       query: (id) => ({
         url: `/orders/${id}/cancel`,
         method: 'PATCH',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Order', id }],
     }),
     deleteOrder: builder.mutation<void, number>({
       query: (id) => ({
         url: `/orders/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => ['Order'],
     }),
     searchOrders: builder.query<OrderDTO[], string>({
       query: (searchTerm) => ({
@@ -132,8 +122,6 @@ export const ordersApi = createApi({
         method: 'GET',
         params: { searchTerm },
       }),
-      transformResponse: (response: OrderDTO[] | { data: OrderDTO[] }) =>
-        Array.isArray(response) ? response : response.data,
     }),
     verifyBuyer: builder.mutation<boolean, number>({
       query: (buyerId) => ({

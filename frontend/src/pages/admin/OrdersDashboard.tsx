@@ -1,140 +1,148 @@
 import { useState } from 'react';
 import {
-  Paper,
-  Title,
-  Divider,
-  Stack,
-  Group,
+  useGetPaginatedOrdersQuery,
+  useSearchOrdersQuery,
+  OrderDTO,
+} from '../../api/ordersApi';
+import {
   ActionIcon,
   Box,
+  Paper,
+  Title,
+  TextInput,
+  Group,
+  Divider,
+  Stack,
   Loader,
-  Modal,
-  Button,
-  Text,
-  Badge,
-  Table,
-  Menu,
 } from '@mantine/core';
-import { PiTrashBold, PiPencilSimpleBold } from 'react-icons/pi';
-import { useGetOrdersQuery, useDeleteOrderMutation, OrderDTO } from '../../api/OrdersApi';
+import { useDebouncedValue } from '@mantine/hooks';
+import {
+  PiMagnifyingGlassBold,
+  PiPencilSimpleLineBold,
+  PiTrashBold,
+  PiEyeBold
+} from 'react-icons/pi';
+import DashboardTable, { Column } from '../../components/DashboardTable';
 
 const OrdersDashboard = () => {
-  const { data: orders, isLoading, isError } = useGetOrdersQuery();
-  const [deleteOrder] = useDeleteOrderMutation();
+  const [page, setPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
 
-  // Modal states
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [updateModalOpen, setUpdateModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<OrderDTO | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const {
+    data: paginatedResponse,
+    isLoading: isPaginatedLoading,
+  } = useGetPaginatedOrdersQuery({
+    offset: page,
+    pageSize: 10,
+  });
 
-  const handleDelete = async () => {
-    if (deleteId !== null) {
-      await deleteOrder(deleteId).unwrap();
-      setConfirmOpen(false);
-      setDeleteId(null);
-    }
-  };
+  const {
+    data: searchedOrders,
+    isFetching: isSearchLoading,
+  } = useSearchOrdersQuery(debouncedSearch, {
+    skip: debouncedSearch.length === 0,
+  });
 
-  if (isLoading) return <Loader size="xl" />;
-  if (isError) return <Text color="red">Error loading orders</Text>;
+  const columns: Column<OrderDTO>[] = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      enableSorting: false,
+      cell: (info: any) => info.getValue(),
+    },
+    {
+      accessorKey: 'buyerId',
+      header: 'Buyer',
+      enableSorting: false,
+      cell: (info: any) => info.getValue(),
+    },
+    {
+      accessorKey: 'supplierId',
+      header: 'Supplier',
+      enableSorting: false,
+      cell: (info: any) => info.getValue(),
+    },
+    {
+      accessorKey: 'orderDate',
+      header: 'Order Date',
+      enableSorting: true,
+      cell: (info: any) => new Date(info.getValue()).toLocaleDateString(),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      enableSorting: true,
+      cell: (info: any) => info.getValue(),
+    },
+    {
+      accessorKey: 'shipmentId',
+      header: 'Shipment ID',
+      enableSorting: true,
+      cell: (info: any) => info.getValue(),
+    },
+    {
+      accessorKey: 'totalPrice',
+      header: 'Total',
+      enableSorting: true,
+      cell: (info: any) => `$${info.getValue()?.toFixed(2)}`,
+    },
+    {
+      accessorKey: 'id',
+      header: 'Actions',
+      enableSorting: false,
+      cell: () => (
+        <Group justify="center">
+          <ActionIcon color="green" variant="light">
+            <PiEyeBold size={18} />
+          </ActionIcon>
+          <ActionIcon color="blue" variant="light">
+            <PiPencilSimpleLineBold size={18} />
+          </ActionIcon>
+          <ActionIcon color="red" variant="light">
+            <PiTrashBold size={18} />
+          </ActionIcon>
+        </Group>
+      ),
+    },
+  ];
+
+  const tableData = debouncedSearch.length > 0 ? searchedOrders || [] : paginatedResponse?.content || [];
+  const totalPages = debouncedSearch.length > 0 ? 1 : paginatedResponse?.totalPages || 1;
 
   return (
-    <Paper p="md" radius="md">
+    <Paper>
       <Stack>
         <Group justify="space-between">
-          <Title order={3}>Orders Management</Title>
-         <Button onClick={() => {
-           console.log('Button clicked');
-           setCreateModalOpen(true);
-           console.log('Modal state should be true now');
-         }}>
-           Create New Order
-         </Button>
+          <Title order={3}>Orders Dashboard</Title>
+          <TextInput
+            placeholder="Search orders..."
+            leftSection={<PiMagnifyingGlassBold size={16} />}
+            w={250}
+            value={searchTerm}
+            onChange={(e) => {
+              setPage(0);
+              setSearchTerm(e.currentTarget.value);
+            }}
+          />
         </Group>
 
         <Divider />
 
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>ID</Table.Th>
-              <Table.Th>Buyer</Table.Th>
-              <Table.Th>Supplier</Table.Th>
-              <Table.Th>Order Date</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Total</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {orders?.map((order) => (
-              <Table.Tr key={order.id}>
-                <Table.Td>{order.id}</Table.Td>
-                <Table.Td>{order.buyerId}</Table.Td>
-                <Table.Td>{order.supplierId}</Table.Td>
-                <Table.Td>
-                  {new Date(order.orderDate).toLocaleDateString()}
-                </Table.Td>
-                <Table.Td>
-                  <Badge color={
-                    order.status === 'CANCELLED' ? 'red' :
-                    order.status === 'COMPLETED' ? 'green' : 'blue'
-                  }>
-                    {order.status}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>${order.totalPrice?.toFixed(2)}</Table.Td>
-                <Table.Td>
-                  <Group>
-                    <ActionIcon
-                      variant="subtle"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setUpdateModalOpen(true);
-                      }}
-                    >
-                      <PiPencilSimpleBold />
-                    </ActionIcon>
-                    <ActionIcon
-                      color="red"
-                      variant="subtle"
-                      onClick={() => {
-                        setDeleteId(order.id!);
-                        setConfirmOpen(true);
-                      }}
-                    >
-                      <PiTrashBold />
-                    </ActionIcon>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-
-       
-
-        {/* Update Order Modal */}
-
-        {/* Delete Confirmation Modal */}
-        <Modal
-          opened={confirmOpen}
-          onClose={() => setConfirmOpen(false)}
-          title="Confirm Deletion"
-          centered
-        >
-          <Text>Are you sure you want to delete this order?</Text>
-          <Group mt="md" justify="flex-end">
-            <Button variant="default" onClick={() => setConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button color="red" onClick={handleDelete}>
-              Delete
-            </Button>
-          </Group>
-        </Modal>
+        {(isPaginatedLoading || isSearchLoading) ? (
+          <Box py="xl" style={{ textAlign: 'center' }}>
+            <Loader />
+          </Box>
+        ) : (
+          <DashboardTable
+            tableData={tableData}
+            allColumns={columns}
+            enableSort
+            totalPages={totalPages}
+            currentPage={page}
+            fetchData={setPage}
+          />
+        )}
       </Stack>
     </Paper>
   );

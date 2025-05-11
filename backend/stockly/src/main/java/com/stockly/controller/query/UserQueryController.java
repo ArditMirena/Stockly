@@ -1,8 +1,8 @@
 package com.stockly.controller.query;
 
 import com.stockly.dto.UserDTO;
+import com.stockly.mapper.UserMapper;
 import com.stockly.model.User;
-import com.stockly.service.command.UserCommandService;
 import com.stockly.service.query.UserQueryService;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.data.domain.Page;
@@ -23,17 +23,19 @@ import java.util.List;
 @RequestMapping("/api/v1/users")
 public class UserQueryController {
     private final UserQueryService userQueryService;
+    private final UserMapper userMapper;
 
-    public UserQueryController(UserQueryService userQueryService) {
+    public UserQueryController(UserQueryService userQueryService, UserMapper userMapper) {
         this.userQueryService = userQueryService;
+        this.userMapper = userMapper;
     }
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<User> authenticatedUser() {
+    public ResponseEntity<UserDTO> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(currentUser);
+        return ResponseEntity.ok(userMapper.toDTO(currentUser));
     }
 
     @GetMapping()

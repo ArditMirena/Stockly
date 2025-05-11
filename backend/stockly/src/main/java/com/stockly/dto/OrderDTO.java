@@ -19,6 +19,7 @@ public class OrderDTO {
     private Date deliveryDate;
     private String status;
     private BigDecimal totalPrice;
+    private String shipmentId;
     private Date updatedAt;
     private List<OrderItemDTO> items;
 }

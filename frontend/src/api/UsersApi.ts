@@ -4,7 +4,7 @@ import { axiosBaseQuery } from '../utils/axiosBaseQuery';
 export interface User {
     id: number;
     username: string;
-    usernameF: null | string;
+    usernameF?: null | string;
     email: string;
     role: string;
 }
@@ -62,13 +62,14 @@ export const usersApi = createApi ({
                 }
             })
         }),
-        updateUser: builder.mutation<User, {id: number, user: Partial<User> }> ({
-            query: ({id, ...user}) => ({
+        updateUser: builder.mutation<void, { id: number; user: Partial<User> }>({
+            query: ({ id, user }) => ({
                 url: `/users/${id}`,
                 method: 'PUT',
-                body: user
-            })
+                data: user,
+            }),
         }),
+
         deleteUser: builder.mutation<void, number>({
             query: (id) => ({
                 url: `/users/${id}`,

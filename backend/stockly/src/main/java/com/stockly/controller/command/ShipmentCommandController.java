@@ -2,9 +2,10 @@ package com.stockly.controller.command;
 
 import com.easypost.exception.EasyPostException;
 import com.easypost.model.Tracker;
-import com.stockly.model.Order;
-import com.stockly.model.Shipment;
+import com.stockly.dto.ShipmentDTO;
 import com.stockly.service.EasyPostService;
+import com.stockly.service.command.ShipmentCommandService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,32 +19,23 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ShipmentCommandController {
 
-    private final EasyPostService easyPostService;
+    private final ShipmentCommandService shipmentCommandService;
 
-    @PostMapping
-    public ResponseEntity<?> createShipment(@RequestParam Long orderId) {
-        try {
-            Shipment shipment = easyPostService.createShipmentFromOrder(orderId);
-            Map<String, Object> response = new HashMap<>();
-            response.put("carrier", shipment.getCarrier());
-            response.put("trackingNumber", shipment.getTrackingNumber());
-            response.put("labelUrl", shipment.getLabelUrl());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Shipment creation failed", "message", e.getMessage()));
-        }
+    @PostMapping()
+    public ResponseEntity<ShipmentDTO> createShipment(@RequestParam Long orderId) throws EasyPostException {
+        ShipmentDTO shipmentDTO = shipmentCommandService.createShipment(orderId);
+        return new ResponseEntity<>(shipmentDTO, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ShipmentDTO> updateShipment(@Valid @PathVariable String shipmentId, String newRateId) throws EasyPostException {
+        ShipmentDTO shipmentDTO = shipmentCommandService.updateShipment(shipmentId, newRateId);
+        return new ResponseEntity<>(shipmentDTO, HttpStatus.OK);
+    }
 
-    @GetMapping("/{id}/track")
-    public ResponseEntity<Tracker> trackShipment(@PathVariable String id) {
-        try {
-            Tracker tracker = easyPostService.getTrackingInfo(id);
-            return ResponseEntity.ok(tracker);
-        } catch (EasyPostException e) {
-            return ResponseEntity.badRequest().build();
-        }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteShipment(@Valid @PathVariable String shipmentId) throws EasyPostException {
+        shipmentCommandService.deleteShipment(shipmentId);
+        return ResponseEntity.noContent().build();
     }
 }

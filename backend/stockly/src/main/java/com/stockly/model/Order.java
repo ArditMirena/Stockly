@@ -51,6 +51,9 @@ public class Order {
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
+    @Column(name = "shipment_id")
+    private String shipmentId;
+
     @Column(name = "updated_at")
     @UpdateTimestamp
     private Date updatedAt;
@@ -59,12 +62,8 @@ public class Order {
     @JoinColumn(name = "warehouse_id")
     private Warehouse warehouse;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Shipment> shipments = new ArrayList<>();
 
     // Helper method to add items
     public void addItem(OrderItem item) {

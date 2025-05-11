@@ -33,6 +33,7 @@ public class OrderMapper {
         dto.setDeliveryDate(order.getDeliveryDate());
         dto.setStatus(order.getStatus().name());
         dto.setTotalPrice(order.getTotalPrice());
+        dto.setShipmentId(order.getShipmentId());
         dto.setUpdatedAt(order.getUpdatedAt());
 
         if (order.getBuyer() != null) {
@@ -70,6 +71,7 @@ public class OrderMapper {
         // Basic fields
         order.setOrderDate(dto.getOrderDate());
         order.setDeliveryDate(dto.getDeliveryDate());
+        order.setShipmentId(dto.getShipmentId());
 
         if (dto.getStatus() != null) {
             order.setStatus(OrderStatus.valueOf(dto.getStatus()));
@@ -147,6 +149,7 @@ public class OrderMapper {
         } else {
             order.setTotalPrice(BigDecimal.ZERO);
         }
+        order.setShipmentId(null);
 
         return order;
     }

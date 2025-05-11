@@ -5,7 +5,6 @@ import com.stockly.dto.RegisterUserDTO;
 import com.stockly.dto.VerifyUserDTO;
 import com.stockly.model.User;
 import com.stockly.responses.AuthResponse;
-import com.stockly.service.JwtService;
 import com.stockly.service.command.AuthenticationService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -52,7 +50,7 @@ public class AuthenticationCommandController {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), null, "Login successful"));
+        return ResponseEntity.ok(new AuthResponse(null, null, "Login successful"));
     }
 
     @PostMapping("/refresh")
@@ -83,7 +81,7 @@ public class AuthenticationCommandController {
         response.addHeader(HttpHeaders.SET_COOKIE, newAccessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, newRefreshCookie.toString());
 
-        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), null, "Token refreshed"));
+        return ResponseEntity.ok(new AuthResponse(null, null, "Token refreshed"));
     }
 
 

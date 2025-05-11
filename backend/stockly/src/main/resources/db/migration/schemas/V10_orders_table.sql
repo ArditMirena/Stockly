@@ -6,6 +6,7 @@ CREATE TABLE orders (
     order_date TIMESTAMP WITH TIME ZONE,
     delivery_date TIMESTAMP,
     status VARCHAR(50) NOT NULL,
+    shipment_id VARCHAR(255) NULL,
     total_price DECIMAL(19,4) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

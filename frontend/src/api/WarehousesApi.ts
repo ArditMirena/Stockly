@@ -57,6 +57,12 @@ export const warehousesApi = createApi({
     reducerPath: 'warehousesApi',
     baseQuery: axiosBaseQuery(),
     endpoints: (builder) => ({
+        getAllWarehouses: builder.query<WarehouseDTO[], void> ({
+            query: () => ({
+                url: `/warehouses`,
+                method: 'GET'
+            })
+        }),
         getAllWarehousesWithPagination: builder.query<PaginatedWarehouseResponse, PaginationParams>({
             query: (params) => ({
                 url: '/warehouses/page',
@@ -89,6 +95,7 @@ export const warehousesApi = createApi({
 });
 
 export const {
+    useGetAllWarehousesQuery,
     useGetAllWarehousesWithPaginationQuery,
     useSearchWarehousesQuery,
     useDeleteWarehouseMutation
