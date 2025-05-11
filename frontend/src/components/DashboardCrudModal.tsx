@@ -7,6 +7,7 @@ import {
 } from '@mantine/core';
 import { useForm, Controller, FieldValues, DefaultValues } from 'react-hook-form';
 import { useEffect } from 'react';
+import { ReactNode } from 'react';
 
 interface Field<T> {
   name: keyof T;
@@ -18,11 +19,13 @@ interface Field<T> {
 interface DashboardCrudModalProps<T extends FieldValues> {
   opened: boolean;
   onClose: () => void;
-  onSubmit: (values: T) => void;
+  onSubmit: (values: any) => void | Promise<void>;
   defaultValues?: Partial<T>;
-  fields: Field<T>[];
+  fields?: Field<T>[];
   title: string;
   submitLabel?: string;
+  children?: ReactNode;
+  customContent?: React.ReactNode; // <-- add this line
 }
 
 export function DashboardCrudModal<T extends FieldValues>({
@@ -30,9 +33,10 @@ export function DashboardCrudModal<T extends FieldValues>({
   onClose,
   onSubmit,
   defaultValues,
-  fields,
+  fields = [],
   title,
   submitLabel = 'Save',
+  children,
 }: DashboardCrudModalProps<T>) {
   const {
     register,
@@ -54,10 +58,10 @@ export function DashboardCrudModal<T extends FieldValues>({
       title={title}
       centered
       style={{
-            position: 'fixed',
-            top: '0',
-            left: '0'
-          }}>
+        position: 'fixed',
+        top: '0',
+        left: '0'
+      }}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack>
           {fields.map((field) => {
@@ -87,6 +91,9 @@ export function DashboardCrudModal<T extends FieldValues>({
               />
             );
           })}
+          
+          {children}
+          
           <Button type="submit" fullWidth>
             {submitLabel}
           </Button>

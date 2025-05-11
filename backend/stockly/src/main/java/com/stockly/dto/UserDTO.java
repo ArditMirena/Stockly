@@ -1,6 +1,5 @@
 package com.stockly.dto;
 
-import com.stockly.model.RoleEnum;
 import lombok.Builder;
 import lombok.Data;
 
