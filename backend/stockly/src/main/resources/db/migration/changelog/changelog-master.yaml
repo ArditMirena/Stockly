@@ -33,3 +33,7 @@ databaseChangeLog:
       file: db/migration/schemas/V11__order_items.sql
   - include:
       file: db/migration/schemas/V13__warehouse_products__.sql
+  - include:
+      file: db/migration/schemas/V19__receipts.sql
+  - include:
+      file: db/migration/schemas/V20__receipt_item.sql

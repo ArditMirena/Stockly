@@ -20,6 +20,7 @@ import {
   PiArrowsOutLineHorizontalBold,
   PiTeaBagBold,
   PiFactoryBold,
+  PiWarehouseBold,
   PiPackageBold
 } from "react-icons/pi";
 import {
@@ -45,6 +46,7 @@ const tabs = {
     { link: '/admin/users', label: 'Users', icon: PiUsersBold },
     { link: '/admin/products', label: 'Products', icon: PiTeaBagBold },
     { link: '/admin/companies', label: 'Companies', icon: PiFactoryBold },
+    { link: '/admin/warehouses', label: 'Warehouses', icon: PiWarehouseBold},
     { link: '/admin/orders', label: 'Orders', icon: PiPackageBold },
     { link: '', label: 'Receipts', icon: PiReadCvLogoBold },
     { link: '', label: 'Reviews', icon: PiChatCenteredTextBold },
