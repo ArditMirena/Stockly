@@ -20,6 +20,9 @@ import java.util.Set;
 @Repository
 public interface WarehouseProductRepository extends JpaRepository<WarehouseProduct, Long> {
 
+    List<WarehouseProduct> findByWarehouseId(Long warehouseId);
+
+
     @Query("SELECT p FROM Product p JOIN WarehouseProduct wp ON p.id = wp.product.id WHERE wp.warehouse.id = :warehouseId AND wp.availability = :availability")
     List<Product> findProductsByWarehouseAndAvailability(@Param("warehouseId") Long warehouseId, @Param("availability") String availability);
 
@@ -32,19 +35,6 @@ public interface WarehouseProductRepository extends JpaRepository<WarehouseProdu
 
     Optional<WarehouseProduct> findByProduct(Product product);
 
-//    @Query("SELECT COALESCE(SUM(wp.quantity), 0) FROM WarehouseProduct wp WHERE wp.product.id = :productId")
-//    Integer findStockByProductId(@Param("productId") Long productId);
-//
-//    @Query("""
-//        SELECT COALESCE(wp.quantity, 0)
-//        FROM WarehouseProduct wp
-//        WHERE wp.product.id = :productId
-//        AND wp.warehouse.id = :warehouseId
-//    """)
-//    Integer findStockAtWarehouse(
-//            @Param("productId") Long productId,
-//            @Param("warehouseId") Long warehouseId
-//    );
 
     @Query("""
     SELECT 
