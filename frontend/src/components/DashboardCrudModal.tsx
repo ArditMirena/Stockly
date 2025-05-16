@@ -1,102 +1,60 @@
-import {
-  Modal,
-  Button,
-  Stack,
-  TextInput,
-  Select,
-} from '@mantine/core';
-import { useForm, Controller, FieldValues, DefaultValues } from 'react-hook-form';
-import { useEffect } from 'react';
+import { Modal, Button, Stack, Group } from '@mantine/core';
 import { ReactNode } from 'react';
 
-interface Field<T> {
-  name: keyof T;
-  label: string;
-  type: 'text' | 'select';
-  options?: { value: string; label: string }[];
-}
-
-interface DashboardCrudModalProps<T extends FieldValues> {
+interface DashboardCrudModalProps {
   opened: boolean;
-  onClose: () => void;
-  onSubmit: (values: any) => void | Promise<void>;
-  defaultValues?: Partial<T>;
-  fields?: Field<T>[];
   title: string;
+  onClose: () => void;
+  children: ReactNode;
+  onSubmit?: () => void;
   submitLabel?: string;
-  children?: ReactNode;
-  customContent?: React.ReactNode; // <-- add this line
+  isSubmitting?: boolean;
+  disableSubmit?: boolean;
+  showSubmitButton?: boolean;
 }
 
-export function DashboardCrudModal<T extends FieldValues>({
+export default function DashboardCrudModal({
   opened,
-  onClose,
-  onSubmit,
-  defaultValues,
-  fields = [],
   title,
-  submitLabel = 'Save',
+  onClose,
   children,
-}: DashboardCrudModalProps<T>) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-  } = useForm<T>({
-    defaultValues: defaultValues as DefaultValues<T>,
-  });
-
-  useEffect(() => {
-    reset(defaultValues as T);
-  }, [defaultValues, reset]);
-
+  onSubmit,
+  submitLabel = 'Save',
+  isSubmitting = false,
+  disableSubmit = false,
+  showSubmitButton = true,
+}: DashboardCrudModalProps) {
   return (
-    <Modal 
+    <Modal
       opened={opened}
       onClose={onClose}
       title={title}
       centered
+      radius="md"
+      padding="lg"
+      size="md"
       style={{
         position: 'fixed',
         top: '0',
         left: '0'
+      }}
+    >
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit?.();
       }}>
-      <form onSubmit={handleSubmit(onSubmit)}>
         <Stack>
-          {fields.map((field) => {
-            if (field.type === 'select') {
-              return (
-                <Controller
-                  key={String(field.name)}
-                  control={control}
-                  name={field.name as any}
-                  render={({ field: controllerField }) => (
-                    <Select
-                      label={field.label}
-                      data={field.options || []}
-                      value={controllerField.value}
-                      onChange={controllerField.onChange}
-                    />
-                  )}
-                />
-              );
-            }
-
-            return (
-              <TextInput
-                key={String(field.name)}
-                label={field.label}
-                {...register(field.name as any)}
-              />
-            );
-          })}
-          
           {children}
-          
-          <Button type="submit" fullWidth>
-            {submitLabel}
-          </Button>
+          <Group justify="flex-end" mt="md">
+            <Button variant="default" onClick={onClose}>
+              Close
+            </Button>
+            {showSubmitButton && (
+              <Button type="submit" loading={isSubmitting} disabled={disableSubmit}>
+                {submitLabel}
+              </Button>
+            )}
+          </Group>
         </Stack>
       </form>
     </Modal>

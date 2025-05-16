@@ -1,5 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "../utils/axiosBaseQuery";
+import { Product } from "./ProductsApi";
 
 export interface AddressDTO {
     street: string;
@@ -56,6 +57,7 @@ interface SearchParams {
 export const warehousesApi = createApi({
     reducerPath: 'warehousesApi',
     baseQuery: axiosBaseQuery(),
+    tagTypes: ['Warehouse'],
     endpoints: (builder) => ({
         getAllWarehouses: builder.query<WarehouseDTO[], void> ({
             query: () => ({
@@ -91,6 +93,13 @@ export const warehousesApi = createApi({
                 method: 'DELETE',
             }),
         }),
+        getWarehouseProducts: builder.query<Product[], { warehouseId: number }>({
+            query: ({ warehouseId }) => ({
+                url: `/warehouses/${warehouseId}/products`,
+                method: 'GET'
+            }),
+            providesTags: ['Warehouse']
+            }),
     }),
 });
 
@@ -98,5 +107,6 @@ export const {
     useGetAllWarehousesQuery,
     useGetAllWarehousesWithPaginationQuery,
     useSearchWarehousesQuery,
-    useDeleteWarehouseMutation
+    useDeleteWarehouseMutation,
+    useGetWarehouseProductsQuery
 } = warehousesApi;

@@ -50,7 +50,7 @@ export const shipmentsApi = createApi ({
       query: (orderId) => ({
         url: `/shipments`,
         method: `POST`,
-        body: orderId
+        params: {orderId}
       })
     }),
     deleteShipment: builder.mutation<void, string> ({

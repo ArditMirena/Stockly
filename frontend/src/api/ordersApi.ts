@@ -16,12 +16,24 @@ export interface OrderDTO {
   id: number;
   buyerId: number;
   supplierId: number;
+  warehouseId: number;
   orderDate: string;
   deliveryDate: string;
   status: string;
   shipmentId: string;
   totalPrice: number;
   items: OrderItemDTO[];
+}
+
+interface OrderItemRequest {
+  productId: number;
+  quantity: number;
+}
+
+interface CreateOrderRequest {
+  warehouseId: number;
+  buyerId: number;
+  items: OrderItemRequest[];
 }
 
 interface PaginatedOrderResponse {
@@ -84,11 +96,11 @@ export const ordersApi = createApi({
         method: 'GET'
       }),
     }),
-    createOrder: builder.mutation<OrderDTO, Partial<OrderDTO>>({
+    createOrder: builder.mutation<OrderDTO, CreateOrderRequest>({
       query: (order) => ({
-        url: '/orders',
+        url: '/orders/process',
         method: 'POST',
-        body: order,
+        data: order
       }),
     }),
     updateOrder: builder.mutation<OrderDTO, { id: number, order: Partial<OrderDTO> }>({
