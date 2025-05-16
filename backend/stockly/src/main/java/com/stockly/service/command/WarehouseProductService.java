@@ -1,6 +1,7 @@
 package com.stockly.service.command;
 
 import com.stockly.model.Product;
+import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.WarehouseProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +16,7 @@ public class WarehouseProductService {
     @Autowired
     private WarehouseProductRepository warehouseProductRepository;
 
-    public List<Product> getProductsByWarehouseAndAvailability(Long warehouseId, String availability) {
-        return warehouseProductRepository.findProductsByWarehouseAndAvailability(warehouseId, availability);
-    }
+
 
     public void updateProductAvailability(Long warehouseId, Long productId, String availability) {
         // Use the custom method to find the WarehouseProduct by warehouseId and productId

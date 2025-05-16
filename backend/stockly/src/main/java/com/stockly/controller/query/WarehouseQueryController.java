@@ -1,7 +1,11 @@
 package com.stockly.controller.query;
 
+import com.stockly.dto.ProductDTO;
 import com.stockly.dto.WarehouseDTO;
+import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.model.Product;
+import com.stockly.model.Warehouse;
+import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.WarehouseProductService;
 import com.stockly.service.query.WarehouseQueryService;
 import io.micrometer.common.util.StringUtils;
@@ -22,6 +26,8 @@ public class WarehouseQueryController {
     private final WarehouseQueryService warehouseQueryService;
     @Autowired
     private WarehouseProductService warehouseProductService;
+    @Autowired
+    private WarehouseRepository warehouseRepository;
 
     public WarehouseQueryController(WarehouseQueryService warehouseQueryService) {
         this.warehouseQueryService = warehouseQueryService;
@@ -39,8 +45,8 @@ public class WarehouseQueryController {
     }
 
     @GetMapping("/{warehouseId}/products")
-    public ResponseEntity<List<Product>> getProductsByWarehouse(@PathVariable Long warehouseId, @RequestParam String availability) {
-        List<Product> products = warehouseProductService.getProductsByWarehouseAndAvailability(warehouseId, availability);
+    public ResponseEntity<List<ProductDTO>> getProductsByWarehouse(@PathVariable Long warehouseId) {
+        List<ProductDTO> products = warehouseQueryService.getProductsByWarehouseId(warehouseId);
         return ResponseEntity.ok(products);
     }
 
