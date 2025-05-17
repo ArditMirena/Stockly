@@ -6,6 +6,7 @@ import { companiesApi } from '../api/CompaniesApi';
 import { warehousesApi} from "../api/WarehousesApi.ts";
 import { ordersApi } from '../api/ordersApi';
 import { shipmentsApi } from '../api/ShipmentsApi.ts';
+import { predictionsApi} from "../api/PredictionsApi.ts";
 import { setupListeners } from '@reduxjs/toolkit/query';
 
 const store = configureStore({
@@ -16,7 +17,8 @@ const store = configureStore({
     [companiesApi.reducerPath]: companiesApi.reducer,
     [warehousesApi.reducerPath]: warehousesApi.reducer,
     [ordersApi.reducerPath]: ordersApi.reducer,
-    [shipmentsApi.reducerPath]: shipmentsApi.reducer
+    [shipmentsApi.reducerPath]: shipmentsApi.reducer,
+    [predictionsApi.reducerPath]: predictionsApi.reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -26,6 +28,7 @@ const store = configureStore({
       .concat(warehousesApi.middleware)
       .concat(ordersApi.middleware)
       .concat(shipmentsApi.middleware)
+      .concat(predictionsApi.middleware)
 });
 
 setupListeners(store.dispatch);
