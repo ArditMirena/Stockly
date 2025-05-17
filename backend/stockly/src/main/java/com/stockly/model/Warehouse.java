@@ -34,5 +34,27 @@ public class Warehouse {
     @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WarehouseProduct> warehouseProducts = new ArrayList<>();
 
+    public void addWarehouseProduct(WarehouseProduct warehouseProduct) {
+        if (warehouseProduct == null) {
+            throw new IllegalArgumentException("WarehouseProduct cannot be null");
+        }
+
+        if (warehouseProducts == null) {
+            warehouseProducts = new ArrayList<>();
+        }
+
+        // Check if the product already exists in this warehouse
+        boolean productExists = warehouseProducts.stream()
+                .anyMatch(wp -> wp.getProduct().equals(warehouseProduct.getProduct()));
+
+        if (!productExists) {
+            // Set the warehouse reference
+            warehouseProduct.setWarehouse(this);
+            // Add to the collection
+            warehouseProducts.add(warehouseProduct);
+            // Update availability status
+            warehouseProduct.updateAvailability();
+        }
+    }
 
 }

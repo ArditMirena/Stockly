@@ -38,7 +38,6 @@ public class Order {
     private Company supplier;
 
     @Column(name = "order_date")
-    @CreationTimestamp
     private Instant orderDate;
 
     @Column(name = "delivery_date")
