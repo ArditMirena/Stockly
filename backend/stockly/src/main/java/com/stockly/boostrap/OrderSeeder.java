@@ -1,11 +1,13 @@
 package com.stockly.boostrap;
 
+import com.stockly.dto.request.OrderItemRequest;
 import com.stockly.model.*;
 import com.stockly.model.enums.OrderStatus;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.repository.OrderRepository;
 import com.stockly.repository.ProductRepository;
 import com.stockly.repository.WarehouseRepository;
+import com.stockly.service.impl.command.OrderProcessingService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -24,15 +26,18 @@ public class OrderSeeder implements CommandLineRunner {
     private final CompanyRepository companyRepository;
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
+    private final OrderProcessingService orderProcessingService;
 
     public OrderSeeder(OrderRepository orderRepository,
                        CompanyRepository companyRepository,
                        WarehouseRepository warehouseRepository,
-                       ProductRepository productRepository) {
+                       ProductRepository productRepository,
+                       OrderProcessingService orderProcessingService) {
         this.orderRepository = orderRepository;
         this.companyRepository = companyRepository;
         this.warehouseRepository = warehouseRepository;
         this.productRepository = productRepository;
+        this.orderProcessingService = orderProcessingService;
     }
 
     @Override
@@ -76,6 +81,7 @@ public class OrderSeeder implements CommandLineRunner {
 
                 // Get products available in this warehouse
                 List<Product> warehouseProducts = productRepository.findProductsByWarehouseId(warehouse.getId());
+                List<OrderItemRequest> orderItemRequests = new ArrayList<>(); // To collect items for inventory update
 
                 for (int j = 0; j < itemCount && !warehouseProducts.isEmpty(); j++) {
                     // Select a random product from the warehouse
@@ -100,10 +106,26 @@ public class OrderSeeder implements CommandLineRunner {
                     orderItem.calculateTotalPrice();
 
                     order.addItem(orderItem);
+
+                    // Create OrderItemRequest for inventory update
+                    OrderItemRequest itemRequest = new OrderItemRequest();
+                    itemRequest.setProductId(product.getId());
+                    itemRequest.setQuantity(quantity);
+                    orderItemRequests.add(itemRequest);
                 }
 
                 if (!order.getItems().isEmpty()) {
-                    orderRepository.save(order);
+                    Order savedOrder = orderRepository.save(order);
+
+                    // Update warehouse inventory only if order is not cancelled/rejected
+                    if (order.getStatus() != OrderStatus.CANCELLED) {
+                        try {
+                            orderProcessingService.updateWarehouseInventory(warehouse, orderItemRequests);
+                        } catch (Exception e) {
+                            // Handle inventory update failure (log it, but don't stop seeding)
+                            System.err.println("Failed to update inventory for order " + savedOrder.getId() + ": " + e.getMessage());
+                        }
+                    }
                 }
             }
         }

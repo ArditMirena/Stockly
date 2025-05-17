@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         }
 
         Order order = orderMapper.createNewOrderFromDto(dto);
-        order.setOrderDate(Instant.now());
+        order.setOrderDate(Instant.now().truncatedTo(ChronoUnit.SECONDS));
 
         // Set relationships properly
         if (dto.getBuyerId() != null) {

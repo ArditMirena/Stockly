@@ -99,7 +99,7 @@ public class OrderProcessingService {
         return orderDTO;
     }
 
-    private void updateWarehouseInventory(Warehouse warehouse, List<OrderItemRequest> items) {
+    public void updateWarehouseInventory(Warehouse warehouse, List<OrderItemRequest> items) {
         for (OrderItemRequest item : items) {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));

@@ -4,6 +4,7 @@ import com.stockly.dto.OrderDTO;
 import com.stockly.dto.OrderExportDTO;
 import com.stockly.repository.OrderRepository;
 import com.stockly.repository.WarehouseProductRepository;
+import com.stockly.service.impl.query.OrderExportService;
 import com.stockly.service.impl.query.StockCalculationService;
 import com.stockly.service.query.OrderQueryService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,6 +31,7 @@ public class OrderQueryController {
     private final OrderRepository orderRepository;
     private final WarehouseProductRepository warehouseProductRepository;
     private final StockCalculationService stockCalculationService;
+    private final OrderExportService orderExportService;
 
     @GetMapping("/{id}")
     public OrderDTO getOrderById(@PathVariable Long id) {
@@ -70,17 +73,13 @@ public class OrderQueryController {
 
 
     @GetMapping("/export")
-    public List<OrderExportDTO> exportOrders() {
-        Instant startDate = Instant.now().minus(30, ChronoUnit.DAYS);
-        return orderRepository.findOrdersForExport(startDate).stream()
-                .map(projection -> new OrderExportDTO(
-                        projection.getProductId(),
-                        projection.getWarehouseId(),
-                        projection.getOrderDate(),
-                        projection.getQuantity(),
-                        projection.getCurrentStock()
-                ))
-                .collect(Collectors.toList());
+    public ResponseEntity<List<OrderExportDTO>> exportOrders(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant startDate) {
+
+        Instant queryDate = (startDate != null) ? startDate : Instant.now().minus(30, ChronoUnit.DAYS);
+        return ResponseEntity.ok(orderExportService.exportOrders(queryDate));
     }
 
     @GetMapping("/search")

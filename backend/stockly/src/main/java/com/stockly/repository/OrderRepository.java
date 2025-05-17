@@ -75,79 +75,37 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     );
 
 
-    @Query(value = """
-        WITH StockHistory AS (
-            -- Initial stock levels
-            SELECT 
-                wp.product_id as product_id,
-                wp.warehouse_id as warehouse_id,
-                wp.created_at as change_date,
-                wp.quantity as quantity_change,
-                'INITIAL' as change_type
-            FROM warehouse_products wp
-            
-            UNION ALL
-            
-            -- Orders (negative changes)
-            SELECT 
-                oi.product_id as product_id,
-                o.warehouse_id as warehouse_id,
-                o.order_date as change_date,
-                -oi.quantity as quantity_change,
-                'ORDER' as change_type
-            FROM orders o
-            JOIN order_items oi ON o.id = oi.order_id
-            
-            UNION ALL
-            
-            -- Restocks (positive changes)
-            SELECT 
-                wp.product_id as product_id,
-                wp.warehouse_id as warehouse_id,
-                wp.updated_at as change_date,
-                wp.quantity as quantity_change,
-                'RESTOCK' as change_type
-            FROM warehouse_products wp
-            WHERE wp.updated_at > wp.created_at
-        ),
-        RunningTotals AS (
-            SELECT 
-                product_id,
-                warehouse_id,
-                change_date,
-                quantity_change,
-                SUM(quantity_change) OVER (
-                    PARTITION BY product_id, warehouse_id 
-                    ORDER BY change_date
-                    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-                ) as running_total
-            FROM StockHistory
-        )
-        SELECT 
-            oi.product_id as productId,
-            o.warehouse_id as warehouseId,
-            o.order_date as orderDate,
-            oi.quantity as quantity,
-            COALESCE((
-                SELECT rt.running_total
-                FROM RunningTotals rt
-                WHERE rt.product_id = oi.product_id
-                AND rt.warehouse_id = o.warehouse_id
-                AND rt.change_date < o.order_date
-                ORDER BY rt.change_date DESC
-                LIMIT 1
-            ), (
-                SELECT wp.quantity
-                FROM warehouse_products wp
-                WHERE wp.product_id = oi.product_id
-                AND wp.warehouse_id = o.warehouse_id
-                LIMIT 1
-            )) as currentStock
+    @Query(nativeQuery = true, value = """
+    WITH numbered_orders AS (
+        SELECT
+            oi.product_id,
+            o.warehouse_id,
+            o.order_date,
+            oi.quantity,
+            wp.quantity as current_db_stock,
+            ROW_NUMBER() OVER (
+                PARTITION BY oi.product_id, o.warehouse_id 
+                ORDER BY o.order_date DESC
+            ) as row_num
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
+        JOIN warehouse_products wp ON 
+            wp.product_id = oi.product_id AND 
+            wp.warehouse_id = o.warehouse_id
         WHERE o.order_date >= :startDate
-        ORDER BY o.order_date
-    """, nativeQuery = true)
+    )
+    SELECT
+        product_id AS productId,
+        warehouse_id AS warehouseId,
+        order_date AS orderDate,
+        quantity AS quantity,
+        CASE
+            WHEN row_num = 1 THEN current_db_stock  -- Show actual current stock for most recent order
+            ELSE current_db_stock + quantity        -- Show stock before deduction for historical orders
+        END AS currentStock
+    FROM numbered_orders
+    ORDER BY order_date
+""")
     List<OrderExportProjection> findOrdersForExport(@Param("startDate") Instant startDate);
 
 
