@@ -50,7 +50,7 @@ public class AuthenticationCommandController {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        return ResponseEntity.ok(new AuthResponse(null, null, "Login successful"));
+        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), null, "Login successful"));
     }
 
     @PostMapping("/refresh")

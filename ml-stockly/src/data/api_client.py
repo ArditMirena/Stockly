@@ -29,7 +29,8 @@ class APIClient:
                 timeout=5
             )
             response.raise_for_status()
-            self.token = response.json().get('token')
+            self.token = response.json().get('accessToken')
+
             return self.token
         except requests.exceptions.RequestException as e:
             print(f"Authentication failed: {e}")
