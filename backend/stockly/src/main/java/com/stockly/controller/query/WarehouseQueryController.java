@@ -91,4 +91,9 @@ public class WarehouseQueryController {
             ));
         }
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getWarehouseCount() {
+        return ResponseEntity.ok(warehouseQueryService.getWarehousesCount());
+    }
 }

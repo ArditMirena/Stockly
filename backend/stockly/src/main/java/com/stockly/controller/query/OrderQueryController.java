@@ -102,8 +102,10 @@ public class OrderQueryController {
                         PageRequest.of(page, size)
                 )
         );
-
-
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<Long> getOrderCount() {
+        return ResponseEntity.ok(orderQueryService.getOrdersCount());
+    }
 }

@@ -57,4 +57,9 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         final List<Product> products = productRepository.findAll(specification);
         return products.stream().map(ProductMapper::toDTO).collect(Collectors.toList());
     }
+
+    @Override
+    public Long getProductCount() {
+        return productRepository.count();
+    }
 }

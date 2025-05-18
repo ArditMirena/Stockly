@@ -84,6 +84,12 @@ export const usersApi = createApi ({
                 searchTerm,
               },
             }),
+        }),
+        getUsersCount: builder.query<number, void>({
+            query: () => ({
+                url: `/users/count`,
+                method: 'GET',
+            }),
         })
     }),
 });
@@ -94,4 +100,5 @@ export const {
     useUpdateUserMutation,
     useDeleteUserMutation,
     useSearchUsersQuery,
+    useGetUsersCountQuery
   } = usersApi;  

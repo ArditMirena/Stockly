@@ -86,4 +86,9 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
         return companyRepository.findByCompanyType(companyType, pageable)
                 .map(companyMapper::toDto);
     }
+
+    @Override
+    public Long getCompanyCount(){
+        return companyRepository.count();
+    }
 }

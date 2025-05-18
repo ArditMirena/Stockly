@@ -47,4 +47,9 @@ public class UserQueryServiceImpl implements UserQueryService {
         final List<User> users = userRepository.findAll(specification);
         return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
+
+    @Override
+    public Long getUsersCount() {
+        return userRepository.count();
+    }
 }

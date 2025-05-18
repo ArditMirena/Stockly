@@ -17,4 +17,6 @@ public interface WarehouseQueryService {
     Page<WarehouseDTO> getAllWarehousesWithPagination(Pageable pageable);
     Page<WarehouseDTO> getWarehousesByCompanyWithPagination(Long companyId, Pageable pageable);
     List<ProductDTO> getProductsByWarehouseId(Long id);
+
+    Long getWarehousesCount();
 }

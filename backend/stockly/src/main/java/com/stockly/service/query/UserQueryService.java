@@ -10,4 +10,6 @@ public interface UserQueryService {
     public List<UserDTO> getAllUsers();
     public Page<UserDTO> getAllUsersWithPagination(PageRequest pageRequest);
     public List<UserDTO> searchUsers(String searchTerm);
+
+    Long getUsersCount();
 }

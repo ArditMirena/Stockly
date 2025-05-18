@@ -139,6 +139,12 @@ export const productsApi = createApi ({
               searchTerm,
             },
           }),
+      }),
+      getProductsCount: builder.query<number, void>({
+          query: () => ({
+              url: `/products/count`,
+              method: 'GET',
+          }),
       })
   }),
 });
@@ -150,5 +156,6 @@ export const {
   useAddProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useSearchProductsQuery
+  useSearchProductsQuery,
+  useGetProductsCountQuery
 } = productsApi;
