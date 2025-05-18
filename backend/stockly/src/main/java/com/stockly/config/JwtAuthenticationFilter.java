@@ -43,6 +43,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+
+        String path = request.getServletPath();
+
+        if (path.startsWith("/api/v1/auth") &&
+                (path.equals("/api/v1/auth/login") ||
+                        path.equals("/api/v1/auth/signup") ||
+                        path.equals("/api/v1/auth/refresh") ||
+                        path.equals("/api/v1/auth/verify") ||
+                        path.equals("/api/v1/auth/resend"))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String token = extractJwtFromHeader(request);
 
         if (token == null) {
@@ -71,6 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             } catch (Exception exception) {
                 handlerExceptionResolver.resolveException(request, response, null, exception);
+                return;
             }
         }
 

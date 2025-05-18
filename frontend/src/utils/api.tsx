@@ -13,18 +13,64 @@ const api = axios.create({
   },
 });
 
+let isRefreshing = false;
+let failedQueue: {
+  resolve: (value?: unknown) => void;
+  reject: (reason?: any) => void;
+}[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 export const setupResponseInterceptor = (onUnauthorized: () => void) => {
   api.interceptors.response.use(
     (response: AxiosResponse) => response,
-    (error: AxiosError<ErrorResponse>) => {
+    async (error: AxiosError<ErrorResponse>) => {
+      const originalRequest = error.config as any;
+
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(() => api(originalRequest))
+            .catch(err => Promise.reject(err));
+        }
+
+        isRefreshing = true;
+
+        try {
+          const refreshResponse = await api.post("/auth/refresh");
+
+          isRefreshing = false;
+          processQueue(null, refreshResponse.data.accessToken);
+
+          return api(originalRequest);
+        } catch (refreshError) {
+          isRefreshing = false;
+          processQueue(refreshError, null);
+
+          console.error("Refresh token invalid. Logging out...");
+          onUnauthorized();
+          return Promise.reject(refreshError);
+        }
+      }
+
       if (error.response) {
         switch (error.response.status) {
-          case 401:
-            console.error("Session expired. Logging out...");
-            onUnauthorized();
-            break;
           case 403:
-            console.error("Access denied. You do not have permission.");
+            console.error("Access denied.");
             break;
           case 404:
             console.error("Resource not found.");
@@ -33,16 +79,14 @@ export const setupResponseInterceptor = (onUnauthorized: () => void) => {
             console.error("Internal server error.");
             break;
           default:
-            console.error("An error occurred:", error.response.data.message);
+            console.error("Error:", error.response.data.message);
         }
         return Promise.reject(error.response.data);
       } else if (error.request) {
-        // Handle no response errors (e.g., network issues)
-        console.error("No response received from the server.");
+        console.error("No response from server.");
         return Promise.reject({ message: "No response received from the server." });
       } else {
-        // Handle request setup errors
-        console.error("Error in making request:", error.message);
+        console.error("Request setup error:", error.message);
         return Promise.reject({ message: error.message });
       }
     }

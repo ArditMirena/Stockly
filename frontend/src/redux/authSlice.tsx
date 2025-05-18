@@ -1,20 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import Cookies from 'js-cookie';
-import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
 import { User } from '../api/UsersApi';
-
-const token: string | null = Cookies.get('token') || null;
-
-const isTokenExpired = (token: string | null): boolean => {
-  if (!token) return true;
-  try {
-    const { exp } = jwtDecode<{ exp: number }>(token);
-    return exp * 1000 < Date.now();
-  } catch (error) {
-    return true;
-  }
-};
 
 export interface SignupData {
   username: string;
@@ -34,14 +20,12 @@ export interface VerifyUserData {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   error: string | { message: string; details?: any } | null;
 };
 
 const initialState: AuthState = {
   user: null,
-  token: isTokenExpired(token) ? null : token,
   isLoading: false,
   error: null,
 };
@@ -97,7 +81,6 @@ const authSlice = createSlice({
   reducers: {
     logout(state) {
       state.user = null;
-      state.token = null;
     },
   },
   extraReducers: (builder) => {
@@ -116,9 +99,7 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state) => {
         state.isLoading = false;
-        state.token = null;
         state.error = null;
-        state.user = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -144,7 +125,6 @@ const authSlice = createSlice({
       })      
       .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
-        state.token = null;
         state.error = null;
       })
       .addCase(logoutAsync.rejected, (state, action) => {

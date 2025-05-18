@@ -6,6 +6,7 @@ import com.stockly.dto.VerifyUserDTO;
 import com.stockly.model.User;
 import com.stockly.responses.AuthResponse;
 import com.stockly.service.command.AuthenticationService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -36,7 +37,7 @@ public class AuthenticationCommandController {
                 .secure(true)
                 .path("/api/v1/auth/refresh")
                 .maxAge(Duration.ofDays(7))
-                .sameSite("Strict")
+                .sameSite("Strict") // optional but recommended for security
                 .build();
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", tokens.getAccessToken())
@@ -50,7 +51,8 @@ public class AuthenticationCommandController {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), null, "Login successful"));
+
+        return ResponseEntity.ok(new AuthResponse(tokens.getAccessToken(), tokens.getRefreshToken(), "Login successful"));
     }
 
     @PostMapping("/refresh")

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import { useDispatch } from 'react-redux';
-import { useNavigate, NavLink, useLocation } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
 import {
   PiBellRingingBold,
   PiReceiptBold,
@@ -42,7 +42,7 @@ const tabs = {
     { link: '', label: 'SSH Keys', icon: PiKeyBold },
     { link: '', label: 'Databases', icon: PiDatabaseBold },
     { link: '', label: 'Other Settings', icon: PiGearBold },
-    { link: '/admin/warehouse/products', label: 'Warehosue Products', icon: PiShoppingCartBold },
+    { link: '/admin/warehouse/products', label: 'Warehouse Products', icon: PiShoppingCartBold },
   ],
   general: [
     { link: '/admin/users', label: 'Users', icon: PiUsersBold },
@@ -112,7 +112,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
         <AppShell.Navbar p="xs">
           <AppShell.Section grow>
             <Text fw={500} size="sm" className={classes.title} c="dimmed" mb="xs">
-              administrator@stockly.dev
+              <Link to='/admin' style={{textDecoration: 'none', color: 'green', fontWeight: 'bold'}} >administrator@stockly.dev</Link>
             </Text>
 
             <SegmentedControl
