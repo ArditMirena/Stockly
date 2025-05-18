@@ -51,12 +51,6 @@ public class OrderCommandController {
     @PostMapping("/process")
     public ResponseEntity<OrderDTO> processOrder(@Valid @RequestBody OrderRequest request) {
         OrderDTO orderDTO = orderProcessingService.processOrder(request);
-        try {
-            receiptCommandService.sendAndPersistReceipt(orderDTO.getId());
-        } catch (Exception e) {
-            // Log it but don’t fail the order creation
-            e.printStackTrace();
-        }
         return ResponseEntity.status(HttpStatus.CREATED).body(orderDTO);
     }
 }
