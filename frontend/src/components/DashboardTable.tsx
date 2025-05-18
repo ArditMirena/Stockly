@@ -30,6 +30,7 @@ export interface Column<T> {
   header: string;
   cell?: (info: { row: any, getValue: () => any }) => React.ReactNode;
   enableSorting?: boolean;
+  size?: number; // Optional size prop for columns
 }
 
 interface DashboardTableProps<T> {
@@ -63,12 +64,17 @@ const DashboardTable = <T extends WithId>({
     columnHelper.accessor((row: any) => row[col.accessorKey], {
       id: col.accessorKey as string,
       header: () => (
-        <Group gap={4}>
-          <Text fw={600}>{col.header}</Text>
+        <Group gap={4} justify="center">
+          <Text fw={600} truncate>{col.header}</Text>
         </Group>
       ),
-      cell: col.cell,
+      cell: (info) => (
+        <Box style={{ textAlign: 'center' }}>
+          {col.cell ? col.cell(info) : info.getValue()}
+        </Box>
+      ),
       enableSorting: enableSort && col.enableSorting,
+      size: col.size,
     })
   );
 
@@ -98,15 +104,24 @@ const DashboardTable = <T extends WithId>({
           withRowBorders={false}
           highlightOnHover
           striped={false}
+          layout="fixed" // Add fixed layout
         >
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} style={{ padding: '12px' }}>
+                  <th 
+                    key={header.id} 
+                    style={{ 
+                      padding: '12px',
+                      width: header.column.getSize(),
+                      minWidth: header.column.getSize(),
+                      textAlign: 'center'
+                    }}
+                  >
                     <Flex
                       align="center"
-                      justify="start"
+                      justify="center"
                       gap="xs"
                       onClick={header.column.getToggleSortingHandler()}
                       style={{
@@ -129,15 +144,20 @@ const DashboardTable = <T extends WithId>({
               <tr
                 key={row.id}
                 style={{
-                  backgroundColor:
-                    idx % 2 === 0 ? theme.white : theme.colors.gray[0],
+                  backgroundColor: idx % 2 === 0 ? theme.white : theme.colors.gray[0],
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} style={{ padding: '12px' }}>
-                    <Box>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </Box>
+                  <td 
+                    key={cell.id} 
+                    style={{ 
+                      padding: '12px',
+                      width: cell.column.getSize(),
+                      minWidth: cell.column.getSize(),
+                      textAlign: 'center'
+                    }}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
               </tr>

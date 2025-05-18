@@ -137,6 +137,7 @@ const CompaniesDashboard = () => {
                     )}
                 </Group>
             ),
+            size: 220
         },
     ];
 

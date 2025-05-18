@@ -16,6 +16,7 @@ import { PiCheckBold, PiChartLineBold, PiBellRingingBold, PiArrowsClockwiseBold 
 import classes from '../style/Home.module.css';
 import ContactSection from "../components/ContactSection";
 import { Footer } from "../components/Footer.tsx";
+import SupplyChainHomeVector from '../assets/supply-chain.png';
 
 const Home = () => {
   return (
@@ -81,7 +82,7 @@ const Home = () => {
             </Button>
           </Group>
         </div>
-        <Image className={classes.image} />
+        <Image className={classes.image} src={SupplyChainHomeVector} />
       </div>
 
       {/* Features Section */}

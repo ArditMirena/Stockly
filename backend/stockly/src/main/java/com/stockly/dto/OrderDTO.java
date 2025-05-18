@@ -13,7 +13,9 @@ import java.util.List;
 public class OrderDTO {
     private Long id;
     private Long buyerId;
+    private String buyerName;
     private Long supplierId;
+    private String supplierName;
     private Long warehouseId;
     private Instant orderDate;
     private Date deliveryDate;

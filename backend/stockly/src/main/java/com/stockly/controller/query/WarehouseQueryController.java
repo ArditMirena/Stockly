@@ -2,13 +2,16 @@ package com.stockly.controller.query;
 
 import com.stockly.dto.ProductDTO;
 import com.stockly.dto.WarehouseDTO;
+import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
 import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.WarehouseProductService;
+import com.stockly.service.query.WarehouseProductQueryService;
 import com.stockly.service.query.WarehouseQueryService;
 import io.micrometer.common.util.StringUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/warehouses")
-
+@RequiredArgsConstructor
 public class WarehouseQueryController {
 
     private final WarehouseQueryService warehouseQueryService;
@@ -28,10 +31,7 @@ public class WarehouseQueryController {
     private WarehouseProductService warehouseProductService;
     @Autowired
     private WarehouseRepository warehouseRepository;
-
-    public WarehouseQueryController(WarehouseQueryService warehouseQueryService) {
-        this.warehouseQueryService = warehouseQueryService;
-    }
+    private final WarehouseProductQueryService warehouseProductQueryService;
 
     @GetMapping
     public ResponseEntity<List<WarehouseDTO>> getAllWarehouses() {
@@ -95,5 +95,18 @@ public class WarehouseQueryController {
     @GetMapping("/count")
     public ResponseEntity<Long> getWarehouseCount() {
         return ResponseEntity.ok(warehouseQueryService.getWarehousesCount());
+    }
+
+    @GetMapping("/products/page")
+    public ResponseEntity<Page<WarehouseProductDTO>> getProductsByWarehouseWithPagination(
+            @RequestParam(value = "offset", required = false) Integer offset,
+            @RequestParam(value = "pageSize", required = false) Integer pageSize,
+            @RequestParam(value = "sortBy", required = false) String sortBy
+    ) {
+        if(null == offset) offset = 0;
+        if(null == pageSize) pageSize = 10;
+        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
+
+        return ResponseEntity.ok(warehouseProductQueryService.getAllWarehouseProductsWithPagination(PageRequest.of(offset, pageSize, Sort.by(sortBy))));
     }
 }

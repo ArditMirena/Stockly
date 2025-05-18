@@ -37,11 +37,12 @@ import { logoutAsync } from '../redux/authSlice';
 const tabs = {
   account: [
     { link: '', label: 'Notifications', icon: PiBellRingingBold },
-    { link: '', label: 'Billing', icon: PiReceiptBold },
+    { link: '/admin/predictions', label: 'Predictions ', icon: PiReceiptBold },
     { link: '', label: 'Security', icon: PiFingerprintBold },
     { link: '', label: 'SSH Keys', icon: PiKeyBold },
     { link: '', label: 'Databases', icon: PiDatabaseBold },
     { link: '', label: 'Other Settings', icon: PiGearBold },
+    { link: '/admin/warehouse/products', label: 'Warehosue Products', icon: PiShoppingCartBold },
   ],
   general: [
     { link: '/admin/users', label: 'Users', icon: PiUsersBold },

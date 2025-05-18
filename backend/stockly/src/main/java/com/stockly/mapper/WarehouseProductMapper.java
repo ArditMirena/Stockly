@@ -23,6 +23,7 @@ public class WarehouseProductMapper {
                 .createdAt(warehouseProduct.getCreatedAt())
                 .updatedAt(warehouseProduct.getUpdatedAt())
                 .quantity(warehouseProduct.getQuantity())
+                .availability(warehouseProduct.getAvailability())
                 .unitPrice(warehouseProduct.getProduct().getPrice())
                 .build();
     }
@@ -33,6 +34,7 @@ public class WarehouseProductMapper {
         WarehouseProduct warehouseProduct = new WarehouseProduct();
         warehouseProduct.setId(dto.getId());
         warehouseProduct.setQuantity(dto.getQuantity());
+        warehouseProduct.setAvailability(dto.getAvailability());
 
         // Map only IDs for associated entities
         Warehouse warehouse = new Warehouse();

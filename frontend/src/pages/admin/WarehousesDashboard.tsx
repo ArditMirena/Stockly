@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import { useMemo, useState} from 'react';
 import {
     Paper,
     Title,
@@ -219,6 +219,11 @@ const WarehousesDashboard = () => {
                     onClose={() => setConfirmOpen(false)}
                     title="Confirm Delete"
                     centered
+                    style={{
+                        position: 'fixed',
+                        top: '0',
+                        left: '0'
+                    }}
                 >
                     <Text>Are you sure you want to delete this warehouse?</Text>
                     <Group mt="md" justify="flex-end">
