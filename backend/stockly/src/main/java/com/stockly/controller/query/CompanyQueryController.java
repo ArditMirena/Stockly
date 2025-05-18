@@ -71,4 +71,9 @@ public class CompanyQueryController {
             ));
         }
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getCompanyCount() {
+        return ResponseEntity.ok(companyQueryService.getCompanyCount());
+    }
 }

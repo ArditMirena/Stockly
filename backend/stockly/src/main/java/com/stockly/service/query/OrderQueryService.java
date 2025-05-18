@@ -19,6 +19,7 @@ public interface OrderQueryService {
     BigDecimal getTotalRevenueBySupplier(Long supplierId);
     Long countOrdersByStatus(String status);
 
+    Long getOrdersCount();
 
 
     Page<OrderDTO> searchOrders(

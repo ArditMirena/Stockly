@@ -64,4 +64,9 @@ public class UserQueryController {
     ) {
         return ResponseEntity.ok(userQueryService.searchUsers(searchTerm));
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getUserCount() {
+        return ResponseEntity.ok(userQueryService.getUsersCount());
+    }
 }

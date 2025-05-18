@@ -1,74 +1,93 @@
-import { PiChartLineBold } from 'react-icons/pi';
+import {PiChartLineBold, PiFactoryBold, PiPackageBold, PiUsersBold, PiWarehouseBold, PiHandbagBold} from 'react-icons/pi';
 import { Center, Group, Paper, RingProgress, SimpleGrid, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
+import { useGetProductsCountQuery } from '../api/productsApi';
+import { useGetCompaniesCountQuery } from '../api/companiesApi';
+import { useGetOrdersCountQuery } from '../api/ordersApi';
+import { useGetWarehousesCountQuery } from '../api/warehousesApi';
+import { useGetUsersCountQuery } from '../api/UsersApi';
 
 const icons = {
-  cl: PiChartLineBold
+  us: PiUsersBold,
+  cm: PiFactoryBold,
+  wh: PiWarehouseBold,
+  or: PiPackageBold,
+  pd: PiHandbagBold
 };
 
-const data = [
-  { label: 'Products', stats: 456578, progress: 65, color: 'green', icon: 'cl' },
-  { label: 'New users', stats: 2550, progress: 72, color: 'blue', icon: 'cl' },
-  { label: 'Orders', stats: 4735, progress: 30, color: 'red', icon: 'cl' },
-] as const;
-
 export function StatsRing() {
-  const [displayedStats, setDisplayedStats] = useState(
-    data.map(() => 0)
-  );
+  const { data: productCount = 0 } = useGetProductsCountQuery();
+  const { data: companiesCount = 0 } = useGetCompaniesCountQuery();
+  const { data: ordersCount = 0 } = useGetOrdersCountQuery();
+  const { data: warehousesCount = 0 } = useGetWarehousesCountQuery();
+  const { data: usersCount = 0 } = useGetUsersCountQuery();
+
+  const baseData = [
+    { label: 'Users', stats: usersCount, color: 'yellow', icon: 'us' },
+    { label: 'Products', stats: productCount, color: 'green', icon: 'pd' },
+    { label: 'Companies', stats: companiesCount, color: 'blue', icon: 'cm' },
+    { label: 'Orders', stats: ordersCount, color: 'red', icon: 'or' },
+    { label: 'Warehouses', stats: warehousesCount, color: 'orange', icon: 'wh' },
+  ] as const;
+
+  const [animatedStats, setAnimatedStats] = useState<number[]>([]);
+  const [animatedProgress, setAnimatedProgress] = useState<number[]>([]);
 
   useEffect(() => {
-    const duration = 2000;
+    const maxCount = Math.max(...baseData.map((s) => s.stats), 1);
+    const duration = 1500;
     const startTime = performance.now();
-    
+
     const animate = (currentTime: number) => {
       const elapsedTime = currentTime - startTime;
       const progress = Math.min(elapsedTime / duration, 1);
-      
-      const newDisplayedStats = data.map((stat) => {
-        return Math.floor(stat.stats * progress);
+
+      const stats = baseData.map((stat) => Math.floor(stat.stats * progress));
+      const progressValues = baseData.map((stat) => {
+        const percent = (stat.stats / maxCount) * 100;
+        return percent * progress;
       });
-      
-      setDisplayedStats(newDisplayedStats);
-      
+
+      setAnimatedStats(stats);
+      setAnimatedProgress(progressValues);
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       }
     };
-    
+
     requestAnimationFrame(animate);
-  }, []);
+  }, [productCount, usersCount, companiesCount, ordersCount, warehousesCount]);
 
-  const stats = data.map((stat, index) => {
+  const stats = baseData.map((stat, index) => {
     const Icon = icons[stat.icon];
-    
-    const formattedStats = displayedStats[index].toLocaleString();
-    
-    return (
-      <Paper withBorder radius="md" p="lg" key={stat.label}>
-        <Group>
-          <RingProgress
-            size={80}
-            roundCaps
-            thickness={8}
-            sections={[{ value: stat.progress, color: stat.color }]}
-            label={
-              <Center>
-                <Icon size={20} />
-              </Center>
-            }
-          />
+    const displayedStat = animatedStats[index]?.toLocaleString() ?? '0';
+    const progress = animatedProgress[index] ?? 0;
 
-          <div>
-            <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
-              {stat.label}
-            </Text>
-            <Text fw={700} size="xl">
-              {formattedStats}
-            </Text>
-          </div>
-        </Group>
-      </Paper>
+    return (
+        <Paper withBorder radius="md" p="lg" key={stat.label}>
+          <Group>
+            <RingProgress
+                size={80}
+                roundCaps
+                thickness={8}
+                sections={[{ value: progress, color: stat.color }]}
+                label={
+                  <Center>
+                    <Icon size={20} />
+                  </Center>
+                }
+            />
+            <div>
+              <Text c="dimmed" size="xs" tt="uppercase" fw={700}>
+                {stat.label}
+              </Text>
+              <Text fw={700} size="xl">
+                {displayedStat}
+              </Text>
+            </div>
+          </Group>
+        </Paper>
     );
   });
 

@@ -126,15 +126,8 @@ public class OrderQueryServiceImpl implements OrderQueryService {
         ).map(orderMapper::toDto);
     }
 
-
-
-
-
-
-
-
-
-
-
-
+    @Override
+    public Long getOrdersCount(){
+        return orderRepository.count();
+    }
 }

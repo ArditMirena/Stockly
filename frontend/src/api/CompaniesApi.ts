@@ -126,6 +126,12 @@ export const companiesApi = createApi({
                     searchTerm,
                 },
             }),
+        }),
+        getCompaniesCount: builder.query<number, void>({
+            query: () => ({
+                url: `/companies/count`,
+                method: 'GET',
+            }),
         })
     }),
 });
@@ -139,5 +145,6 @@ export const {
     useDeleteCompanyMutation,
     useGetCompaniesByTypeQuery,
     useGetCompaniesByTypeWithPaginationQuery,
-    useSearchCompaniesQuery
+    useSearchCompaniesQuery,
+    useGetCompaniesCountQuery
 } = companiesApi;

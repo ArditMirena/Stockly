@@ -93,6 +93,12 @@ export const warehousesApi = createApi({
                 method: 'DELETE',
             }),
         }),
+        getWarehousesCount: builder.query<number, void>({
+            query: () => ({
+                url: `/warehouses/count`,
+                method: 'GET',
+            }),
+        }),
         getWarehouseProducts: builder.query<Product[], { warehouseId: number }>({
             query: ({ warehouseId }) => ({
                 url: `/warehouses/${warehouseId}/products`,
@@ -108,5 +114,6 @@ export const {
     useGetAllWarehousesWithPaginationQuery,
     useSearchWarehousesQuery,
     useDeleteWarehouseMutation,
-    useGetWarehouseProductsQuery
+    useGetWarehouseProductsQuery,
+    useGetWarehousesCountQuery
 } = warehousesApi;

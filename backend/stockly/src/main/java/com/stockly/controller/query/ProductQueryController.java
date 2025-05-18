@@ -49,4 +49,9 @@ public class ProductQueryController {
     ) {
         return ResponseEntity.ok(productQueryService.searchProducts(searchTerm));
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getProductCount() {
+        return ResponseEntity.ok(productQueryService.getProductCount());
+    }
 }

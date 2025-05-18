@@ -99,4 +99,9 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
                 .map(ProductMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public Long getWarehousesCount(){
+        return warehouseRepository.count();
+    }
 }

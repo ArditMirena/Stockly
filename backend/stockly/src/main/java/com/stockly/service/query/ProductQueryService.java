@@ -12,4 +12,6 @@ public interface ProductQueryService {
     Optional<ProductDTO> getProductById(Long id);
     List<ProductDTO> searchProducts(String searchTerm);
     Page<ProductDTO> getAllProductsWithPagination(PageRequest pageRequest);
+
+    Long getProductCount();
 }

@@ -141,6 +141,12 @@ export const ordersApi = createApi({
         method: 'GET',
       }),
     }),
+    getOrdersCount: builder.query<number, void>({
+      query: () => ({
+        url: `/orders/count`,
+        method: 'GET',
+      }),
+    })
   }),
 });
 
@@ -155,4 +161,5 @@ export const {
   useDeleteOrderMutation,
   useSearchOrdersQuery,
   useVerifyBuyerMutation,
+  useGetOrdersCountQuery
 } = ordersApi;
