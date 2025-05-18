@@ -1,9 +1,20 @@
 // src/pages/admin/PredictionsDashboard.tsx
 import React, { useState } from 'react';
-import { StockLevelChart } from '../../components/StockLevelChart.tsx'
+import { StockLevelChart } from '../../components/StockLevelChart.tsx';
 import { RestockPieChart } from '../../components/RestockPieChart.tsx';
 import DashboardTable, { Column } from '../../components/DashboardTable.tsx';
 import { PredictionResult, useGetCurrentPredictionsQuery } from '../../api/PredictionsApi.ts';
+import {
+    Select,
+    Grid,
+    Card,
+    LoadingOverlay,
+    Alert,
+    Pagination,
+    Text,
+    Container,
+    Stack
+} from '@mantine/core';
 
 export const PredictionsDashboard: React.FC = () => {
     const { data: predictions = [], isLoading, isError } = useGetCurrentPredictionsQuery();
@@ -12,8 +23,8 @@ export const PredictionsDashboard: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 10;
 
-    if (isLoading) return <div>Loading predictions...</div>;
-    if (isError) return <div>Error loading predictions</div>;
+    if (isLoading) return <LoadingOverlay visible />;
+    if (isError) return <Alert color="red" title="Error">Error loading predictions</Alert>;
 
     const filteredPredictions = predictions.filter(pred => {
         if (selectedWarehouse && selectedProduct) {
@@ -74,15 +85,15 @@ export const PredictionsDashboard: React.FC = () => {
             accessorKey: 'recommendation',
             header: 'Restock Qty',
             enableSorting: true,
-            cell: ({ getValue, row }) => {
+            cell: ({ getValue }) => {
                 const recommendation = getValue() as { suggested_restock: number };
                 return (
-                    <span style={{
-                        color: recommendation.suggested_restock > 0 ? 'red' : 'green',
-                        fontWeight: recommendation.suggested_restock > 0 ? 'bold' : 'normal'
-                    }}>
-            {recommendation.suggested_restock}
-          </span>
+                    <Text 
+                        c={recommendation.suggested_restock > 0 ? 'red' : 'green'}
+                        fw={recommendation.suggested_restock > 0 ? 'bold' : 'normal'}
+                    >
+                        {recommendation.suggested_restock}
+                    </Text>
                 );
             }
         },
@@ -90,7 +101,7 @@ export const PredictionsDashboard: React.FC = () => {
             accessorKey: 'stock_data',
             header: 'Days Remaining',
             enableSorting: true,
-            cell: ({ getValue, row }) => {
+            cell: ({ getValue }) => {
                 const stockData = getValue() as { days_remaining: number };
                 return stockData.days_remaining.toFixed(1);
             }
@@ -98,59 +109,85 @@ export const PredictionsDashboard: React.FC = () => {
     ];
 
     const handlePageChange = (page: number) => {
-        setCurrentPage(page);
+        setCurrentPage(page - 1); // Mantine Pagination is 1-based
     };
 
     return (
-        <div className="dashboard-container">
-            <div className="filters">
-                <select
-                    value={selectedWarehouse || ''}
-                    onChange={e => {
-                        setSelectedWarehouse(e.target.value ? Number(e.target.value) : null);
-                        setCurrentPage(0);
-                    }}
-                >
-                    <option value="">All Warehouses</option>
-                    {Array.from(new Set(predictions.map(p => p.warehouse_id))).map(id => (
-                        <option key={id} value={id}>Warehouse {id}</option>
-                    ))}
-                </select>
+        <Container size="xl" p="md">
+            <Stack gap="md">
+                <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Select
+                            label="Warehouse"
+                            placeholder="All Warehouses"
+                            value={selectedWarehouse?.toString() || null}
+                            onChange={(value) => {
+                                setSelectedWarehouse(value ? Number(value) : null);
+                                setCurrentPage(0);
+                            }}
+                            data={Array.from(new Set(predictions.map(p => p.warehouse_id))).map(id => ({
+                                value: id.toString(),
+                                label: `Warehouse ${id}`
+                            }))}
+                            clearable
+                        />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                        <Select
+                            label="Product"
+                            placeholder="All Products"
+                            value={selectedProduct?.toString() || null}
+                            onChange={(value) => {
+                                setSelectedProduct(value ? Number(value) : null);
+                                setCurrentPage(0);
+                            }}
+                            data={availableProducts.map(id => ({
+                                value: id.toString(),
+                                label: `Product ${id}`
+                            }))}
+                            clearable
+                        />
+                    </Grid.Col>
+                </Grid>
 
-                <select
-                    value={selectedProduct || ''}
-                    onChange={e => {
-                        setSelectedProduct(e.target.value ? Number(e.target.value) : null);
-                        setCurrentPage(0);
-                    }}
-                >
-                    <option value="">All Products</option>
-                    {availableProducts.map(id => (
-                        <option key={id} value={id}>Product {id}</option>
-                    ))}
-                </select>
-            </div>
+                <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                        <Card withBorder radius="md" p="md" h="100%">
+                            <StockLevelChart 
+                                data={filteredPredictions} 
+                                warehouseId={selectedWarehouse || undefined}
+                            />
+                        </Card>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                        <Card withBorder radius="md" p="md" h="100%">
+                            <RestockPieChart data={filteredPredictions} />
+                        </Card>
+                    </Grid.Col>
+                </Grid>
 
-            <div className="charts-grid">
-                <div className="chart-card">
-                    <StockLevelChart data={filteredPredictions} warehouseId={selectedWarehouse || undefined}/>
-                </div>
-                <div className="chart-card">
-                <RestockPieChart data={filteredPredictions} />
-                </div>
-            </div>
-
-            <div className="table-section">
-                <DashboardTable<PredictionResult>
-                    tableData={paginatedData}
-                    allColumns={columns}
-                    enableSort={true}
-                    totalPages={totalPages}
-                    currentPage={currentPage}
-                    fetchData={handlePageChange}
-                />
-            </div>
-        </div>
+                <Card withBorder radius="md" p="md">
+                    <DashboardTable<PredictionResult>
+                        tableData={paginatedData}
+                        allColumns={columns}
+                        enableSort={true}
+                        totalPages={totalPages}
+                        currentPage={currentPage}
+                        fetchData={handlePageChange}
+                    />
+                    {totalPages > 1 && (
+                        <Pagination
+                            total={totalPages}
+                            value={currentPage + 1}
+                            onChange={handlePageChange}
+                            mt="md"
+                            siblings={1}
+                            boundaries={1}
+                        />
+                    )}
+                </Card>
+            </Stack>
+        </Container>
     );
 };
 

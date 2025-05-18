@@ -16,8 +16,49 @@ export interface WarehouseDTO {
     companyId: number;
 }
 
+export interface WarehouseProductDTO {
+    id: number;
+    warehouseId: number;
+    warehouseName: string;
+    productId: number;
+    quantity: number;
+    availability: string;
+    createdAt: string;
+    updatedAt: string;
+    productTitle: string;
+    productSku: string;
+    productThumbnail: string;
+    unitPrice: number;
+}
+
 interface PaginatedWarehouseResponse {
     content: WarehouseDTO[];
+    pageable: {
+        pageNumber: number;
+        pageSize: number;
+        sort: {
+            empty: boolean;
+            sorted: boolean;
+            unsorted: boolean;
+        };
+    };
+    totalElements: number;
+    totalPages: number;
+    last: boolean;
+    size: number;
+    number: number;
+    sort: {
+        empty: boolean;
+        sorted: boolean;
+        unsorted: boolean;
+    };
+    first: boolean;
+    numberOfElements: number;
+    empty: boolean;
+}
+
+export interface PaginatedWarehouseProductResponse {
+    content: WarehouseProductDTO[];
     pageable: {
         pageNumber: number;
         pageSize: number;
@@ -99,7 +140,25 @@ export const warehousesApi = createApi({
                 method: 'GET'
             }),
             providesTags: ['Warehouse']
+        }),
+        assignProductToWarehouse: builder.mutation<void, { productId: number; quantity: number; warehouseId: number }>({
+            query: ({ productId, quantity, warehouseId }) => ({
+                url: `/warehouses/assign-product/${productId}/${quantity}/towarehouse/${warehouseId}`,
+                method: 'POST',
             }),
+        }),
+        getWarehouseProductsWithPagination: builder.query<PaginatedWarehouseProductResponse, PaginationParams>({
+            query: (params) => ({
+                url: '/warehouses/products/page',
+                method: 'GET',
+                params: {
+                    offset: params?.offset || 0,
+                    pageSize: params?.pageSize || 10,
+                    sortBy: params?.sortBy || 'id'
+                }
+            }),
+            providesTags: ['Warehouse']
+        }),
     }),
 });
 
@@ -108,5 +167,7 @@ export const {
     useGetAllWarehousesWithPaginationQuery,
     useSearchWarehousesQuery,
     useDeleteWarehouseMutation,
-    useGetWarehouseProductsQuery
+    useGetWarehouseProductsQuery,
+    useAssignProductToWarehouseMutation,
+    useGetWarehouseProductsWithPaginationQuery
 } = warehousesApi;

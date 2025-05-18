@@ -15,7 +15,9 @@ interface OrderItemDTO {
 export interface OrderDTO {
   id: number;
   buyerId: number;
+  buyerName: string;
   supplierId: number;
+  supplierName: string;
   warehouseId: number;
   orderDate: string;
   deliveryDate: string;
@@ -79,16 +81,16 @@ export const ordersApi = createApi({
         method: 'GET'
       }),
     }),
-    getPaginatedOrders: builder.query<PaginatedOrderResponse, PaginationParams>({
+    getOrdersWithPagination: builder.query<PaginatedOrderResponse, PaginationParams> ({
       query: (params) => ({
-        url: '/orders',
+        url: `/orders/page`,
         method: 'GET',
         params: {
           offset: params?.offset || 0,
           pageSize: params?.pageSize || 10,
           sortBy: params?.sortBy || 'id'
         }
-      }),
+      })
     }),
     getOrderById: builder.query<OrderDTO, number>({
       query: (id) => ({
@@ -128,8 +130,8 @@ export const ordersApi = createApi({
         method: 'DELETE',
       }),
     }),
-    searchOrders: builder.query<OrderDTO[], string>({
-      query: (searchTerm) => ({
+    searchOrders: builder.query<OrderDTO[], string | void>({
+      query: (searchTerm = "") => ({
         url: '/orders/search',
         method: 'GET',
         params: { searchTerm },
@@ -146,7 +148,7 @@ export const ordersApi = createApi({
 
 export const {
   useGetOrdersQuery,
-  useGetPaginatedOrdersQuery,
+  useGetOrdersWithPaginationQuery,
   useGetOrderByIdQuery,
   useCreateOrderMutation,
   useUpdateOrderMutation,

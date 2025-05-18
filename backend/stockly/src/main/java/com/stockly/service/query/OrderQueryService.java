@@ -2,6 +2,7 @@ package com.stockly.service.query;
 
 import com.stockly.dto.OrderDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
@@ -20,15 +21,8 @@ public interface OrderQueryService {
     Long countOrdersByStatus(String status);
 
 
-
-    Page<OrderDTO> searchOrders(
-            Long buyerId,
-            Long supplierId,
-            String status,
-            Date startDate,
-            Date endDate,
-            Pageable pageable
-    );
+    Page<OrderDTO> getAllOrdersWithPagination(PageRequest pageRequest);
+    List<OrderDTO> searchOrders(String searchTerm);
 
 
 

@@ -7,10 +7,15 @@ import com.stockly.model.Order;
 import com.stockly.model.enums.OrderStatus;
 import com.stockly.repository.OrderRepository;
 import com.stockly.service.query.OrderQueryService;
+import com.stockly.specification.OrderSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -94,47 +99,23 @@ public class OrderQueryServiceImpl implements OrderQueryService {
         return orderRepository.countByStatus(status);
     }
 
-
-
-
-
     @Override
-    public Page<OrderDTO> searchOrders(
-            Long buyerId,
-            Long supplierId,
-            String status,
-            Date startDate,
-            Date endDate,
-            Pageable pageable
-    ) {
-        OrderStatus orderStatus = null;
-        if (status != null) {
-            try {
-                orderStatus = OrderStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid order status: " + status);
-            }
-        }
+    public Page<OrderDTO> getAllOrdersWithPagination(PageRequest pageRequest) {
+        Page<Order> orders = orderRepository.findAll(pageRequest);
 
-        return orderRepository.searchOrders(
-                buyerId,
-                supplierId,
-                orderStatus,
-                startDate,
-                endDate,
-                pageable
-        ).map(orderMapper::toDto);
+        List<OrderDTO> orderDTOS = orders.stream()
+                .map(orderMapper::toDto)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(orderDTOS, pageRequest, orders.getTotalElements());
     }
 
-
-
-
-
-
-
-
-
-
+    @Override
+    public List<OrderDTO> searchOrders(String searchTerm) {
+        final Specification<Order> specification = OrderSpecification.unifiedSearch(searchTerm);
+        final List<Order> orders = orderRepository.findAll(specification);
+        return orders.stream().map(orderMapper::toDto).collect(Collectors.toList());
+    }
 
 
 }

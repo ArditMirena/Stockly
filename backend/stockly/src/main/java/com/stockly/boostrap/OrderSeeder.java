@@ -73,7 +73,7 @@ public class OrderSeeder implements CommandLineRunner {
                 order.setSupplier(supplier);
                 order.setWarehouse(warehouse);
                 order.setOrderDate(generateRandomPastDate());
-                order.setStatus(getRandomOrderStatus());
+                order.setStatus(OrderStatus.CREATED);
 
                 // Add 1-5 items to the order
                 int itemCount = 1 + new Random().nextInt(5);

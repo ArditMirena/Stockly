@@ -6,6 +6,10 @@ import {
   useSearchProductsQuery,
 } from '../../api/ProductsApi';
 import {
+  useGetAllWarehousesQuery,
+  useAssignProductToWarehouseMutation
+} from '../../api/WarehousesApi';
+import {
   Paper,
   Title,
   Divider,
@@ -20,14 +24,22 @@ import {
   Text,
   TextInput
 } from '@mantine/core';
+import { showNotification } from '@mantine/notifications';
 import { useDebouncedValue } from '@mantine/hooks';
-import { PiTrashBold, PiMagnifyingGlassBold } from 'react-icons/pi';
+import { PiTrashBold, PiMagnifyingGlassBold, PiPlusBold, PiCheckBold } from 'react-icons/pi';
 import DashboardTable, { Column } from '../../components/DashboardTable';
+import DashboardCrudModal from '../../components/DashboardCrudModal';
 
 const ProductsDashboard = () => {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [assignProduct] = useAssignProductToWarehouseMutation();
+  const { data: allWarehouses } = useGetAllWarehousesQuery();
 
   const {
     data: paginatedResponse,
@@ -122,6 +134,17 @@ const ProductsDashboard = () => {
       cell: ({ getValue }) => (
         <Group justify="center">
           <ActionIcon
+            color="blue"
+            variant="light"
+            onClick={() => {
+              setSelectedProductId(getValue());
+              setAssignModalOpen(true);
+            }}
+            title="Assign to Warehouse"
+          >
+            <PiPlusBold size={18} />
+          </ActionIcon>
+          <ActionIcon
             color="red"
             variant="light"
             onClick={() => {
@@ -163,14 +186,74 @@ const ProductsDashboard = () => {
             <Loader />
           </Box>
         ) : (
-          <DashboardTable
-            tableData={tableData}
-            allColumns={columns}
-            enableSort
-            totalPages={totalPages}
-            currentPage={page}
-            fetchData={setPage}
-          />
+          <>
+            <DashboardTable
+              tableData={tableData}
+              allColumns={columns}
+              enableSort
+              totalPages={totalPages}
+              currentPage={page}
+              fetchData={setPage}
+            />
+            <DashboardCrudModal
+              opened={assignModalOpen}
+              onClose={() => {
+                setAssignModalOpen(false);
+                setSelectedProductId(null);
+                setSelectedWarehouseId(null);
+                setQuantity(1);
+              }}
+              title="Assign Product to Warehouse"
+              onSubmit={async () => {
+                if (!selectedProductId || !selectedWarehouseId) return;
+
+                try {
+                  await assignProduct({
+                    productId: selectedProductId,
+                    quantity,
+                    warehouseId: selectedWarehouseId,
+                  }).unwrap();
+                  showNotification({
+                    title: 'Product Assigned',
+                    message: `Product was successfully assigned to the warehouse.`,
+                    color: 'green',
+                    icon: <PiCheckBold />,
+                  });
+
+                  setAssignModalOpen(false);
+                  setSelectedProductId(null);
+                  setSelectedWarehouseId(null);
+                  setQuantity(1);
+                } catch (error) {
+                  console.error('Assignment failed:', error);
+                }
+              }}
+              submitLabel="Assign"
+            >
+              <Stack>
+                <TextInput
+                  label="Quantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.currentTarget.value))}
+                  min={1}
+                />
+                <Text>Select Warehouse:</Text>
+                <Stack>
+                  {allWarehouses?.map((w) => (
+                    <Button
+                      key={w.id}
+                      variant={selectedWarehouseId === w.id ? 'filled' : 'light'}
+                      onClick={() => setSelectedWarehouseId(w.id)}
+                      fullWidth
+                    >
+                      {w.name}
+                    </Button>
+                  ))}
+                </Stack>
+              </Stack>
+            </DashboardCrudModal>
+          </>
         )}
 
         <Modal

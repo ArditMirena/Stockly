@@ -38,10 +38,12 @@ public class OrderMapper {
 
         if (order.getBuyer() != null) {
             dto.setBuyerId(order.getBuyer().getId());
+            dto.setBuyerName(order.getBuyer().getCompanyName());
         }
 
         if (order.getSupplier() != null) {
             dto.setSupplierId(order.getSupplier().getId());
+            dto.setSupplierName(order.getSupplier().getCompanyName());
         }
 
         if(order.getWarehouse() != null) {

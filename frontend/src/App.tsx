@@ -12,6 +12,7 @@ import OrdersDashboard from "./pages/admin/OrdersDashboard";
 import WarehousesDashboard from "./pages/admin/WarehousesDashboard.tsx";
 import TrackShipment from './pages/admin/TrackShipment.tsx'
 import PredictionsDashboard from './pages/admin/PredictionsDashboard.tsx'
+import WarehouseProductsDashboard from './pages/admin/WarehouseProductsDashboard.tsx'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path='orders' element={<OrdersDashboard />} />
           <Route path='shipments/track' element={<TrackShipment />} />
           <Route path='predictions' element={<PredictionsDashboard />} />
+          <Route path='warehouse/products' element={<WarehouseProductsDashboard />} />
         </Route>
       </Routes>
     </Router>

@@ -6,6 +6,7 @@ import com.easypost.model.Address;
 import com.easypost.model.Shipment;
 import com.easypost.service.EasyPostClient;
 import com.stockly.model.Order;
+import com.stockly.model.enums.OrderStatus;
 import com.stockly.repository.OrderRepository;
 import com.stockly.model.*;
 import com.stockly.service.EasyPostService;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +62,9 @@ public class EasyPostServiceImpl implements EasyPostService {
         epShipment = client.shipment.buy(epShipment.getId(), buyParams);
 
         order.setShipmentId(epShipment.getId());
+        order.setStatus(OrderStatus.SHIPPED);
+        BigDecimal shipmentCost = new BigDecimal(selectedRate.getRate());
+        order.setTotalPrice(order.getTotalPrice().add(shipmentCost));
         orderRepository.save(order);
 
         return epShipment;

@@ -8,9 +8,11 @@ import com.stockly.service.impl.query.OrderExportService;
 import com.stockly.service.impl.query.StockCalculationService;
 import com.stockly.service.query.OrderQueryService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -82,28 +84,23 @@ public class OrderQueryController {
         return ResponseEntity.ok(orderExportService.exportOrders(queryDate));
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<Page<OrderDTO>> searchOrders(
-            @RequestParam(required = false) Long buyerId,
-            @RequestParam(required = false) Long supplierId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+    @GetMapping("/page")
+    public ResponseEntity<Page<OrderDTO>> getAllOrdersWithPagination(
+            @RequestParam(value = "offset", required = false) Integer offset,
+            @RequestParam(value = "pageSize", required = false) Integer pageSize,
+            @RequestParam(value = "sortBy", required = false) String sortBy
     ) {
-        return ResponseEntity.ok(
-                orderQueryService.searchOrders(
-                        buyerId,
-                        supplierId,
-                        status,
-                        startDate,
-                        endDate,
-                        PageRequest.of(page, size)
-                )
-        );
+        if(null == offset) offset = 0;
+        if(null == pageSize) pageSize = 10;
+        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
+        return ResponseEntity.ok(orderQueryService.getAllOrdersWithPagination(PageRequest.of(offset, pageSize, Sort.by(sortBy))));
+    }
 
-
+    @GetMapping("/search")
+    public ResponseEntity<List<OrderDTO>> searchOrders(
+            @RequestParam(required = false) String searchTerm
+    ) {
+        return ResponseEntity.ok(orderQueryService.searchOrders(searchTerm));
     }
 
 }

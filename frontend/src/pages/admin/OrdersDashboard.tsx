@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   useCreateOrderMutation,
-  useGetPaginatedOrdersQuery,
+  useGetOrdersWithPaginationQuery,
   useSearchOrdersQuery,
   OrderDTO,
 } from '../../api/ordersApi';
@@ -71,7 +71,7 @@ const OrdersDashboard = () => {
   const {
     data: paginatedResponse,
     isLoading: isPaginatedLoading,
-  } = useGetPaginatedOrdersQuery({
+  } = useGetOrdersWithPaginationQuery({
     offset: page,
     pageSize: 10,
   });
@@ -204,14 +204,20 @@ const OrdersDashboard = () => {
       cell: (info) => info.getValue(),
     },
     {
-      accessorKey: 'buyerId',
+      accessorKey: 'buyerName',
       header: 'Buyer',
       enableSorting: false,
       cell: (info) => info.getValue(),
     },
     {
-      accessorKey: 'supplierId',
+      accessorKey: 'supplierName',
       header: 'Supplier',
+      enableSorting: false,
+      cell: (info) => info.getValue(),
+    },
+    {
+      accessorKey: 'warehouseId',
+      header: 'Warehouse ID',
       enableSorting: false,
       cell: (info) => info.getValue(),
     },
@@ -232,6 +238,7 @@ const OrdersDashboard = () => {
       header: 'Shipment ID',
       enableSorting: true,
       cell: (info) => info.getValue(),
+      size: 300
     },
     {
       accessorKey: 'totalPrice',
@@ -252,9 +259,6 @@ const OrdersDashboard = () => {
             </ActionIcon>
             <ActionIcon color="blue" variant="light" onClick={() => handleOpenModal(order, 'edit')}>
               <PiPencilSimpleLineBold size={18} />
-            </ActionIcon>
-            <ActionIcon color="red" variant="light">
-              <PiTrashBold size={18} />
             </ActionIcon>
           </Group>
         );
