@@ -1,10 +1,14 @@
 package com.stockly.exception;
 
-public class CustomException extends RuntimeException {
-  private final CustomError error;
+import lombok.Getter;
 
-  public CustomException(CustomError error) {
-    super(error.getMessage());
-    this.error = error;
+@Getter
+public class CustomException extends RuntimeException {
+  public CustomException(String message) {
+    super(message);
   }
-};
+
+  public CustomException(String message, Throwable cause) {
+    super(message, cause);
+  }
+}
