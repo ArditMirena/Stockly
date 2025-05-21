@@ -43,12 +43,6 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
         Company company = companyMapper.createNewCompanyFromDto(companyDTO);
         company.setAddress(address);
 
-        // Ensure company type is set before assigning to user
-        if (companyDTO.getWarehouses() != null && !companyDTO.getWarehouses().isEmpty()) {
-            company.setCompanyType("SUPPLIER");
-        } else if (companyDTO.getBusinessType() != null && !companyDTO.getBusinessType().isEmpty()) {
-            company.setCompanyType("BUYER");
-        }
 
         // Save first to ensure ID is generated
         company = companyRepository.saveAndFlush(company);

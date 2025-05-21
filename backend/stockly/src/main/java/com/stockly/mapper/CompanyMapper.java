@@ -37,7 +37,7 @@ public class CompanyMapper {
         dto.setManager(company.getManager().getId());
         dto.setCreatedAt(company.getCreatedAt());
         dto.setUpdatedAt(company.getUpdatedAt());
-
+        dto.setHasProductionFacility(company.isHasProductionFacility());
 
         if(company.getAddress() != null) {
             dto.setAddress(addressMapper.toDto(company.getAddress()));
@@ -95,6 +95,8 @@ public class CompanyMapper {
         if (dto.getUpdatedAt() != null) {
             entity.setUpdatedAt(dto.getUpdatedAt());
         }
+
+        entity.setHasProductionFacility(dto.isHasProductionFacility());
 
         if (dto.getAddress() != null) {
             City city = cityRepository.findById(dto.getAddress().getCityId())

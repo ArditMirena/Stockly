@@ -1,6 +1,8 @@
 package com.stockly.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.stockly.factory.CompanyTypeStrategyFactory;
+import com.stockly.strategy.CompanyTypeStrategy;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,6 +54,9 @@ public class Company {
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Warehouse> warehouses = new ArrayList<>(); // For Supplier
 
+    @Column(name = "has_production_facility")
+    private boolean hasProductionFacility; // for manufacturer
+
     // Relationship with orders (Buyer)
     @OneToMany(mappedBy = "buyer")
     private List<Order> ordersAsBuyer;
@@ -70,14 +75,14 @@ public class Company {
     }
 
     public void determineCompanyType() {
-        if (!warehouses.isEmpty()) {
-            this.companyType = "SUPPLIER";
-        } else if (businessType != null && !businessType.isEmpty()) {
-            this.companyType = "BUYER";
+        CompanyTypeStrategy strategy = CompanyTypeStrategyFactory.getStrategy(this);
+        if (strategy != null) {
+            strategy.apply(this);
         } else {
             this.companyType = null;
         }
     }
+
 
     public void setBusinessType(String businessType) {
         this.businessType = businessType;
