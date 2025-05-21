@@ -29,6 +29,7 @@ public class CompanyDTO {
     private String companyType;
     private String businessType;
     private Long manager;
+    private boolean hasProductionFacility;
 
     private Instant createdAt;
     private Instant updatedAt;

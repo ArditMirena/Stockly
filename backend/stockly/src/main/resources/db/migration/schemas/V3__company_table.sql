@@ -9,6 +9,7 @@ CREATE TABLE company (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
     business_type VARCHAR(100),
+    has_production_facility BOOLEAN DEFAULT FALSE,
 
     CONSTRAINT fk_manager FOREIGN KEY (manager_id) REFERENCES users(id),
     CONSTRAINT fk_address FOREIGN KEY (address_id) REFERENCES address(id)
