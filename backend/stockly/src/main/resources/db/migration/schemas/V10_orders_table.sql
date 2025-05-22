@@ -2,7 +2,8 @@ CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     buyer_id BIGINT NOT NULL,
     supplier_id BIGINT NOT NULL,
-    warehouse_id BIGINT,
+    source_warehouse_id BIGINT,
+    destination_warehouse_id BIGINT,
     order_date TIMESTAMP WITH TIME ZONE,
     delivery_date TIMESTAMP,
     status VARCHAR(50) NOT NULL,
@@ -11,11 +12,13 @@ CREATE TABLE orders (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_order_buyer
-    FOREIGN KEY (buyer_id) REFERENCES company(id),
+        FOREIGN KEY (buyer_id) REFERENCES company(id),
     CONSTRAINT fk_order_supplier
-    FOREIGN KEY (supplier_id) REFERENCES company(id),
-    CONSTRAINT fk_order_warehouse
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+        FOREIGN KEY (supplier_id) REFERENCES company(id),
+    CONSTRAINT fk_order_sourceWarehouse
+        FOREIGN KEY (source_warehouse_id) REFERENCES warehouses(id),
+    CONSTRAINT fk_order_destinationWarehouse
+        FOREIGN KEY (destination_warehouse_id) REFERENCES warehouses(id),
     CONSTRAINT chk_status
     CHECK (status IN ('CREATED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'))
 );

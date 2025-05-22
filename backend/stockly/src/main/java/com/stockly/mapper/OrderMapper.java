@@ -46,8 +46,12 @@ public class OrderMapper {
             dto.setSupplierName(order.getSupplier().getCompanyName());
         }
 
-        if(order.getWarehouse() != null) {
-            dto.setWarehouseId(order.getWarehouse().getId());
+        if(order.getSourceWarehouse() != null) {
+            dto.setSourceWarehouseId(order.getSourceWarehouse().getId());
+        }
+
+        if(order.getDestinationWarehouse() != null) {
+            dto.setDestinationWarehouseId(order.getDestinationWarehouse().getId());
         }
 
         if (order.getItems() != null && !order.getItems().isEmpty()) {
@@ -96,10 +100,16 @@ public class OrderMapper {
             order.setSupplier(supplier);
         }
 
-        if (dto.getWarehouseId() != null) {
+        if (dto.getSourceWarehouseId() != null) {
             Warehouse warehouse = new Warehouse();
-            warehouse.setId(dto.getWarehouseId());
-            order.setWarehouse(warehouse);
+            warehouse.setId(dto.getSourceWarehouseId());
+            order.setSourceWarehouse(warehouse);
+        }
+
+        if (dto.getDestinationWarehouseId() != null) {
+            Warehouse warehouse = new Warehouse();
+            warehouse.setId(dto.getDestinationWarehouseId());
+            order.setDestinationWarehouse(warehouse);
         }
 
         // Handle order items if present in DTO

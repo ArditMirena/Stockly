@@ -46,6 +46,16 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             buyer.setOrdersAsBuyer(null);
             buyer.setOrdersAsSupplier(null);
             order.setBuyer(buyer);
+            if (buyer.getCompanyType().equals("SUPPLIER")) {
+                if (dto.getDestinationWarehouseId() != null && buyer.getWarehouses().contains(warehouseRepository.findById(dto.getDestinationWarehouseId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Destination Warehouse not found with id: "
+                                + dto.getDestinationWarehouseId() + " in Buyer Company with id : " + buyer.getId())))) {
+
+                    Warehouse warehouse = warehouseRepository.findById(dto.getDestinationWarehouseId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Destination Warehouse not found with id: " + dto.getDestinationWarehouseId()));
+                    order.setDestinationWarehouse(warehouse);
+                }
+            }
         }
 
         if (dto.getSupplierId() != null) {
@@ -56,10 +66,10 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             order.setSupplier(supplier);
         }
 
-        if (dto.getWarehouseId() != null) {
-            Warehouse warehouse = warehouseRepository.findById(dto.getWarehouseId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: " + dto.getWarehouseId()));
-            order.setWarehouse(warehouse);
+        if (dto.getSourceWarehouseId() != null) {
+            Warehouse warehouse = warehouseRepository.findById(dto.getSourceWarehouseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Source Warehouse not found with id: " + dto.getSourceWarehouseId()));
+            order.setSourceWarehouse(warehouse);
         }
 
         // Process order items

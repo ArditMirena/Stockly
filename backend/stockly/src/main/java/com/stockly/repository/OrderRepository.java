@@ -82,24 +82,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     WITH numbered_orders AS (
         SELECT
             oi.product_id,
-            o.warehouse_id,
+            o.source_warehouse_id,
             o.order_date,
             oi.quantity,
             wp.quantity as current_db_stock,
             ROW_NUMBER() OVER (
-                PARTITION BY oi.product_id, o.warehouse_id 
+                PARTITION BY oi.product_id, o.source_warehouse_id 
                 ORDER BY o.order_date DESC
             ) as row_num
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN warehouse_products wp ON 
             wp.product_id = oi.product_id AND 
-            wp.warehouse_id = o.warehouse_id
+            wp.warehouse_id = o.sourceWarehouse_id
         WHERE o.order_date >= :startDate
     )
     SELECT
         product_id AS productId,
-        warehouse_id AS warehouseId,
+        source_warehouse_id AS warehouseId,
         order_date AS orderDate,
         quantity AS quantity,
         CASE
@@ -115,7 +115,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
     SELECT 
         o.id as orderId,
-        o.warehouse.id as warehouseId,
+        o.sourceWarehouse.id as warehouseId,
         o.orderDate as orderDate,
         oi.product.id as productId,
         oi.quantity as quantity
@@ -128,13 +128,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
         SELECT 
             oi.product.id as productId,
-            o.warehouse.id as warehouseId,
+            o.sourceWarehouse.id as warehouseId,
             o.orderDate as orderDate,
             oi.quantity as quantity,
             (SELECT COALESCE(SUM(wp.quantity), 0)
              FROM WarehouseProduct wp
              WHERE wp.product.id = oi.product.id
-             AND wp.warehouse.id = o.warehouse.id
+             AND wp.warehouse.id = o.sourceWarehouse.id
              AND (wp.updatedAt < o.orderDate OR wp.updatedAt IS NULL)
             ) as stockAtTime
         FROM Order o

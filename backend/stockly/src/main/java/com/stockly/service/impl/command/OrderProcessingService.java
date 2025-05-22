@@ -17,7 +17,6 @@ import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.OrderCommandService;
 import com.stockly.service.command.WarehouseCommandService;
-import com.stockly.service.command.WarehouseProductCommandService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,18 +39,25 @@ public class OrderProcessingService {
 
     public OrderDTO processOrder(OrderRequest request) {
         // 1. Validate warehouse
-        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found"));
+        Warehouse sourceWarehouse = warehouseRepository.findById(request.getSourceWarehouseId())
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: "+ request.getSourceWarehouseId()));
+
+
 
         // 2. Check product availability in warehouse
-        checkProductAvailability(warehouse, request.getItems());
+        checkProductAvailability(sourceWarehouse, request.getItems());
 
         // 3. Create order
-        OrderDTO orderDTO = createOrderDTO(request, warehouse);
+        OrderDTO orderDTO = createOrderDTO(request, sourceWarehouse);
+        if (request.getDestinationWarehouseId() != null) {
+            Warehouse destinationWarehouse = warehouseRepository.findById(request.getDestinationWarehouseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Destination Warehouse not found with id: " + request.getDestinationWarehouseId()));
+            orderDTO.setDestinationWarehouseId(destinationWarehouse.getId());
+        }
         Order order = orderCommandService.createOrder(orderDTO);
 
         // 4. Update warehouse inventory
-        updateWarehouseInventory(warehouse, request.getItems());
+        updateWarehouseInventory(sourceWarehouse, request.getItems());
 
         return orderMapper.toDto(order);
     }
@@ -78,7 +84,7 @@ public class OrderProcessingService {
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setBuyerId(request.getBuyerId());
         orderDTO.setSupplierId(warehouse.getCompany().getId());
-        orderDTO.setWarehouseId(warehouse.getId());
+        orderDTO.setSourceWarehouseId(warehouse.getId());
         orderDTO.setStatus("PROCESSING");
 
         List<OrderItemDTO> itemDTOs = request.getItems().stream()

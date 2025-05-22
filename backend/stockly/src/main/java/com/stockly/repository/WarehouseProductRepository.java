@@ -56,7 +56,7 @@ public interface WarehouseProductRepository extends JpaRepository<WarehouseProdu
             SUM(wp.quantity) as currentStock
         FROM WarehouseProduct wp
         WHERE (wp.product.id, wp.warehouse.id) IN (
-            SELECT oi.product.id, o.warehouse.id 
+            SELECT oi.product.id, o.sourceWarehouse.id 
             FROM Order o JOIN o.items oi 
             WHERE o.orderDate >= :startDate
         )
@@ -98,7 +98,7 @@ public interface WarehouseProductRepository extends JpaRepository<WarehouseProdu
             wp.updated_at as timestamp,
             wp.quantity as quantityChange,
             'RESTOCK' as changeType
-        FROM warehouse_product wp
+        FROM warehouse_products wp
         WHERE wp.updated_at >= :startDate
         
         ORDER BY timestamp
