@@ -60,8 +60,12 @@ public class Order {
     private Date updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "warehouse_id")
-    private Warehouse warehouse;
+    @JoinColumn(name = "source_warehouse_id")
+    private Warehouse sourceWarehouse;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destination_warehouse_id", nullable = true)
+    private Warehouse destinationWarehouse;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();

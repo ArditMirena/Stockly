@@ -1,3 +1,4 @@
+/*
 package com.stockly.boostrap;
 
 import com.stockly.dto.request.OrderItemRequest;
@@ -144,4 +145,4 @@ public class OrderSeeder implements CommandLineRunner {
         OrderStatus[] statuses = OrderStatus.values();
         return statuses[new Random().nextInt(statuses.length)];
     }
-}
+}*/

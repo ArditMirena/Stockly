@@ -16,7 +16,8 @@ public class OrderDTO {
     private String buyerName;
     private Long supplierId;
     private String supplierName;
-    private Long warehouseId;
+    private Long sourceWarehouseId;
+    private Long destinationWarehouseId;
     private Instant orderDate;
     private Date deliveryDate;
     private String status;
