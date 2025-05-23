@@ -1,4 +1,4 @@
-import { useMemo, useState} from 'react';
+import { useMemo, useState } from 'react';
 import {
     Paper,
     Title,
@@ -12,19 +12,25 @@ import {
     Button,
     Text,
     TextInput,
-    Menu
+    Menu,
+    Select,
+    Notification,
+    Tabs,
+    Badge
 } from '@mantine/core';
 import { useLocation } from 'react-router-dom';
 import { useDebouncedValue } from '@mantine/hooks';
-import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold } from 'react-icons/pi';
+import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold, PiPlusBold } from 'react-icons/pi';
 import DashboardTable, { Column } from '../../components/DashboardTable';
 import {
     useGetAllWarehousesWithPaginationQuery,
     useSearchWarehousesQuery,
     useDeleteWarehouseMutation,
+    useAddWarehouseMutation,
     WarehouseDTO
 } from '../../api/WarehousesApi';
-import { useGetCompaniesQuery } from '../../api/CompaniesApi';
+import { useGetCompaniesQuery, useGetCountriesQuery, useGetCitiesByCountryQuery } from '../../api/CompaniesApi';
+import DashboardCrudModal from '../../components/DashboardCrudModal';
 
 const WarehousesDashboard = () => {
     const [page, setPage] = useState(0);
@@ -35,8 +41,42 @@ const WarehousesDashboard = () => {
         location.state?.preselectedCompany?.id || null
     );
 
-    // Fetch companies for the filter dropdown
-    const { data: companies } = useGetCompaniesQuery();
+    // Modal state
+    const [modalOpen, setModalOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [name, setName] = useState('');
+    const [street, setStreet] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+    const [selectedCity, setSelectedCity] = useState<string | null>(null);
+    const [selectedCompanyType, setSelectedCompanyType] = useState<'SUPPLIER' | 'MANUFACTURER'>('SUPPLIER');
+    const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+
+    // Fetch data
+    const { data: allCompanies = [] } = useGetCompaniesQuery();
+    const { data: countries = [], isLoading: isCountriesLoading } = useGetCountriesQuery();
+    const {
+        data: cities = [],
+        isFetching: isCitiesLoading
+    } = useGetCitiesByCountryQuery(selectedCountry ? Number(selectedCountry) : 0, {
+        skip: !selectedCountry
+    });
+
+    // Filter companies based on type
+    const filteredCompanies = useMemo(() => {
+        return allCompanies.filter(company => {
+            if (selectedCompanyType === 'SUPPLIER') {
+                return !company.businessType && !company.hasProductionFacility;
+            } else { // MANUFACTURER
+                return !company.businessType && company.hasProductionFacility;
+            }
+        });
+    }, [allCompanies, selectedCompanyType]);
+
+    const companyOptions = filteredCompanies.map(company => ({
+        value: company.id.toString(),
+        label: company.companyName,
+    }));
 
     const {
         data: paginatedResponse,
@@ -45,9 +85,8 @@ const WarehousesDashboard = () => {
         offset: page,
         pageSize: 10,
         sortBy: 'id',
-        companyId: companyFilter || undefined // Send undefined instead of null
+        companyId: companyFilter || undefined
     });
-
 
     const {
         data: searchedWarehouses = [],
@@ -63,15 +102,85 @@ const WarehousesDashboard = () => {
         }
     );
 
+    // Mutations
     const [deleteWarehouse] = useDeleteWarehouseMutation();
+    const [addWarehouse, { isLoading: isAddingWarehouse }] = useAddWarehouseMutation();
+
+    // Delete confirmation state
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
+
+    // Options for selects
+    const countryOptions = countries
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(country => ({
+            value: country.id.toString(),
+            label: country.name,
+        }));
+
+    const cityOptions = cities.map(city => ({
+        value: city.id.toString(),
+        label: city.name,
+    }));
 
     const handleDelete = async () => {
         if (deleteId !== null) {
             await deleteWarehouse(deleteId);
             setConfirmOpen(false);
             setDeleteId(null);
+        }
+    };
+
+    const handleOpenModal = () => {
+        setModalOpen(true);
+        setError(null);
+        setName('');
+        setStreet('');
+        setPostalCode('');
+        setSelectedCountry(null);
+        setSelectedCity(null);
+        setSelectedCompany(null);
+        setSelectedCompanyType('SUPPLIER');
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setError(null);
+    };
+
+    const handleSubmit = async () => {
+        setError(null);
+
+        // Validation
+        const errors = [];
+        if (!name) errors.push('Name is required');
+        if (!street) errors.push('Street is required');
+        if (!postalCode) errors.push('Postal code is required');
+        if (!selectedCity) errors.push('City is required');
+        if (!selectedCompany) errors.push('Company is required');
+
+        if (errors.length > 0) {
+            setError(errors.join(', '));
+            return;
+        }
+
+        try {
+            const warehouseData = {
+                name,
+                address: {
+                    street,
+                    postalCode,
+                    cityId: Number(selectedCity),
+                },
+                companyId: Number(selectedCompany),
+            };
+
+            await addWarehouse(warehouseData).unwrap();
+            handleCloseModal();
+        } catch (err) {
+            console.error('Failed to add warehouse:', err);
+            setError('Failed to add warehouse. Please try again.');
         }
     };
 
@@ -93,7 +202,7 @@ const WarehousesDashboard = () => {
             header: 'Company',
             enableSorting: true,
             cell: (info) => {
-                const company = companies?.find(c => c.id === info.getValue());
+                const company = allCompanies.find(c => c.id === info.getValue());
                 return company?.companyName || info.getValue();
             },
         },
@@ -127,7 +236,6 @@ const WarehousesDashboard = () => {
         },
     ];
 
-
     const tableData = useMemo(() => {
         if (debouncedSearch.trim().length > 0) {
             return searchedWarehouses || [];
@@ -156,7 +264,7 @@ const WarehousesDashboard = () => {
                                     variant="outline"
                                 >
                                     {companyFilter
-                                        ? companies?.find(c => c.id === companyFilter)?.companyName || `Company ${companyFilter}`
+                                        ? allCompanies.find(c => c.id === companyFilter)?.companyName || `Company ${companyFilter}`
                                         : 'All Companies'}
                                 </Button>
                             </Menu.Target>
@@ -164,7 +272,7 @@ const WarehousesDashboard = () => {
                                 <Menu.Item onClick={() => setCompanyFilter(null)}>
                                     All Companies
                                 </Menu.Item>
-                                {companies?.map(company => (
+                                {allCompanies.map(company => (
                                     <Menu.Item
                                         key={company.id}
                                         onClick={() => setCompanyFilter(company.id)}
@@ -184,6 +292,12 @@ const WarehousesDashboard = () => {
                                 setSearchTerm(e.currentTarget.value);
                             }}
                         />
+                        <Button
+                            leftSection={<PiPlusBold size={16} />}
+                            onClick={handleOpenModal}
+                        >
+                            Add Warehouse
+                        </Button>
                     </Group>
                 </Group>
 
@@ -219,11 +333,6 @@ const WarehousesDashboard = () => {
                     onClose={() => setConfirmOpen(false)}
                     title="Confirm Delete"
                     centered
-                    style={{
-                        position: 'fixed',
-                        top: '0',
-                        left: '0'
-                    }}
                 >
                     <Text>Are you sure you want to delete this warehouse?</Text>
                     <Group mt="md" justify="flex-end">
@@ -235,6 +344,98 @@ const WarehousesDashboard = () => {
                         </Button>
                     </Group>
                 </Modal>
+
+                <DashboardCrudModal
+                    opened={modalOpen}
+                    title="Add Warehouse"
+                    onClose={handleCloseModal}
+                    onSubmit={handleSubmit}
+                    submitLabel="Create"
+                    isSubmitting={isAddingWarehouse}
+                    size="lg"
+                >
+                    <Stack>
+                        <Tabs
+                            value={selectedCompanyType}
+                            onChange={(value) => {
+                                setSelectedCompanyType(value as 'SUPPLIER' | 'MANUFACTURER');
+                                setSelectedCompany(null); // Reset company selection when type changes
+                            }}
+                        >
+                            <Tabs.List>
+                                <Tabs.Tab value="SUPPLIER">
+                                    <Badge color="blue" variant="light">
+                                        SUPPLIER
+                                    </Badge>
+                                </Tabs.Tab>
+                                <Tabs.Tab value="MANUFACTURER">
+                                    <Badge color="orange" variant="light">
+                                        MANUFACTURER
+                                    </Badge>
+                                </Tabs.Tab>
+                            </Tabs.List>
+                        </Tabs>
+
+                        <Select
+                            label="Company"
+                            placeholder={`Select ${selectedCompanyType.toLowerCase()}`}
+                            value={selectedCompany}
+                            onChange={setSelectedCompany}
+                            data={companyOptions}
+                            required
+                            searchable
+                            nothingFoundMessage="No companies found"
+                        />
+
+                        <TextInput
+                            label="Warehouse Name"
+                            value={name}
+                            onChange={(e) => setName(e.currentTarget.value)}
+                            required
+                        />
+
+                        <Select
+                            label="Country"
+                            placeholder="Select country"
+                            value={selectedCountry}
+                            onChange={setSelectedCountry}
+                            data={countryOptions}
+                            required
+                            rightSection={isCountriesLoading ? <Loader size="xs"/> : null}
+                        />
+
+                        <Select
+                            label="City"
+                            placeholder={selectedCountry ? "Select city" : "Select country first"}
+                            value={selectedCity}
+                            onChange={setSelectedCity}
+                            data={cityOptions}
+                            disabled={!selectedCountry}
+                            required
+                            rightSection={isCitiesLoading ? <Loader size="xs"/> : null}
+                        />
+
+                        <TextInput
+                            label="Street Address"
+                            value={street}
+                            onChange={(e) => setStreet(e.currentTarget.value)}
+                            required
+                        />
+
+                        <TextInput
+                            label="Postal Code"
+                            value={postalCode}
+                            onChange={(e) => setPostalCode(e.currentTarget.value)}
+                            required
+                        />
+
+                        {error && (
+                            <Notification color="red" onClose={() => setError(null)} mt="md">
+                                {error}
+                            </Notification>
+                        )}
+                    </Stack>
+                </DashboardCrudModal>
             </Stack>
         </Paper>
     );
