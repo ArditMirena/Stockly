@@ -104,7 +104,7 @@ const DashboardTable = <T extends WithId>({
           withRowBorders={false}
           highlightOnHover
           striped={false}
-          layout="fixed" // Add fixed layout
+          layout="fixed"
         >
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -116,7 +116,11 @@ const DashboardTable = <T extends WithId>({
                       padding: '12px',
                       width: header.column.getSize(),
                       minWidth: header.column.getSize(),
-                      textAlign: 'center'
+                      textAlign: 'center',
+                      backgroundColor: theme.colors.dark[5],
+                      color: theme.white,
+                      position: 'sticky',
+                      top: 0,
                     }}
                   >
                     <Flex

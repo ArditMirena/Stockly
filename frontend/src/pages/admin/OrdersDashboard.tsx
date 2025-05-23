@@ -5,8 +5,8 @@ import {
   useSearchOrdersQuery,
   OrderDTO,
 } from '../../api/ordersApi';
-import { useGetAllWarehousesQuery, useGetWarehouseProductsQuery } from '../../api/WarehousesApi';
-import { useGetCompaniesByTypeQuery } from '../../api/CompaniesApi';
+import { useGetAllWarehousesQuery, useGetWarehouseProductsQuery, useAssignProductToWarehouseMutation } from '../../api/WarehousesApi';
+import { useGetCompaniesQuery } from '../../api/CompaniesApi';
 import { useCreateShipmentMutation } from '../../api/ShipmentsApi';
 import {
   ActionIcon,
@@ -28,7 +28,6 @@ import { showNotification } from '@mantine/notifications';
 import {
   PiMagnifyingGlassBold,
   PiPencilSimpleLineBold,
-  PiTrashBold,
   PiEyeBold
 } from 'react-icons/pi';
 import DashboardTable, { Column } from '../../components/DashboardTable';
@@ -44,11 +43,13 @@ const OrdersDashboard = () => {
 
   const [buyerId, setBuyerId] = useState<string | null>(null);
   const [warehouseId, setWarehouseId] = useState<string | null>(null);
+  const [destinationWarehouseId, setDestinationWarehouseId] = useState<string | null>(null);
   const [productId, setProductId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
+  const [assignProduct] = useAssignProductToWarehouseMutation();
 
   const { data: warehouses = [] } = useGetAllWarehousesQuery();
-  const { data: buyers = [] } = useGetCompaniesByTypeQuery('BUYER');
+  const { data: buyers = [] } = useGetCompaniesQuery();
 
   const { 
     data: warehouseProducts = [], 
@@ -71,6 +72,7 @@ const OrdersDashboard = () => {
   const {
     data: paginatedResponse,
     isLoading: isPaginatedLoading,
+    refetch: refetchOrders
   } = useGetOrdersWithPaginationQuery({
     offset: page,
     pageSize: 10,
@@ -90,7 +92,7 @@ const OrdersDashboard = () => {
 
     if (order) {
       setBuyerId(order.buyerId.toString());
-      setWarehouseId(order.warehouseId.toString());
+      setWarehouseId(order.sourceWarehouseId.toString());
       if (order.items && order.items.length > 0) {
         setProductId(order.items[0].productId.toString());
         setQuantity(order.items[0].quantity);
@@ -109,6 +111,7 @@ const OrdersDashboard = () => {
     setModalType(null);
     setBuyerId(null);
     setWarehouseId(null);
+    setDestinationWarehouseId(null);
     setProductId(null);
     setQuantity(1);
   };
@@ -122,17 +125,20 @@ const OrdersDashboard = () => {
     }
 
     try {
-      const payload = {
-        warehouseId: parseInt(warehouseId, 10),
+      const payload: any = {
         buyerId: parseInt(buyerId, 10),
+        sourceWarehouseId: parseInt(warehouseId!, 10),
         items: [{
           productId: parseInt(productId, 10),
           quantity: Number(quantity)
         }]
-      };
-      console.log(JSON.stringify(payload, null, 2));
-      await createOrder(payload).unwrap();
+      };      
+      if (destinationWarehouseId) {
+        payload.destinationWarehouseId = parseInt(destinationWarehouseId, 10);
+      }
+      await createOrder(payload).unwrap;
       handleCloseModal();
+      refetchOrders();
     } catch (err) {
       console.error('Failed to save order:', err);
       setError('Failed to save order. Please try again.');
@@ -140,16 +146,25 @@ const OrdersDashboard = () => {
   };
 
   const handleCreateShipment = async () => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || !selectedOrder.items || selectedOrder.items.length === 0) return;
 
     try {
       await createShipment(selectedOrder.id).unwrap();
+      if (destinationWarehouseId) {
+      const orderItem = selectedOrder.items[0];
+      await assignProduct({
+        productId: orderItem.productId,
+        quantity: orderItem.quantity,
+        warehouseId: parseInt(destinationWarehouseId, 10),
+      }).unwrap();
+    }
       handleCloseModal();
       showNotification({
         title: 'Shipment Created',
         message: `Shipment successfully created for order #${selectedOrder.id}`,
         color: 'green',
       });
+      refetchOrders();
     } catch (error) {
       showNotification({
         title: 'Error',
@@ -185,7 +200,7 @@ const OrdersDashboard = () => {
       data={warehouses.map(w => ({ 
         label: w.name, 
         value: w.id.toString(),
-        description: w.address.country
+        description: `${w.address.cityId}, ${w.address.country}`
       }))}
       value={warehouseId}
       onChange={(value) => {
@@ -216,10 +231,18 @@ const OrdersDashboard = () => {
       cell: (info) => info.getValue(),
     },
     {
-      accessorKey: 'warehouseId',
-      header: 'Warehouse ID',
+      accessorKey: 'sourceWarehouseId',
+      header: 'Source Warehouse ID',
       enableSorting: false,
       cell: (info) => info.getValue(),
+      size: 200,
+    },
+    {
+      accessorKey: 'destinationWarehouseId',
+      header: 'Destination Warehouse ID',
+      enableSorting: false,
+      cell: (info) => info.getValue(),
+      size: 200,
     },
     {
       accessorKey: 'orderDate',
@@ -339,6 +362,18 @@ const OrdersDashboard = () => {
             required
           />
         </Stack>
+        <Select
+          label="Destination Warehouse (optional)"
+          placeholder="Select destination warehouse"
+          data={warehouses.map(w => ({
+            label: w.name,
+            value: w.id.toString(),
+            description: `${w.address.cityId}, ${w.address.country}`
+          }))}
+          value={destinationWarehouseId}
+          onChange={setDestinationWarehouseId}
+          disabled={modalType === 'view'}
+        />
         {error && (
           <Notification color="red" onClose={() => setError(null)}>
             {error}

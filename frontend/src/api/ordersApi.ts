@@ -18,7 +18,8 @@ export interface OrderDTO {
   buyerName: string;
   supplierId: number;
   supplierName: string;
-  warehouseId: number;
+  sourceWarehouseId: number;
+  destinationWarehouseId: number;
   orderDate: string;
   deliveryDate: string;
   status: string;
@@ -33,8 +34,9 @@ interface OrderItemRequest {
 }
 
 interface CreateOrderRequest {
-  warehouseId: number;
+  sourceWarehouseId: number;
   buyerId: number;
+  destinationWarehouseId: number;
   items: OrderItemRequest[];
 }
 
