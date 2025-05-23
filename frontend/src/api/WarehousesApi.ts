@@ -1,6 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "../utils/axiosBaseQuery";
 import { Product } from "./ProductsApi";
+import {Company} from "./CompaniesApi.ts";
 
 export interface AddressDTO {
     street: string;
@@ -106,6 +107,13 @@ export const warehousesApi = createApi({
                 method: 'GET'
             })
         }),
+        addWarehouse: builder.mutation<WarehouseDTO, Partial<WarehouseDTO>>({
+            query: (warehouse) => ({
+                url: `/warehouses`,
+                method: 'POST',
+                data: warehouse,
+            })
+        }),
         getAllWarehousesWithPagination: builder.query<PaginatedWarehouseResponse, PaginationParams>({
             query: (params) => ({
                 url: '/warehouses/page',
@@ -176,5 +184,6 @@ export const {
     useGetWarehouseProductsQuery,
     useGetWarehousesCountQuery,
     useAssignProductToWarehouseMutation,
-    useGetWarehouseProductsWithPaginationQuery
+    useGetWarehouseProductsWithPaginationQuery,
+    useAddWarehouseMutation
 } = warehousesApi;
