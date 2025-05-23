@@ -1,12 +1,25 @@
-import { createApi  } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from '../utils/axiosBaseQuery';
 
+// Interface Definitions
 export interface AddressDTO {
     id?: number;
     street: string;
     cityId: number;
     postalCode: string;
-    country: string;
+    country?: string;
+}
+
+export interface Country {
+    id: number;
+    name: string;
+    isoCode: string;
+}
+
+export interface City {
+    id: number;
+    name: string;
+    country: Country;
 }
 
 export interface Company {
@@ -19,6 +32,8 @@ export interface Company {
     manager: number;
     createdAt: string;
     updatedAt: string;
+    businessType?: string;
+    hasProductionFacility?: boolean;
 }
 
 interface PaginatedCompanyResponse {
@@ -53,22 +68,29 @@ interface PaginationParams {
     sortBy?: string;
 }
 
+// API Definition
 export const companiesApi = createApi({
     reducerPath: 'companiesApi',
     baseQuery: axiosBaseQuery(),
+    tagTypes: ['Company', 'Country', 'City'],
     endpoints: (builder) => ({
-        getCompanies: builder.query<Company[], void> ({
+        // Company Endpoints
+        getCompanies: builder.query<Company[], void>({
             query: () => ({
                 url: `/companies`,
                 method: 'GET'
             }),
+            providesTags: ['Company']
         }),
+
         getCompaniesByType: builder.query<Company[], string>({
             query: (companyType) => ({
                 url: `/companies/type/${companyType}`,
                 method: 'GET'
             }),
+            providesTags: ['Company']
         }),
+
         getCompaniesByTypeWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams & { companyType?: string }>({
             query: (params) => ({
                 url: '/companies/page',
@@ -79,8 +101,10 @@ export const companiesApi = createApi({
                     sortBy: params?.sortBy || 'id',
                     companyType: params?.companyType
                 }
-            })
+            }),
+            providesTags: ['Company']
         }),
+
         getCompaniesWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams>({
             query: (params) => ({
                 url: '/companies/page',
@@ -90,34 +114,43 @@ export const companiesApi = createApi({
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id'
                 }
-            })
+            }),
+            providesTags: ['Company']
         }),
-        getCompanyById: builder.query<Company, number> ({
+
+        getCompanyById: builder.query<Company, number>({
             query: (id) => ({
                 url: `/companies/${id}`,
                 method: 'GET'
             }),
+            providesTags: (result, error, id) => [{ type: 'Company', id }]
         }),
-        addCompany: builder.mutation<Company, Partial<Company>> ({
+
+        addCompany: builder.mutation<Company, Partial<Company>>({
             query: (company) => ({
                 url: `/companies`,
                 method: 'POST',
-                body: company,
-            }),
+                data: company,
+            })
         }),
-        updateCompany: builder.mutation<Company, {id: number, company: Partial<Company>}> ({
-            query: ({id, ...company}) => ({
+
+        updateCompany: builder.mutation<Company, { id: number, company: Partial<Company> }>({
+            query: ({ id, ...company }) => ({
                 url: `/companies/${id}`,
                 method: 'PUT',
                 body: company,
             }),
+            invalidatesTags: (result, error, { id }) => [{ type: 'Company', id }]
         }),
-        deleteCompany: builder.mutation<void, number> ({
+
+        deleteCompany: builder.mutation<void, number>({
             query: (id) => ({
                 url: `/companies/${id}`,
                 method: 'DELETE',
             }),
+            invalidatesTags: ['Company']
         }),
+
         searchCompanies: builder.query<Company[], string | void>({
             query: (searchTerm = "") => ({
                 url: `/companies/search`,
@@ -126,16 +159,80 @@ export const companiesApi = createApi({
                     searchTerm,
                 },
             }),
+            providesTags: ['Company']
         }),
+
         getCompaniesCount: builder.query<number, void>({
             query: () => ({
                 url: `/companies/count`,
                 method: 'GET',
             }),
+            providesTags: ['Company']
+        }),
+
+        // Country Endpoints
+        getCountries: builder.query<Country[], void>({
+            query: () => ({
+                url: `/countries`,
+                method: 'GET'
+            }),
+            providesTags: ['Country']
+        }),
+
+        searchCountries: builder.query<Country[], string>({
+            query: (searchTerm) => ({
+                url: `/countries/search`,
+                method: 'GET',
+                params: { searchTerm }
+            }),
+            providesTags: ['Country']
+        }),
+
+        getCountryById: builder.query<Country, number>({
+            query: (id) => ({
+                url: `/countries/${id}`,
+                method: 'GET'
+            }),
+            providesTags: (result, error, id) => [{ type: 'Country', id }]
+        }),
+
+        // City Endpoints
+        getCities: builder.query<City[], void>({
+            query: () => ({
+                url: `/cities`,
+                method: 'GET'
+            }),
+            providesTags: ['City']
+        }),
+
+        getCitiesByCountry: builder.query<City[], number>({
+            query: (countryId) => ({
+                url: `/cities/country/${countryId}`,
+                method: 'GET'
+            }),
+            providesTags: (result, error, countryId) => [{ type: 'City', id: countryId }]
+        }),
+
+        searchCities: builder.query<City[], string>({
+            query: (searchTerm) => ({
+                url: `/cities/search`,
+                method: 'GET',
+                params: { searchTerm }
+            }),
+            providesTags: ['City']
+        }),
+
+        getCityById: builder.query<City, number>({
+            query: (id) => ({
+                url: `/cities/${id}`,
+                method: 'GET'
+            }),
+            providesTags: (result, error, id) => [{ type: 'City', id }]
         })
     }),
 });
 
+// Export hooks for usage in components
 export const {
     useGetCompaniesQuery,
     useGetCompaniesWithPaginationQuery,
@@ -146,5 +243,12 @@ export const {
     useGetCompaniesByTypeQuery,
     useGetCompaniesByTypeWithPaginationQuery,
     useSearchCompaniesQuery,
-    useGetCompaniesCountQuery
+    useGetCompaniesCountQuery,
+    useGetCountriesQuery,
+    useSearchCountriesQuery,
+    useGetCountryByIdQuery,
+    useGetCitiesQuery,
+    useGetCitiesByCountryQuery,
+    useSearchCitiesQuery,
+    useGetCityByIdQuery
 } = companiesApi;

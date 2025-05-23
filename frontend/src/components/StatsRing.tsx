@@ -1,4 +1,4 @@
-import {PiChartLineBold, PiFactoryBold, PiPackageBold, PiUsersBold, PiWarehouseBold, PiHandbagBold} from 'react-icons/pi';
+import {PiFactoryBold, PiPackageBold, PiUsersBold, PiWarehouseBold, PiHandbagBold} from 'react-icons/pi';
 import { Center, Group, Paper, RingProgress, SimpleGrid, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useGetProductsCountQuery } from '../api/productsApi';
