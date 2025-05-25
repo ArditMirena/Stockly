@@ -88,6 +88,13 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
     }
 
     @Override
+    public List<CompanyDTO> getCompaniesByManager(Long managerId) {
+        return companyRepository.findByManagerId(managerId).stream()
+                .map(companyMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Long getCompanyCount(){
         return companyRepository.count();
     }
