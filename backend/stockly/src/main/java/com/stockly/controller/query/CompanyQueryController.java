@@ -76,4 +76,10 @@ public class CompanyQueryController {
     public ResponseEntity<Long> getCompanyCount() {
         return ResponseEntity.ok(companyQueryService.getCompanyCount());
     }
+
+    @GetMapping("/manager/{managerId}")
+    public ResponseEntity<List<CompanyDTO>> getCompanyByManagerId(@PathVariable Long managerId) {
+        List<CompanyDTO> companies = companyQueryService.getCompaniesByManager(managerId);
+        return ResponseEntity.ok(companies);
+    }
 }

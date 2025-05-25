@@ -18,4 +18,5 @@ public interface CompanyQueryService {
     Page<CompanyDTO> getAllCompaniesWithPagination(PageRequest pageRequest);
     Page<CompanyDTO> getCompaniesByTypeWithPagination(String companyType, Pageable pageable);
     Long getCompanyCount();
+    List<CompanyDTO> getCompaniesByManager(Long managerId);
 }
