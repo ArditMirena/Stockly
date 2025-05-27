@@ -39,19 +39,18 @@ const Login = () => {
 
   const onSubmit = (data: LoginData) => {
     setError(null);
-
     dispatch(login(data))
       .unwrap()
-      dispatch(fetchCurrentUser())
-        .unwrap()
-        .then(() => {
-          navigate('/admin/home');
-        })
-        .catch(() => {
-          setError('Failed to load user details.');
+      .then(() => dispatch(fetchCurrentUser()).unwrap())
+      .then(() => {
+        navigate('/admin/home');
       })
-      .catch(() => {
-        setError('Login failed. Please check your credentials and try again.');
+      .catch((err) => {
+        if (typeof err === 'string') {
+          setError(err);
+        } else {
+          setError('Login failed. Please check your credentials and try again.');
+        }
       });
   };
 
@@ -119,7 +118,7 @@ const Login = () => {
                 Don’t have an account? Register
               </Anchor>
               <Button type="submit" radius="md" disabled={isLoading}>
-                {isLoading ? "Loging in..." : "Login"}
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </Group>
           </form>

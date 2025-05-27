@@ -41,6 +41,7 @@ const UsersDashboard = () => {
   const {
     data: paginatedResponse,
     isLoading: isPaginatedLoading,
+    refetch: refetchUsers,
   } = useGetUsersWithPaginationQuery({
     offset: page,
     pageSize: 10,
@@ -129,6 +130,7 @@ const UsersDashboard = () => {
       }).unwrap();
 
       setModalOpen(false);
+      refetchUsers();
       setSelectedUser(null);
     } catch (err) {
       console.error('Failed to update user:', err);
