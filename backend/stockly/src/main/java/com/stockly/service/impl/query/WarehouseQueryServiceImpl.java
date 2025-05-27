@@ -105,10 +105,4 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
         return warehouseRepository.count();
     }
 
-
-    public List<WarehouseDTO> getWarehousesByManager(Long managerId) {
-        return warehouseRepository.findByManagerId(managerId)
-                .stream().map(warehouseMapper::toDto)
-                .collect(Collectors.toList());
-    }
 }

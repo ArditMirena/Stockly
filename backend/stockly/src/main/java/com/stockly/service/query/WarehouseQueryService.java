@@ -20,5 +20,4 @@ public interface WarehouseQueryService {
 
     Long getWarehousesCount();
 
-    List<WarehouseDTO> getWarehousesByManager(Long managerId);
 }

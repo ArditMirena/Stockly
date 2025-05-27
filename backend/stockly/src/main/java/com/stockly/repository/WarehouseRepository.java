@@ -14,5 +14,4 @@ import java.util.List;
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long>, JpaSpecificationExecutor<Warehouse> {
     List<Warehouse> findByCompanyId(Long companyId);
     boolean existsByName(String name);
-    List<Warehouse> findByManagerId(Long managerId);
 }

@@ -109,9 +109,5 @@ public class WarehouseQueryController {
 
         return ResponseEntity.ok(warehouseProductQueryService.getAllWarehouseProductsWithPagination(PageRequest.of(offset, pageSize, Sort.by(sortBy))));
     }
-
-    @GetMapping("/manager/{managerId}")
-    public ResponseEntity<List<WarehouseDTO>> getWarehousesByManager(@PathVariable Long managerId) {
-        return ResponseEntity.ok(warehouseQueryService.getWarehousesByManager(managerId));
-    }
+    
 }
