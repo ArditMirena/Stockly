@@ -5,6 +5,8 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Unauthorized from './pages/Unauthorized'
+import ServerError from './pages/ServerError'
+import NotFound from './pages/NotFound'
 
 import AdminLayout from './components/layouts/AdminLayout'
 import AdminHome from './pages/admin/AdminHome'
@@ -20,7 +22,31 @@ import WarehouseProductsDashboard from './pages/admin/WarehouseProductsDashboard
 import ProtectedRoute from './components/PrivateRoute'
 import { ROLES } from './utils/Roles'
 
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCurrentUser, logout } from './redux/authSlice';
+import { setupResponseInterceptor } from './utils/api';
+import { AppDispatch, RootState } from './redux/store';
+import { LoadingOverlay } from '@mantine/core';
+
 function App() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { isInitialized, isLoading } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    setupResponseInterceptor(() => {
+      dispatch(logout());
+    });
+
+    if (!isInitialized && !isLoading) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, isInitialized, isLoading]);
+
+  if (!isInitialized && isLoading) {
+    return <LoadingOverlay visible />;
+  }
+
   return (
     <Router>
       <Routes>
@@ -29,6 +55,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/server-error" element={<ServerError />} />
+        <Route path="/not-found" element={<NotFound />} />
 
         {/* Admin area */}
         <Route

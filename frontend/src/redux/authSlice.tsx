@@ -22,12 +22,14 @@ interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | { message: string; details?: any } | null;
+  isInitialized: boolean;
 };
 
 const initialState: AuthState = {
   user: null,
   isLoading: false,
   error: null,
+  isInitialized: false,
 };
 
 export const signup = createAsyncThunk('auth/signup', async (userData: SignupData, { rejectWithValue }) => {
@@ -82,6 +84,9 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null;
     },
+    clearError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -118,10 +123,15 @@ const authSlice = createSlice({
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
+        state.isLoading = false;
+        state.error = null;
+        state.isInitialized = true;
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.user = null;
+        state.isLoading = false;
         state.error = action.payload as string;
+        state.isInitialized = true;
       })      
       .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
@@ -133,4 +143,5 @@ const authSlice = createSlice({
   },
 });
 
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

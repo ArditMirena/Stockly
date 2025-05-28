@@ -2,7 +2,7 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { RootState } from '../redux/store'
-import { Loader } from '@mantine/core'
+import { LoadingOverlay } from '@mantine/core'
 
 interface ProtectedRouteProps {
   allowedRoles: string[]
@@ -10,22 +10,23 @@ interface ProtectedRouteProps {
   redirectToLogin?: string
   redirectToUnauthorized?: string
 }
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+
+const PrivateRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   children,
   redirectToLogin = '/login',
   redirectToUnauthorized = '/unauthorized',
 }) => {
-  const { user, isLoading } = useSelector((state: RootState) => state.auth)
+  const { user, isLoading, error, isInitialized } = useSelector((state: RootState) => state.auth)
 
-  if (isLoading) return <Loader />
+  if (!isInitialized || isLoading) {
+    return <LoadingOverlay visible />
+  }
 
-  // not logged in
-  if (!user) {
+  if (error || !user) {
     return <Navigate to={redirectToLogin} replace />
   }
 
-  // logged in but role not permitted
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to={redirectToUnauthorized} replace />
   }
@@ -33,4 +34,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   return <>{children}</>
 }
 
-export default ProtectedRoute
+export default PrivateRoute;

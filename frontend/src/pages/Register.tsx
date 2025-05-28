@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   ActionIcon,
+  Center,
   Modal
 } from '@mantine/core';
 import { PiGoogleLogoBold, PiFacebookLogoBold, PiArrowLineUpLeftBold, PiXBold } from "react-icons/pi";
@@ -114,68 +115,70 @@ const Register = () => {
       >
         <PiArrowLineUpLeftBold style={{ width: '80%', height: '80%' }} />
       </ActionIcon>
-      <Container size={420} my={40}>
-        <Paper shadow="xl" radius="md" p="xl" withBorder>
-          <Text size="lg" fw={500}>
-            Welcome to <span><Link to={"/"} style={{ textDecoration: 'none', color: 'limegreen' }}>Stockly</Link></span>
-          </Text>
+      <Center style={{ minHeight: '100vh', width: '100%' }}>
+        <Container size={450} style={{ width: '100%' }}>
+          <Paper shadow="xl" radius="md" p="xl" withBorder>
+            <Text size="lg" fw={500}>
+              Welcome to <span><Link to={"/"} style={{ textDecoration: 'none', color: 'limegreen' }}>Stockly</Link></span>
+            </Text>
 
-          <Group grow mb="md" mt="md">
-            <Button variant="default" radius="md" disabled>
-              <PiGoogleLogoBold size={20} />
-              &nbsp;
-              Google
-            </Button>
-            <Button variant="default" radius="md" disabled>
-              <PiFacebookLogoBold size={40} />
-              &nbsp;
-              Facebook
-            </Button>
-          </Group>
-
-          <Divider label="Or register with email" labelPosition="center" my="lg" />
-
-          <form style={{ textAlign: 'left' }} onSubmit={handleRegisterSubmit(onSubmit)}>
-            <Stack>
-              <TextInput
-                label="Username"
-                placeholder="Your username"
-                radius="md"
-                {...registerMain("username")}
-                error={registerErrors.username?.message}
-              />
-              <TextInput
-                label="Email"
-                placeholder="hello@stockly.com"
-                radius="md"
-                {...registerMain("email")}
-                error={registerErrors.email?.message}
-              />
-              <PasswordInput
-                label="Password"
-                placeholder="Your password"
-                radius="md" 
-                {...registerMain("password")}
-                error={registerErrors.password?.message}
-              />
-              <Checkbox 
-                label="I accept terms and conditions"
-                {...registerMain("termsAccepted")}
-                error={registerErrors.termsAccepted?.message}
-              />
-            </Stack>
-
-            <Group justify="space-between" mt="xl">
-              <Anchor component={Link} to="/login" c="dimmed" size="xs">
-                Already have an account? Login
-              </Anchor>
-              <Button type="submit" radius="md" disabled={isLoading}>
-                {isLoading ? "Signing up..." : "Register"}
+            <Group grow mb="md" mt="md">
+              <Button variant="default" radius="md" disabled>
+                <PiGoogleLogoBold size={20} />
+                &nbsp;
+                Google
+              </Button>
+              <Button variant="default" radius="md" disabled>
+                <PiFacebookLogoBold size={40} />
+                &nbsp;
+                Facebook
               </Button>
             </Group>
-          </form>
-        </Paper>
-      </Container>
+
+            <Divider label="Or register with email" labelPosition="center" my="lg" />
+
+            <form style={{ textAlign: 'left' }} onSubmit={handleRegisterSubmit(onSubmit)}>
+              <Stack>
+                <TextInput
+                  label="Username"
+                  placeholder="Your username"
+                  radius="md"
+                  {...registerMain("username")}
+                  error={registerErrors.username?.message}
+                />
+                <TextInput
+                  label="Email"
+                  placeholder="hello@stockly.com"
+                  radius="md"
+                  {...registerMain("email")}
+                  error={registerErrors.email?.message}
+                />
+                <PasswordInput
+                  label="Password"
+                  placeholder="Your password"
+                  radius="md" 
+                  {...registerMain("password")}
+                  error={registerErrors.password?.message}
+                />
+                <Checkbox 
+                  label="I accept terms and conditions"
+                  {...registerMain("termsAccepted")}
+                  error={registerErrors.termsAccepted?.message}
+                />
+              </Stack>
+
+              <Group justify="space-between" mt="xl">
+                <Anchor component={Link} to="/login" c="dimmed" size="xs">
+                  Already have an account? Login
+                </Anchor>
+                <Button type="submit" radius="md" disabled={isLoading}>
+                  {isLoading ? "Signing up..." : "Register"}
+                </Button>
+              </Group>
+            </form>
+          </Paper>
+        </Container>
+      </Center>
       <Modal
           opened={opened}
           onClose={close}
@@ -193,6 +196,7 @@ const Register = () => {
         >
         <form onSubmit={handleVerifySubmit(handleVerify)}>
           <Group justify='space-between'>
+            <Text size='sm' color='gray'>Enter the verification code sent to your email</Text>
             <TextInput
               placeholder="123456"
               radius="md"

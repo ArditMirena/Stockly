@@ -12,7 +12,8 @@ import {
   Stack,
   Text,
   TextInput,
-  ActionIcon
+  ActionIcon,
+  Center
 } from '@mantine/core';
 import { PiGoogleLogoBold, PiFacebookLogoBold, PiArrowLineUpLeftBold  } from "react-icons/pi";
 import { Link } from 'react-router-dom';
@@ -69,61 +70,63 @@ const Login = () => {
       >
         <PiArrowLineUpLeftBold style={{ width: '80%', height: '80%' }} />
       </ActionIcon>
-      <Container size={420} my={40}>
-        <Paper shadow="xl" radius="md" p="xl" withBorder>
-          <Text size="lg" fw={500}>
-            Welcome back to <span><Link to={"/"} style={{textDecoration: 'none', color: 'limegreen'}}>Stockly</Link></span>
-          </Text>
+      <Center style={{ minHeight: '100vh', width: '100%' }}>
+        <Container size={450} style={{ width: '100%' }}>
+          <Paper shadow="xl" radius="md" p="xl" withBorder>
+            <Text size="lg" fw={500}>
+              Welcome back to <span><Link to={"/"} style={{textDecoration: 'none', color: 'limegreen'}}>Stockly</Link></span>
+            </Text>
 
-          <Group grow mb="md" mt="md">
-            <Button variant="default" radius="md" disabled>
-              <PiGoogleLogoBold   size={20} />
-              &nbsp;
-              Google
-            </Button>
-            <Button variant="default" radius="md" disabled>
-              <PiFacebookLogoBold   size={40} />
-              &nbsp;
-              Facebook
-            </Button>
-          </Group>
-
-          <Divider label="Or continue with email" labelPosition="center" my="lg" />
-
-          <form style={{ textAlign: 'left' }} onSubmit={handleSubmit(onSubmit)}>
-            <Stack>
-              <TextInput
-                label="Email"
-                placeholder="hello@stockly.com"
-                radius="md"
-                {...register("email")}
-                error={errors.email?.message}
-              />
-              <PasswordInput
-                label="Password"
-                placeholder="Your password"
-                radius="md"
-                {...register("password")}
-                error={errors.password?.message}
-              />
-              {error && (
-                <Text c="red" size="sm" mt="sm">
-                  {error}
-                </Text>
-              )}
-            </Stack>
-
-            <Group justify="space-between" mt="xl">
-              <Anchor component={Link} to="/register" c="dimmed" size="xs">
-                Don’t have an account? Register
-              </Anchor>
-              <Button type="submit" radius="md" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+            <Group grow mb="md" mt="md">
+              <Button variant="default" radius="md" disabled>
+                <PiGoogleLogoBold size={20} />
+                &nbsp;
+                Google
+              </Button>
+              <Button variant="default" radius="md" disabled>
+                <PiFacebookLogoBold size={20} />
+                &nbsp;
+                Facebook
               </Button>
             </Group>
-          </form>
-        </Paper>
-      </Container>
+
+            <Divider label="Or continue with email" labelPosition="center" my="lg" />
+
+            <form style={{ textAlign: 'left' }} onSubmit={handleSubmit(onSubmit)}>
+              <Stack>
+                <TextInput
+                  label="Email"
+                  placeholder="hello@stockly.com"
+                  radius="md"
+                  {...register("email")}
+                  error={errors.email?.message}
+                />
+                <PasswordInput
+                  label="Password"
+                  placeholder="Your password"
+                  radius="md"
+                  {...register("password")}
+                  error={errors.password?.message}
+                />
+                {error && (
+                  <Text c="red" size="sm" mt="sm">
+                    {error}
+                  </Text>
+                )}
+              </Stack>
+
+              <Group justify="space-between" mt="xl">
+                <Anchor component={Link} to="/register" c="dimmed" size="xs">
+                  Don't have an account? Register
+                </Anchor>
+                <Button type="submit" radius="md" disabled={isLoading}>
+                  {isLoading ? "Logging in..." : "Login"}
+                </Button>
+              </Group>
+            </form>
+          </Paper>
+        </Container>
+      </Center>
     </>
   );
 };
