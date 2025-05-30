@@ -117,7 +117,7 @@ const DashboardTable = <T extends WithId>({
                       width: header.column.getSize(),
                       minWidth: header.column.getSize(),
                       textAlign: 'center',
-                      backgroundColor: theme.colors.dark[5],
+                      backgroundColor: theme.colors.dark[3],
                       color: theme.white,
                       position: 'sticky',
                       top: 0,

@@ -6,7 +6,6 @@ import com.stockly.dto.VerifyUserDTO;
 import com.stockly.model.User;
 import com.stockly.responses.AuthResponse;
 import com.stockly.service.command.AuthenticationService;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -34,10 +33,10 @@ public class AuthenticationCommandController {
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
                 .httpOnly(true)
-                .secure(true)
-                .path("/api/v1/auth/refresh")
+                .secure(false)
+                .path("/")
                 .maxAge(Duration.ofDays(7))
-                .sameSite("Strict") // optional but recommended for security
+                .sameSite("Lax") // optional but recommended for security
                 .build();
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", tokens.getAccessToken())
@@ -74,10 +73,10 @@ public class AuthenticationCommandController {
 
         ResponseCookie newRefreshCookie = ResponseCookie.from("refreshToken", tokens.getRefreshToken())
                 .httpOnly(true)
-                .secure(true)
-                .path("/api/v1/auth/refresh")
+                .secure(false)
+                .path("/")
                 .maxAge(Duration.ofDays(7))
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, newAccessCookie.toString());

@@ -37,7 +37,7 @@ export const signup = createAsyncThunk('auth/signup', async (userData: SignupDat
     const response = await api.post(`/auth/signup`, userData);
     return response.data;
   } catch (error: any) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || error.message);
   }
 });
 
@@ -46,7 +46,7 @@ export const login = createAsyncThunk('auth/login', async (credentials: LoginDat
     const response = await api.post(`/auth/login`, credentials);
     return response.data;
   } catch (error: any) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || error.message);
   }
 });
 
@@ -55,7 +55,7 @@ export const verify = createAsyncThunk('auth/verify', async (verifyUserData: Ver
     const response = await api.post(`/auth/verify`, verifyUserData);
     return response.data;
   } catch (error: any) {
-    return rejectWithValue(error.response.data);
+    return rejectWithValue(error.response?.data || error.message);
   }
 });
 
@@ -65,6 +65,19 @@ export const fetchCurrentUser = createAsyncThunk('users/me', async (_, { rejectW
     return response.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data || 'Unable to fetch user info');
+  }
+});
+
+export const initializeAuth = createAsyncThunk('auth/initializeAuth', async (_, { dispatch, rejectWithValue }) => {
+  try {
+    // 1. Try to refresh access token
+    await api.post("/auth/refresh");
+
+    // 2. Then fetch current user
+    const result = await dispatch(fetchCurrentUser()).unwrap();
+    return result;
+  } catch (err: any) {
+    return rejectWithValue("Unable to initialize auth.");
   }
 });
 
@@ -83,6 +96,7 @@ const authSlice = createSlice({
   reducers: {
     logout(state) {
       state.user = null;
+      state.isInitialized = true; // Add this to prevent re-initialization
     },
     clearError(state) {
       state.error = null;
@@ -92,6 +106,10 @@ const authSlice = createSlice({
     builder
       .addCase(signup.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(signup.fulfilled, (state) => { // Add missing fulfilled case
+        state.isLoading = false;
         state.error = null;
       })
       .addCase(signup.rejected, (state, action) => {
@@ -121,6 +139,10 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
+      .addCase(fetchCurrentUser.pending, (state) => { // Add missing pending case
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
         state.isLoading = false;
@@ -132,13 +154,34 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
         state.isInitialized = true;
-      })      
+      })
+      .addCase(initializeAuth.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isInitialized = true;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(initializeAuth.rejected, (state, action) => {
+        state.user = null;
+        state.isInitialized = true;
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(logoutAsync.pending, (state) => { // Add missing pending case
+        state.isLoading = true;
+      })
       .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
         state.error = null;
+        state.isLoading = false;
       })
       .addCase(logoutAsync.rejected, (state, action) => {
         state.error = action.payload as string;
+        state.isLoading = false;
       });
   },
 });

@@ -24,7 +24,7 @@ import { ROLES } from './utils/Roles'
 
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentUser, logout } from './redux/authSlice';
+import { initializeAuth, logout } from './redux/authSlice';
 import { setupResponseInterceptor } from './utils/api';
 import { AppDispatch, RootState } from './redux/store';
 import { LoadingOverlay } from '@mantine/core';
@@ -39,7 +39,7 @@ function App() {
     });
 
     if (!isInitialized && !isLoading) {
-      dispatch(fetchCurrentUser());
+      dispatch(initializeAuth());
     }
   }, [dispatch, isInitialized, isLoading]);
 

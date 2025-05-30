@@ -79,9 +79,9 @@ export const setupResponseInterceptor = (onUnauthorized: () => void) => {
             console.error("Internal server error.");
             break;
           default:
-            console.error("Error:", error.response.data.message);
+            console.error("Error:", error.response.data?.message || error.message);
         }
-        return Promise.reject(error.response.data);
+        return Promise.reject(error.response.data || { message: error.message });
       } else if (error.request) {
         console.error("No response from server.");
         return Promise.reject({ message: "No response received from the server." });
