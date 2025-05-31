@@ -6,6 +6,7 @@ import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
+import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.WarehouseProductService;
 import com.stockly.service.query.WarehouseProductQueryService;
@@ -45,8 +46,8 @@ public class WarehouseQueryController {
     }
 
     @GetMapping("/{warehouseId}/products")
-    public ResponseEntity<List<ProductDTO>> getProductsByWarehouse(@PathVariable Long warehouseId) {
-        List<ProductDTO> products = warehouseQueryService.getProductsByWarehouseId(warehouseId);
+    public ResponseEntity<List<WarehouseProductDTO>> getProductsByWarehouse(@PathVariable Long warehouseId) {
+        List<WarehouseProductDTO> products = warehouseQueryService.getProductsByWarehouseId(warehouseId);
         return ResponseEntity.ok(products);
     }
 

@@ -1,5 +1,8 @@
-import { Modal, Button, Stack, Group } from '@mantine/core';
+import { Modal, Button, Stack, Group, Alert, Text } from '@mantine/core';
 import { ReactNode } from 'react';
+import { PiWarningBold } from 'react-icons/pi';
+
+export type ModalType = 'view' | 'edit' | 'create';
 
 interface DashboardCrudModalProps {
   opened: boolean;
@@ -11,6 +14,10 @@ interface DashboardCrudModalProps {
   isSubmitting?: boolean;
   disableSubmit?: boolean;
   showSubmitButton?: boolean;
+  modalType?: ModalType;
+  errors?: string[];
+  size?: string;
+  additionalActions?: ReactNode;
 }
 
 export default function DashboardCrudModal({
@@ -23,7 +30,21 @@ export default function DashboardCrudModal({
   isSubmitting = false,
   disableSubmit = false,
   showSubmitButton = true,
+  modalType = 'create',
+  errors = [],
+  size = "md",
+  additionalActions,
 }: DashboardCrudModalProps) {
+  const getSubmitLabel = () => {
+    if (submitLabel !== 'Save') return submitLabel;
+    
+    switch (modalType) {
+      case 'create': return 'Create';
+      case 'edit': return 'Update';
+      default: return 'Save';
+    }
+  };
+
   return (
     <Modal
       opened={opened}
@@ -32,7 +53,7 @@ export default function DashboardCrudModal({
       centered
       radius="md"
       padding="lg"
-      size="md"
+      size={size}
       style={{
         position: 'fixed',
         top: '0',
@@ -44,14 +65,36 @@ export default function DashboardCrudModal({
         onSubmit?.();
       }}>
         <Stack>
+          {/* Form Errors */}
+          {errors.length > 0 && (
+            <Alert 
+              icon={<PiWarningBold size={16} />} 
+              title="Please fix the following errors:" 
+              color="red"
+              variant="light"
+            >
+              <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                {errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </Alert>
+          )}
+
           {children}
+          
           <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={onClose}>
               Close
             </Button>
-            {showSubmitButton && (
-              <Button type="submit" loading={isSubmitting} disabled={disableSubmit}>
-                {submitLabel}
+            {additionalActions}
+            {showSubmitButton && modalType !== 'view' && (
+              <Button 
+                type="submit" 
+                loading={isSubmitting} 
+                disabled={disableSubmit}
+              >
+                {getSubmitLabel()}
               </Button>
             )}
           </Group>

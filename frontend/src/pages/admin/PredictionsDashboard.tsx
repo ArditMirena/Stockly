@@ -1,4 +1,3 @@
-// src/pages/admin/PredictionsDashboard.tsx
 import React, { useState } from 'react';
 import { StockLevelChart } from '../../components/StockLevelChart.tsx';
 import { RestockPieChart } from '../../components/RestockPieChart.tsx';
@@ -13,18 +12,67 @@ import {
     Pagination,
     Text,
     Container,
-    Stack
+    Stack,
+    Title,
+    Badge,
+    Group,
+    ActionIcon,
+    Tooltip,
+    Box,
+    Flex,
+    Paper,
+    ThemeIcon,
+    Divider,
+    Button
 } from '@mantine/core';
+import {
+    PiWarehouse,
+    PiPackage,
+    PiChartBar,
+    PiChartPie,
+    PiTrendUp,
+    PiTrendDown,
+    PiWarning,
+    PiCheckCircle,
+    PiXCircle,
+    PiDownload,
+    PiCalendar,
+    PiClock,
+    PiArrowUp,
+    PiArrowDown,
+    PiArrowCounterClockwise,
+    PiFunnel
+} from 'react-icons/pi';
 
 export const PredictionsDashboard: React.FC = () => {
-    const { data: predictions = [], isLoading, isError } = useGetCurrentPredictionsQuery();
+    const { data: predictions = [], isLoading, isError, refetch } = useGetCurrentPredictionsQuery();
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null);
     const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 10;
 
     if (isLoading) return <LoadingOverlay visible />;
-    if (isError) return <Alert color="red" title="Error">Error loading predictions</Alert>;
+    if (isError) return (
+        <Container size="xl" p="md">
+            <Alert 
+                color="red" 
+                title="Error Loading Predictions" 
+                icon={<PiXCircle size={20} />}
+                variant="filled"
+            >
+                Unable to load prediction data. Please try again.
+                <Button 
+                    variant="white" 
+                    size="xs" 
+                    mt="sm" 
+                    leftSection={<PiArrowCounterClockwise size={14} />}
+                    onClick={() => refetch()}
+                >
+                    Retry
+                </Button>
+            </Alert>
+        </Container>
+    );
 
     const filteredPredictions = predictions.filter(pred => {
         if (selectedWarehouse && selectedProduct) {
@@ -43,6 +91,12 @@ export const PredictionsDashboard: React.FC = () => {
         ))
         : Array.from(new Set(predictions.map(p => p.product_id)));
 
+    // Calculate summary statistics
+    const totalProducts = filteredPredictions.length;
+    const lowStockItems = filteredPredictions.filter(p => p.recommendation.suggested_restock > 0).length;
+    const criticalItems = filteredPredictions.filter(p => p.stock_data.days_remaining < 7).length;
+    const healthyItems = totalProducts - lowStockItems;
+
     // Pagination logic
     const totalPages = Math.ceil(filteredPredictions.length / itemsPerPage);
     const paginatedData = filteredPredictions.slice(
@@ -50,18 +104,41 @@ export const PredictionsDashboard: React.FC = () => {
         (currentPage + 1) * itemsPerPage
     );
 
+    const getStockStatus = (daysRemaining: number, suggestedRestock: number) => {
+        if (suggestedRestock > 0 || daysRemaining < 7) {
+            return { color: 'red', label: 'Critical', icon: <PiWarning size={14} /> };
+        } else if (daysRemaining < 14) {
+            return { color: 'yellow', label: 'Low', icon: <PiClock size={14} /> };
+        }
+        return { color: 'green', label: 'Healthy', icon: <PiCheckCircle size={14} /> };
+    };
+
     const columns: Column<PredictionResult>[] = [
         {
             accessorKey: 'product_id',
             header: 'Product ID',
             enableSorting: true,
-            cell: (info) => info.getValue()
+            cell: (info) => (
+                <Group gap="xs">
+                    <ThemeIcon size="sm" variant="light" color="blue">
+                        <PiPackage size={14} />
+                    </ThemeIcon>
+                    <Text fw={500}>{info.getValue()}</Text>
+                </Group>
+            )
         },
         {
             accessorKey: 'warehouse_id',
             header: 'Warehouse',
             enableSorting: true,
-            cell: (info) => info.getValue()
+            cell: (info) => (
+                <Group gap="xs">
+                    <ThemeIcon size="sm" variant="light" color="grape">
+                        <PiWarehouse size={14} />
+                    </ThemeIcon>
+                    <Text>WH-{info.getValue()}</Text>
+                </Group>
+            )
         },
         {
             accessorKey: 'stock_data',
@@ -69,7 +146,11 @@ export const PredictionsDashboard: React.FC = () => {
             enableSorting: true,
             cell: ({ getValue }) => {
                 const stockData = getValue() as { current: number };
-                return stockData.current;
+                return (
+                    <Text fw={600} c="dark">
+                        {stockData.current.toLocaleString()}
+                    </Text>
+                );
             }
         },
         {
@@ -78,7 +159,11 @@ export const PredictionsDashboard: React.FC = () => {
             enableSorting: true,
             cell: ({ getValue }) => {
                 const recommendation = getValue() as { safety_stock: number };
-                return recommendation.safety_stock;
+                return (
+                    <Text c="dimmed">
+                        {recommendation.safety_stock.toLocaleString()}
+                    </Text>
+                );
             }
         },
         {
@@ -87,13 +172,21 @@ export const PredictionsDashboard: React.FC = () => {
             enableSorting: true,
             cell: ({ getValue }) => {
                 const recommendation = getValue() as { suggested_restock: number };
+                const needsRestock = recommendation.suggested_restock > 0;
                 return (
-                    <Text 
-                        c={recommendation.suggested_restock > 0 ? 'red' : 'green'}
-                        fw={recommendation.suggested_restock > 0 ? 'bold' : 'normal'}
-                    >
-                        {recommendation.suggested_restock}
-                    </Text>
+                    <Group gap="xs">
+                        {needsRestock ? (
+                            <PiArrowUp color="red" size={16} />
+                        ) : (
+                            <PiArrowDown color="green" size={16} />
+                        )}
+                        <Text 
+                            c={needsRestock ? 'red' : 'green'}
+                            fw={needsRestock ? 'bold' : 'normal'}
+                        >
+                            {recommendation.suggested_restock.toLocaleString()}
+                        </Text>
+                    </Group>
                 );
             }
         },
@@ -101,9 +194,23 @@ export const PredictionsDashboard: React.FC = () => {
             accessorKey: 'stock_data',
             header: 'Days Remaining',
             enableSorting: true,
-            cell: ({ getValue }) => {
+            cell: ({ getValue, row }) => {
                 const stockData = getValue() as { days_remaining: number };
-                return stockData.days_remaining.toFixed(1);
+                const recommendation = row.original.recommendation;
+                const status = getStockStatus(stockData.days_remaining, recommendation.suggested_restock);
+                
+                return (
+                    <Group gap="xs">
+                        <Badge 
+                            color={status.color} 
+                            variant="light" 
+                            size="sm"
+                            leftSection={status.icon}
+                        >
+                            {stockData.days_remaining.toFixed(1)} days
+                        </Badge>
+                    </Group>
+                );
             }
         }
     ];
@@ -112,47 +219,175 @@ export const PredictionsDashboard: React.FC = () => {
         setCurrentPage(page - 1); // Mantine Pagination is 1-based
     };
 
+    const clearFilters = () => {
+        setSelectedWarehouse(null);
+        setSelectedProduct(null);
+        setCurrentPage(0);
+    };
+
     return (
         <Container size="xl" p="md">
-            <Stack gap="md">
+            <Stack gap="lg">
+                {/* Header */}
+                <Paper p="md" withBorder>
+                    <Group justify="space-between" align="center">
+                        <div>
+                            <Title order={2} mb="xs">
+                                <Group gap="sm">
+                                    <ThemeIcon size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+                                        <PiTrendUp size={24} />
+                                    </ThemeIcon>
+                                    Inventory Predictions Dashboard
+                                </Group>
+                            </Title>
+                            <Text c="dimmed" size="sm">
+                                Monitor stock levels and get AI-powered restocking recommendations
+                            </Text>
+                        </div>
+                        <Group gap="sm">
+                            <Tooltip label="Refresh Data">
+                                <ActionIcon 
+                                    variant="light" 
+                                    size="lg"
+                                    onClick={() => refetch()}
+                                    loading={isLoading}
+                                >
+                                    <PiArrowCounterClockwise size={18} />
+                                </ActionIcon>
+                            </Tooltip>
+                            <Tooltip label="Export Data">
+                                <ActionIcon variant="light" size="lg" color="green">
+                                    <PiDownload size={18} />
+                                </ActionIcon>
+                            </Tooltip>
+                        </Group>
+                    </Group>
+                </Paper>
+
+                {/* Summary Cards */}
                 <Grid gutter="md">
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                        <Select
-                            label="Warehouse"
-                            placeholder="All Warehouses"
-                            value={selectedWarehouse?.toString() || null}
-                            onChange={(value) => {
-                                setSelectedWarehouse(value ? Number(value) : null);
-                                setCurrentPage(0);
-                            }}
-                            data={Array.from(new Set(predictions.map(p => p.warehouse_id))).map(id => ({
-                                value: id.toString(),
-                                label: `Warehouse ${id}`
-                            }))}
-                            clearable
-                        />
+                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                        <Card withBorder p="md" h="100%">
+                            <Group justify="space-between">
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">Total Products</Text>
+                                    <Text size="xl" fw={700}>{totalProducts}</Text>
+                                </div>
+                                <ThemeIcon size="xl" variant="light" color="blue">
+                                    <PiPackage size={24} />
+                                </ThemeIcon>
+                            </Group>
+                        </Card>
                     </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                        <Select
-                            label="Product"
-                            placeholder="All Products"
-                            value={selectedProduct?.toString() || null}
-                            onChange={(value) => {
-                                setSelectedProduct(value ? Number(value) : null);
-                                setCurrentPage(0);
-                            }}
-                            data={availableProducts.map(id => ({
-                                value: id.toString(),
-                                label: `Product ${id}`
-                            }))}
-                            clearable
-                        />
+                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                        <Card withBorder p="md" h="100%">
+                            <Group justify="space-between">
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">Healthy Stock</Text>
+                                    <Text size="xl" fw={700} c="green">{healthyItems}</Text>
+                                </div>
+                                <ThemeIcon size="xl" variant="light" color="green">
+                                    <PiCheckCircle size={24} />
+                                </ThemeIcon>
+                            </Group>
+                        </Card>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                        <Card withBorder p="md" h="100%">
+                            <Group justify="space-between">
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">Need Restock</Text>
+                                    <Text size="xl" fw={700} c="orange">{lowStockItems}</Text>
+                                </div>
+                                <ThemeIcon size="xl" variant="light" color="orange">
+                                    <PiTrendDown size={24} />
+                                </ThemeIcon>
+                            </Group>
+                        </Card>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                        <Card withBorder p="md" h="100%">
+                            <Group justify="space-between">
+                                <div>
+                                    <Text size="sm" c="dimmed" mb="xs">Critical Items</Text>
+                                    <Text size="xl" fw={700} c="red">{criticalItems}</Text>
+                                </div>
+                                <ThemeIcon size="xl" variant="light" color="red">
+                                    <PiWarning size={24} />
+                                </ThemeIcon>
+                            </Group>
+                        </Card>
                     </Grid.Col>
                 </Grid>
 
+                {/* Filters */}
+                <Card withBorder p="md">
+                    <Group justify="space-between" align="end" mb="md">
+                        <Group gap="sm" align="center">
+                            <PiFunnel size={20} />
+                            <Text fw={500}>Filters</Text>
+                        </Group>
+                        {(selectedWarehouse || selectedProduct) && (
+                            <Button 
+                                variant="subtle" 
+                                size="xs" 
+                                onClick={clearFilters}
+                                leftSection={<PiXCircle size={14} />}
+                            >
+                                Clear Filters
+                            </Button>
+                        )}
+                    </Group>
+                    
+                    <Grid gutter="md">
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                            <Select
+                                label="Warehouse"
+                                placeholder="Select warehouse..."
+                                leftSection={<PiWarehouse size={16} />}
+                                value={selectedWarehouse?.toString() || null}
+                                onChange={(value) => {
+                                    setSelectedWarehouse(value ? Number(value) : null);
+                                    setCurrentPage(0);
+                                }}
+                                data={Array.from(new Set(predictions.map(p => p.warehouse_id))).map(id => ({
+                                    value: id.toString(),
+                                    label: `Warehouse ${id}`
+                                }))}
+                                clearable
+                            />
+                        </Grid.Col>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
+                            <Select
+                                label="Product"
+                                placeholder="Select product..."
+                                leftSection={<PiPackage size={16} />}
+                                value={selectedProduct?.toString() || null}
+                                onChange={(value) => {
+                                    setSelectedProduct(value ? Number(value) : null);
+                                    setCurrentPage(0);
+                                }}
+                                data={availableProducts.map(id => ({
+                                    value: id.toString(),
+                                    label: `Product ${id}`
+                                }))}
+                                clearable
+                            />
+                        </Grid.Col>
+                    </Grid>
+                </Card>
+
+                {/* Charts */}
                 <Grid gutter="md">
                     <Grid.Col span={{ base: 12, md: 6 }}>
                         <Card withBorder radius="md" p="md" h="100%">
+                            <Group gap="sm" mb="md">
+                                <ThemeIcon size="sm" variant="light" color="blue">
+                                    <PiChartBar size={16} />
+                                </ThemeIcon>
+                                <Text fw={500}>Stock Level Trends</Text>
+                            </Group>
+                            <Divider mb="md" />
                             <StockLevelChart 
                                 data={filteredPredictions} 
                                 warehouseId={selectedWarehouse || undefined}
@@ -161,34 +396,123 @@ export const PredictionsDashboard: React.FC = () => {
                     </Grid.Col>
                     <Grid.Col span={{ base: 12, md: 6 }}>
                         <Card withBorder radius="md" p="md" h="100%">
+                            <Group gap="sm" mb="md">
+                                <ThemeIcon size="sm" variant="light" color="grape">
+                                    <PiChartPie size={16} />
+                                </ThemeIcon>
+                                <Text fw={500}>Restock Distribution</Text>
+                            </Group>
+                            <Divider mb="md" />
                             <RestockPieChart data={filteredPredictions} />
                         </Card>
                     </Grid.Col>
                 </Grid>
 
+                {/* Data Table */}
                 <Card withBorder radius="md" p="md">
-                    <DashboardTable<PredictionResult>
-                        tableData={paginatedData}
-                        allColumns={columns}
-                        enableSort={true}
-                        totalPages={totalPages}
-                        currentPage={currentPage}
-                        fetchData={handlePageChange}
-                    />
-                    {totalPages > 1 && (
-                        <Pagination
-                            total={totalPages}
-                            value={currentPage + 1}
-                            onChange={handlePageChange}
-                            mt="md"
-                            siblings={1}
-                            boundaries={1}
-                        />
+                    <Group justify="space-between" align="center" mb="md">
+                        <Group gap="sm">
+                            <ThemeIcon size="sm" variant="light" color="teal">
+                                <PiCalendar size={16} />
+                            </ThemeIcon>
+                            <Text fw={500}>Prediction Details</Text>
+                            <Badge variant="light" color="blue" size="sm">
+                                {filteredPredictions.length} items
+                            </Badge>
+                        </Group>
+                        <Group gap="sm">
+                            <Text size="sm" c="dimmed">
+                                Page {currentPage + 1} of {totalPages || 1}
+                            </Text>
+                        </Group>
+                    </Group>
+                    
+                    <Divider mb="md" />
+                    
+                    {filteredPredictions.length === 0 ? (
+                        <Paper p="xl" ta="center">
+                            <ThemeIcon size="xl" variant="light" color="gray" mx="auto" mb="md">
+                                <PiPackage size={32} />
+                            </ThemeIcon>
+                            <Text size="lg" fw={500} mb="xs">No predictions found</Text>
+                            <Text c="dimmed" size="sm">
+                                {(selectedWarehouse || selectedProduct) 
+                                    ? "Try adjusting your filters to see more results"
+                                    : "No prediction data available at the moment"
+                                }
+                            </Text>
+                            {(selectedWarehouse || selectedProduct) && (
+                                <Button 
+                                    variant="light" 
+                                    mt="md" 
+                                    onClick={clearFilters}
+                                    leftSection={<PiXCircle size={16} />}
+                                >
+                                    Clear Filters
+                                </Button>
+                            )}
+                        </Paper>
+                    ) : (
+                        <>
+                            <Box style={{ overflowX: 'auto' }}>
+                                <DashboardTable<PredictionResult>
+                                    tableData={paginatedData}
+                                    allColumns={columns}
+                                    enableSort={true}
+                                    totalPages={totalPages}
+                                    currentPage={currentPage}
+                                    fetchData={handlePageChange}
+                                />
+                            </Box>
+                            
+                            {totalPages > 1 && (
+                                <Flex justify="center" mt="lg">
+                                    <Pagination
+                                        total={totalPages}
+                                        value={currentPage + 1}
+                                        onChange={handlePageChange}
+                                        siblings={1}
+                                        boundaries={1}
+                                        size="sm"
+                                        withEdges
+                                    />
+                                </Flex>
+                            )}
+                        </>
                     )}
                 </Card>
+
+                {/* Footer Info */}
+                <Paper p="md" withBorder bg="gray.0">
+                    <Group justify="space-between" align="center">
+                        <Group gap="sm">
+                            <ThemeIcon size="sm" variant="light" color="blue">
+                                <PiClock size={14} />
+                            </ThemeIcon>
+                            <Text size="sm" c="dimmed">
+                                Last updated: {new Date().toLocaleString()}
+                            </Text>
+                        </Group>
+                        <Group gap="lg">
+                            <Group gap="xs">
+                                <Badge color="green" variant="dot" size="sm">Healthy</Badge>
+                                <Text size="xs" c="dimmed">Good stock levels</Text>
+                            </Group>
+                            <Group gap="xs">
+                                <Badge color="yellow" variant="dot" size="sm">Low</Badge>
+                                <Text size="xs" c="dimmed">Monitor closely</Text>
+                            </Group>
+                            <Group gap="xs">
+                                <Badge color="red" variant="dot" size="sm">Critical</Badge>
+                                <Text size="xs" c="dimmed">Immediate action needed</Text>
+                            </Group>
+                        </Group>
+                    </Group>
+                </Paper>
             </Stack>
         </Container>
     );
 };
 
 export default PredictionsDashboard;
+

@@ -2,6 +2,8 @@ package com.stockly.service.query;
 
 import com.stockly.dto.ProductDTO;
 import com.stockly.dto.WarehouseDTO;
+import com.stockly.dto.WarehouseProductDTO;
+import com.stockly.model.WarehouseProduct;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,7 +18,7 @@ public interface WarehouseQueryService {
     List<WarehouseDTO> searchWarehouses(String searchTerm, Long companyId);
     Page<WarehouseDTO> getAllWarehousesWithPagination(Pageable pageable);
     Page<WarehouseDTO> getWarehousesByCompanyWithPagination(Long companyId, Pageable pageable);
-    List<ProductDTO> getProductsByWarehouseId(Long id);
+    List<WarehouseProductDTO> getProductsByWarehouseId(Long id);
 
     Long getWarehousesCount();
 

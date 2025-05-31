@@ -2,8 +2,10 @@ package com.stockly.service.impl.query;
 
 import com.stockly.dto.ProductDTO;
 import com.stockly.dto.WarehouseDTO;
+import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.mapper.ProductMapper;
 import com.stockly.mapper.WarehouseMapper;
+import com.stockly.mapper.WarehouseProductMapper;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.WarehouseProductRepository;
@@ -31,6 +33,7 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
     private final WarehouseRepository warehouseRepository;
     private final WarehouseMapper warehouseMapper;
     private final WarehouseProductRepository warehouseProductRepository;
+    private final WarehouseProductMapper warehouseProductMapper;
 
     @Override
     public List<WarehouseDTO> getAllWarehouses() {
@@ -88,15 +91,13 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
     }
 
     @Override
-    public List<ProductDTO> getProductsByWarehouseId(Long warehouseId) {
+    public List<WarehouseProductDTO> getProductsByWarehouseId(Long warehouseId) {
         // Get all warehouse products for the given warehouse ID
         List<WarehouseProduct> warehouseProducts = warehouseProductRepository.findByWarehouseId(warehouseId);
 
         // Map each warehouse product's product to ProductDTO using your existing mapper
         return warehouseProducts.stream()
-                .map(WarehouseProduct::getProduct)
-                .filter(Objects::nonNull) // Filter out null products if any
-                .map(ProductMapper::toDTO)
+                .map(warehouseProductMapper::toDTO)
                 .collect(Collectors.toList());
     }
 

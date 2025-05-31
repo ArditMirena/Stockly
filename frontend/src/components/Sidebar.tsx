@@ -1,106 +1,129 @@
-import { useState, useEffect } from 'react';
-import { useDisclosure } from '@mantine/hooks';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, NavLink, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
-  PiBellRingingBold,
   PiReceiptBold,
-  PiFingerprintBold,
-  PiKeyBold,
-  PiDatabaseBold,
   PiGearBold,
-  PiShoppingCartBold,
-  PiTruckBold,
-  PiReadCvLogoBold,
-  PiChatCenteredTextBold,
   PiChatsBold,
   PiUsersBold,
-  PiFileBold,
-  PiUserBold,
-  PiSignOutBold,
   PiListBold,
   PiXBold,
-  PiTeaBagBold,
   PiFactoryBold,
   PiWarehouseBold,
-  PiPackageBold
+  PiPackageBold,
+  PiChartLineBold
 } from "react-icons/pi";
 import {
-  SegmentedControl,
-  Text,
+  ScrollArea,
   Button,
   AppShell,
-  Tooltip,
-  Stack
+  Tooltip
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { LinksGroup } from './/NavbarLinksGroup';
+import { UserButton } from './UserButton';
 import classes from '../style/Sidebar.module.css';
 import { AppDispatch, RootState } from '../redux/store';
 import { logoutAsync } from '../redux/authSlice';
 import { ROLES } from '../utils/Roles';
 
-const tabs = {
-  account: [
-    { link: '', label: 'Notifications', icon: PiBellRingingBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '/admin/predictions', label: 'Predictions', icon: PiReceiptBold, roles: [ROLES.SUPER_ADMIN] },
-    { link: '', label: 'Security', icon: PiFingerprintBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '', label: 'SSH Keys', icon: PiKeyBold, roles: [ROLES.SUPER_ADMIN] },
-    { link: '', label: 'Databases', icon: PiDatabaseBold, roles: [ROLES.SUPER_ADMIN] },
-    { link: '', label: 'Other Settings', icon: PiGearBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '/admin/warehouse/products', label: 'Warehouse Products', icon: PiShoppingCartBold, roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER] },
-  ],
-  general: [
-    { link: '/admin/users', label: 'Users', icon: PiUsersBold, roles: [ROLES.SUPER_ADMIN] },
-    { link: '/admin/products', label: 'Products', icon: PiTeaBagBold, roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER] },
-    { link: '/admin/companies', label: 'Companies', icon: PiFactoryBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '/admin/warehouses', label: 'Warehouses', icon: PiWarehouseBold, roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER] },
-    { link: '/admin/orders', label: 'Orders', icon: PiPackageBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '/admin/shipments/track', label: 'Shipments', icon: PiTruckBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '', label: 'Receipts', icon: PiReadCvLogoBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER] },
-    { link: '', label: 'Reviews', icon: PiChatCenteredTextBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '', label: 'Messages', icon: PiChatsBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-    { link: '', label: 'Files', icon: PiFileBold, roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
-  ],
-};
+const mockdata = [
+  { 
+    label: 'Dashboard', 
+    icon: PiChartLineBold,
+    link: '/admin',
+    roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER]
+  },
+  {
+    label: 'User Management',
+    icon: PiUsersBold,
+    roles: [ROLES.SUPER_ADMIN],
+    links: [
+      { label: 'All Users', link: '/admin/users', roles: [ROLES.SUPER_ADMIN] },
+    ],
+  },
+  {
+    label: 'Inventory & Products',
+    icon: PiWarehouseBold,
+    roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER],
+    initiallyOpened: true,
+    links: [
+      { label: 'Products', link: '/admin/products', roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER] },
+      { label: 'Warehouses', link: '/admin/warehouses', roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER] },
+      { label: 'Warehouse Products', link: '/admin/warehouse/products', roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER] },
+    ],
+  },
+  {
+    label: 'Companies',
+    icon: PiFactoryBold,
+    roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER],
+    links: [
+      { label: 'All Companies', link: '/admin/companies', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+    ],
+  },
+  {
+    label: 'Orders & Shipping',
+    icon: PiPackageBold,
+    roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER],
+    links: [
+      { label: 'Orders', link: '/admin/orders', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+      { label: 'Shipments', link: '/admin/shipments/track', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+      { label: 'Receipts', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER] },
+    ],
+  },
+  { 
+    label: 'Analytics & Reports', 
+    icon: PiReceiptBold,
+    link: '/admin/predictions',
+    roles: [ROLES.SUPER_ADMIN]
+  },
+  {
+    label: 'Communication',
+    icon: PiChatsBold,
+    roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER],
+    links: [
+      { label: 'Messages', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+      { label: 'Reviews', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+      { label: 'Notifications', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+    ],
+  },
+  {
+    label: 'System & Settings',
+    icon: PiGearBold,
+    roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER],
+    links: [
+      { label: 'General Settings', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+      { label: 'Security', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+      { label: 'SSH Keys', link: '', roles: [ROLES.SUPER_ADMIN] },
+      { label: 'Databases', link: '', roles: [ROLES.SUPER_ADMIN] },
+      { label: 'Files', link: '', roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER] },
+    ],
+  },
+];
 
 export function Sidebar({ children }: { children: React.ReactNode }) {
-  const [section, setSection] = useState<'account' | 'general'>('general');
   const [navOpened, { toggle: toggleNav }] = useDisclosure(true);
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   
   const user = useSelector((state: RootState) => state.auth.user);
   const userRole = user?.role;
-
-  useEffect(() => {
-    if (location.pathname.startsWith('/admin')) {
-      setSection('general');
-    }
-  }, [location.pathname]);
 
   const hasAccess = (allowedRoles: string[]) => {
     return userRole && allowedRoles.includes(userRole);
   };
 
-  const links = tabs[section]
-    .filter(item => hasAccess(item.roles))
-    .map((item) => {
-      if (!item.link) return null;
+  const filterItemsByRole = (items: any[]) => {
+    return items
+      .filter(item => hasAccess(item.roles))
+      .map(item => ({
+        ...item,
+        links: item.links ? item.links.filter((link: any) => hasAccess(link.roles)) : undefined
+      }))
+      .filter(item => !item.links || item.links.length > 0);
+  };
 
-      return (
-        <NavLink
-          className={({ isActive }) =>
-            `${classes.link} ${isActive ? classes.linkActive : ''}`
-          }
-          to={item.link}
-          key={item.label}
-          end
-        >
-          <item.icon className={classes.linkIcon} />
-          <span>{item.label}</span>
-        </NavLink>
-      );
-    }).filter(Boolean);
+  const filteredData = filterItemsByRole(mockdata);
+  const links = filteredData.map((item) => <LinksGroup {...item} key={item.label} />);
 
   const handleSignOut = async () => {
     try {
@@ -112,21 +135,6 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const userTooltipContent = (
-    <Stack gap="xs" style={{ minWidth: '200px' }}>
-      <Text size="sm" fw={500}>Account Information</Text>
-      <Text size="xs">
-        <strong>Username:</strong> {user?.username || 'N/A'}
-      </Text>
-      <Text size="xs">
-        <strong>Email:</strong> {user?.email || 'N/A'}
-      </Text>
-      <Text size="xs">
-        <strong>Role:</strong> {user?.role || 'N/A'}
-      </Text>
-    </Stack>
-  );
-
   return (
     <AppShell
       padding="md"
@@ -137,96 +145,65 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       }}
     >
       {navOpened && (
-        <AppShell.Navbar p="xs">
-          <AppShell.Section grow>
-            <Text fw={500} size="sm" className={classes.title} c="dimmed" mb="xs">
-              <Link to='/admin' style={{textDecoration: 'none', color: 'green', fontWeight: 'bold'}} >
+        <AppShell.Navbar className={classes.navbar}>
+          {/* Header Section with Toggle Button */}
+          <div className={classes.header}>
+            <div className={classes.headerContent}>
+              <Link to='/admin' className={classes.logoLink}>
                 administrator@stockly.dev
               </Link>
-            </Text>
-
-            <SegmentedControl
-              value={section}
-              onChange={(value: any) => setSection(value)}
-              transitionTimingFunction="ease"
-              fullWidth
-              data={[
-                { label: 'Account', value: 'account' },
-                { label: 'System', value: 'general' },
-              ]}
-            />
-
-            <div className={classes.navbarMain}>{links}</div>
-          </AppShell.Section>
-
-          <AppShell.Section>
-            <div className={classes.footer}>
-              <Tooltip 
-                label={userTooltipContent}
-                position="top"
-                withArrow
-                multiline
-                w={220}
-              >
-                <a 
-                  href="#" 
-                  className={classes.link} 
-                  onClick={(event) => event.preventDefault()}
+              <Tooltip label="Close sidebar" position="bottom">
+                <Button
+                  variant="subtle"
+                  size="xs"
+                  onClick={toggleNav}
+                  className={classes.headerToggle}
                 >
-                  <PiUserBold className={classes.linkIcon} />
-                  <span>Your account</span>
-                </a>
+                  <PiXBold size={16} />
+                </Button>
               </Tooltip>
-
-              <a
-                href="#"
-                className={classes.link}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSignOut();
-                }}
-              >
-                <PiSignOutBold className={classes.linkIcon} />
-                <span>Logout</span>
-              </a>
             </div>
-          </AppShell.Section>
+          </div>
+
+          {/* Navigation Links */}
+          <ScrollArea className={classes.links}>
+            <div className={classes.linksInner}>
+              {links}
+            </div>
+          </ScrollArea>
+
+          {/* Footer Section */}
+          <div className={classes.footer}>
+            <UserButton 
+              name={user?.username}
+              email={user?.email}
+              onClick={handleSignOut}
+            />
+          </div>
         </AppShell.Navbar>
       )}
 
       <AppShell.Main>
-        <Tooltip 
-          label={navOpened ? "Close sidebar" : "Open sidebar"} 
-          position="right"
-          withArrow
-        >
-          <Button
-            variant="light"
-            size="sm"
-            onClick={toggleNav}
-            style={{
-              position: 'fixed',
-              top: 20,
-              left: navOpened ? 310 : 20,
-              zIndex: 1000,
-              transition: 'left 0.3s ease',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-            }}
-          >
-            {navOpened ? <PiXBold size={18} /> : <PiListBold size={18} />}
-          </Button>
-        </Tooltip>
-        <div style={{ paddingTop: navOpened ? '0' : '60px' }}>
+        {/* Toggle Button - Only show when sidebar is closed */}
+        {!navOpened && (
+          <Tooltip label="Open sidebar" position="right" withArrow>
+            <Button
+              variant="light"
+              size="sm"
+              onClick={toggleNav}
+              className={classes.toggleButton}
+            >
+              <PiListBold size={18} />
+            </Button>
+          </Tooltip>
+        )}
+        
+        {/* Main Content */}
+        <div className={classes.mainContent} data-nav-opened={navOpened}>
           {children}
         </div>
       </AppShell.Main>
     </AppShell>
   );
 }
+

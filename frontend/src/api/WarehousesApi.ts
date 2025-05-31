@@ -1,7 +1,5 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "../utils/axiosBaseQuery";
-import { Product } from "./ProductsApi";
-import {Company} from "./CompaniesApi.ts";
 
 export interface AddressDTO {
     street: string;
@@ -148,7 +146,7 @@ export const warehousesApi = createApi({
                 method: 'GET',
             }),
         }),
-        getWarehouseProducts: builder.query<Product[], { warehouseId: number }>({
+        getWarehouseProducts: builder.query<WarehouseProductDTO[], { warehouseId: number }>({
             query: ({ warehouseId }) => ({
                 url: `/warehouses/${warehouseId}/products`,
                 method: 'GET'
