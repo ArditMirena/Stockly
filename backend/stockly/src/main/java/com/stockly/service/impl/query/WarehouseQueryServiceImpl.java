@@ -72,14 +72,9 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
     }
 
     @Override
-    public Page<WarehouseDTO> getAllWarehousesWithPagination(Pageable pageable) {
-        Page<Warehouse> warehouses = warehouseRepository.findAll(pageable);
-
-        List<WarehouseDTO> warehouseDTOs = warehouses.stream()
-                .map(warehouseMapper::toDto)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(warehouseDTOs, pageable, warehouses.getTotalElements());
+    public Page<WarehouseDTO> getAllWarehousesWithPagination(Long companyId, Long managerId, Pageable pageable) {
+        Page<Warehouse> warehouses = warehouseRepository.findWithFilters(companyId, managerId, pageable);
+        return warehouses.map(warehouseMapper::toDto);
     }
 
     @Override

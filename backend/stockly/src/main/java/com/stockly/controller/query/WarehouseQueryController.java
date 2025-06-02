@@ -75,22 +75,18 @@ public class WarehouseQueryController {
             @RequestParam(value = "offset", required = false) Integer offset,
             @RequestParam(value = "pageSize", required = false) Integer pageSize,
             @RequestParam(value = "sortBy", required = false) String sortBy,
-            @RequestParam(value = "companyId", required = false) Long companyId
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @RequestParam(value = "managerId", required = false) Long managerId
     ) {
         if(null == offset) offset = 0;
         if(null == pageSize) pageSize = 10;
         if(StringUtils.isEmpty(sortBy)) sortBy = "id";
 
-        if(companyId != null) {
-            return ResponseEntity.ok(warehouseQueryService.getWarehousesByCompanyWithPagination(
-                    companyId,
-                    PageRequest.of(offset, pageSize, Sort.by(sortBy))
-            ));
-        } else {
-            return ResponseEntity.ok(warehouseQueryService.getAllWarehousesWithPagination(
-                    PageRequest.of(offset, pageSize, Sort.by(sortBy))
-            ));
-        }
+        return ResponseEntity.ok(warehouseQueryService.getAllWarehousesWithPagination(
+                companyId,
+                managerId,
+                PageRequest.of(offset, pageSize, Sort.by(sortBy))
+        ));
     }
 
     @GetMapping("/count")
@@ -102,13 +98,21 @@ public class WarehouseQueryController {
     public ResponseEntity<Page<WarehouseProductDTO>> getProductsByWarehouseWithPagination(
             @RequestParam(value = "offset", required = false) Integer offset,
             @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "warehouseId", required = false) Long warehouseId,
+            @RequestParam(value = "managerId", required = false) Long managerId
     ) {
         if(null == offset) offset = 0;
         if(null == pageSize) pageSize = 10;
         if(StringUtils.isEmpty(sortBy)) sortBy = "id";
 
-        return ResponseEntity.ok(warehouseProductQueryService.getAllWarehouseProductsWithPagination(PageRequest.of(offset, pageSize, Sort.by(sortBy))));
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
+
+        return ResponseEntity.ok(warehouseProductQueryService.getWarehouseProductsWithFilters(
+                warehouseId,
+                managerId,
+                pageRequest
+        ));
     }
     
 }
