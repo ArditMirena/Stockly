@@ -54,21 +54,23 @@ public class CompanyQueryController {
             @RequestParam(value = "offset", required = false) Integer offset,
             @RequestParam(value = "pageSize", required = false) Integer pageSize,
             @RequestParam(value = "sortBy", required = false) String sortBy,
-            @RequestParam(value = "companyType", required = false) String companyType
+            @RequestParam(value = "companyType", required = false) String companyType,
+            @RequestParam(value = "managerId", required = false) Long managerId
     ) {
         if(null == offset) offset = 0;
         if(null == pageSize) pageSize = 10;
         if(StringUtils.isEmpty(sortBy)) sortBy = "id";
 
-        if(StringUtils.isNotEmpty(companyType)) {
-            return ResponseEntity.ok(companyQueryService.getCompaniesByTypeWithPagination(
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
+
+        if(StringUtils.isNotEmpty(companyType) || managerId != null) {
+            return ResponseEntity.ok(companyQueryService.getCompaniesWithFilters(
                     companyType,
-                    PageRequest.of(offset, pageSize, Sort.by(sortBy))
+                    managerId,
+                    pageRequest
             ));
         } else {
-            return ResponseEntity.ok(companyQueryService.getAllCompaniesWithPagination(
-                    PageRequest.of(offset, pageSize, Sort.by(sortBy))
-            ));
+            return ResponseEntity.ok(companyQueryService.getAllCompaniesWithPagination(pageRequest));
         }
     }
 

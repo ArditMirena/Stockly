@@ -6,6 +6,8 @@ import com.stockly.model.WarehouseProduct;
 import com.stockly.projection.ProductWarehouseProjection;
 import com.stockly.projection.StockChangeProjection;
 import com.stockly.projection.WarehouseStockProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -152,5 +154,18 @@ public interface WarehouseProductRepository extends JpaRepository<WarehouseProdu
             @Param("productId") Long productId,
             @Param("warehouseId") Long warehouseId
     );
+
+
+    @Query("SELECT wp FROM WarehouseProduct wp " +
+            "JOIN wp.warehouse w " +
+            "JOIN w.company c " +
+            "WHERE (:managerId IS NULL OR c.manager.id = :managerId) " +
+            "AND (:warehouseId IS NULL OR wp.warehouse.id = :warehouseId)")
+    Page<WarehouseProduct> findByFilters(
+            @Param("managerId") Long managerId,
+            @Param("warehouseId") Long warehouseId,
+            Pageable pageable
+    );
+
 }
 

@@ -16,7 +16,7 @@ public interface WarehouseQueryService {
     List<WarehouseDTO> getWarehousesByCompanyId(Long companyId);
     boolean warehouseExistsByName(String name);
     List<WarehouseDTO> searchWarehouses(String searchTerm, Long companyId);
-    Page<WarehouseDTO> getAllWarehousesWithPagination(Pageable pageable);
+    Page<WarehouseDTO> getAllWarehousesWithPagination(Long companyId, Long managerId, Pageable pageable);
     Page<WarehouseDTO> getWarehousesByCompanyWithPagination(Long companyId, Pageable pageable);
     List<WarehouseProductDTO> getProductsByWarehouseId(Long id);
 
