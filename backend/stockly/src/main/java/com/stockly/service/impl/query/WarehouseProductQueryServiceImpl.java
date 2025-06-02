@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,5 +30,20 @@ public class WarehouseProductQueryServiceImpl implements WarehouseProductQuerySe
                 .collect(Collectors.toList());
 
         return new PageImpl<>(wPDTOs, pageRequest, warehouseProducts.getTotalElements());
+    }
+
+
+    @Override
+    public Page<WarehouseProductDTO> getWarehouseProductsWithFilters(
+            Long warehouseId,
+            Long managerId,
+            Pageable pageable
+    ) {
+        Page<WarehouseProduct> warehouseProducts = warehouseProductRepository.findByFilters(
+                managerId,
+                warehouseId,
+                pageable
+        );
+        return warehouseProducts.map(warehouseProductMapper::toDTO);
     }
 }

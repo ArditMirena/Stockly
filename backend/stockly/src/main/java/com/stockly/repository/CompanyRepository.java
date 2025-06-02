@@ -18,5 +18,8 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     List<Company> findByCompanyType(String companyType);
     List<Company> findAll(Specification<Company> specification);
     Page<Company> findByCompanyType(String companyType, Pageable pageable);
+    Page<Company> findByManagerId(Long managerId, Pageable pageable);
+    Page<Company> findByCompanyTypeAndManagerId(String companyType, Long managerId, Pageable pageable);
     List<Company> findByManagerId(Long managerId);
+
 }
