@@ -142,4 +142,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         WHERE o.orderDate >= :startDate
     """)
     List<OrderStockProjection> findOrdersWithStock(@Param("startDate") Instant startDate);
+
+
+    Page<Order> findAll(Specification<Order> spec, Pageable pageable);
 }

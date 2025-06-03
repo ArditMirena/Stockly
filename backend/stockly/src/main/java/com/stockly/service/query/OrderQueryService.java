@@ -22,7 +22,15 @@ public interface OrderQueryService {
 
     Long getOrdersCount();
 
-    Page<OrderDTO> getAllOrdersWithPagination(PageRequest pageRequest);
+    Page<OrderDTO> getAllOrdersWithPagination(
+            Pageable pageable,
+            Long buyerManagerId,
+            Long supplierManagerId,
+            Long buyerCompanyId,
+            Long supplierCompanyId,
+            Long sourceWarehouseId,
+            Long destinationWarehouseId
+    );
     List<OrderDTO> searchOrders(String searchTerm);
 
 

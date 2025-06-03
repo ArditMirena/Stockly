@@ -104,14 +104,49 @@ public class OrderQueryServiceImpl implements OrderQueryService {
 
 
     @Override
-    public Page<OrderDTO> getAllOrdersWithPagination(PageRequest pageRequest) {
-        Page<Order> orders = orderRepository.findAll(pageRequest);
+    public Page<OrderDTO> getAllOrdersWithPagination(
+            Pageable pageable,
+            Long buyerManagerId,
+            Long supplierManagerId,
+            Long buyerCompanyId,
+            Long supplierCompanyId,
+            Long sourceWarehouseId,
+            Long destinationWarehouseId
+    ) {
+        Specification<Order> spec = Specification.where(null);
 
-        List<OrderDTO> orderDTOS = orders.stream()
-                .map(orderMapper::toDto)
-                .collect(Collectors.toList());
+        // Buyer filters
+        if (buyerManagerId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("buyer").get("manager").get("id"), buyerManagerId));
+        }
+        if (buyerCompanyId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("buyer").get("id"), buyerCompanyId));
+        }
 
-        return new PageImpl<>(orderDTOS, pageRequest, orders.getTotalElements());
+        // Supplier filters
+        if (supplierManagerId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("supplier").get("manager").get("id"), supplierManagerId));
+        }
+        if (supplierCompanyId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("supplier").get("id"), supplierCompanyId));
+        }
+
+        // Warehouse filters
+        if (sourceWarehouseId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("sourceWarehouse").get("id"), sourceWarehouseId));
+        }
+        if (destinationWarehouseId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("destinationWarehouse").get("id"), destinationWarehouseId));
+        }
+
+        return orderRepository.findAll(spec, pageable)
+                .map(orderMapper::toDto);
     }
 
     @Override
