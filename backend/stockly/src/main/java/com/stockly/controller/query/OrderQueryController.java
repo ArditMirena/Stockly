@@ -88,12 +88,27 @@ public class OrderQueryController {
     public ResponseEntity<Page<OrderDTO>> getAllOrdersWithPagination(
             @RequestParam(value = "offset", required = false) Integer offset,
             @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "buyerManagerId", required = false) Long buyerManagerId,
+            @RequestParam(value = "supplierManagerId", required = false) Long supplierManagerId,
+            @RequestParam(value = "buyerCompanyId", required = false) Long buyerCompanyId,
+            @RequestParam(value = "supplierCompanyId", required = false) Long supplierCompanyId,
+            @RequestParam(value = "sourceWarehouseId", required = false) Long sourceWarehouseId,
+            @RequestParam(value = "destinationWarehouseId", required = false) Long destinationWarehouseId
     ) {
-        if(null == offset) offset = 0;
-        if(null == pageSize) pageSize = 10;
-        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
-        return ResponseEntity.ok(orderQueryService.getAllOrdersWithPagination(PageRequest.of(offset, pageSize, Sort.by(sortBy))));
+        if (null == offset) offset = 0;
+        if (null == pageSize) pageSize = 10;
+        if (StringUtils.isEmpty(sortBy)) sortBy = "id";
+
+        return ResponseEntity.ok(orderQueryService.getAllOrdersWithPagination(
+                PageRequest.of(offset, pageSize, Sort.by(sortBy)),
+                buyerManagerId,
+                supplierManagerId,
+                buyerCompanyId,
+                supplierCompanyId,
+                sourceWarehouseId,
+                destinationWarehouseId
+        ));
     }
 
     @GetMapping("/search")
