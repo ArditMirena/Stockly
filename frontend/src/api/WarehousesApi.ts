@@ -87,6 +87,8 @@ interface PaginationParams {
     pageSize?: number;
     sortBy?: string;
     companyId?: number;
+    managerId?: number;
+    warehouseId?: number;
 }
 
 interface SearchParams {
@@ -120,7 +122,8 @@ export const warehousesApi = createApi({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id',
-                    companyId: params?.companyId
+                    companyId: params?.companyId,
+                    managerId: params?.managerId
                 }
             })
         }),
@@ -166,7 +169,9 @@ export const warehousesApi = createApi({
                 params: {
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
-                    sortBy: params?.sortBy || 'id'
+                    sortBy: params?.sortBy || 'id',
+                    warehouseId: params?.warehouseId,
+                    managerId: params?.managerId
                 }
             }),
             providesTags: ['Warehouse']

@@ -66,6 +66,8 @@ interface PaginationParams {
     offset?: number;
     pageSize?: number;
     sortBy?: string;
+    companyType?: string;
+    managerId?: number;
 }
 
 // API Definition
@@ -91,20 +93,6 @@ export const companiesApi = createApi({
             providesTags: ['Company']
         }),
 
-        getCompaniesByTypeWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams & { companyType?: string }>({
-            query: (params) => ({
-                url: '/companies/page',
-                method: 'GET',
-                params: {
-                    offset: params?.offset || 0,
-                    pageSize: params?.pageSize || 10,
-                    sortBy: params?.sortBy || 'id',
-                    companyType: params?.companyType
-                }
-            }),
-            providesTags: ['Company']
-        }),
-
         getCompaniesWithPagination: builder.query<PaginatedCompanyResponse, PaginationParams>({
             query: (params) => ({
                 url: '/companies/page',
@@ -112,7 +100,9 @@ export const companiesApi = createApi({
                 params: {
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
-                    sortBy: params?.sortBy || 'id'
+                    sortBy: params?.sortBy || 'id',
+                    companyType: params?.companyType,
+                    managerId: params?.managerId
                 }
             }),
             providesTags: ['Company']
