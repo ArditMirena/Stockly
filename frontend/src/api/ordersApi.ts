@@ -70,6 +70,12 @@ interface PaginationParams {
   offset?: number;
   pageSize?: number;
   sortBy?: string;
+  buyerManagerId?: number;
+  supplierManagerId?: number;
+  buyerCompanyId?: number;
+  supplierCompanyId?: number;
+  sourceWarehouseId?: number;
+  destinationWarehouseId?: number;
 }
 
 export const ordersApi = createApi({
@@ -83,16 +89,23 @@ export const ordersApi = createApi({
         method: 'GET'
       }),
     }),
-    getOrdersWithPagination: builder.query<PaginatedOrderResponse, PaginationParams> ({
+    getOrdersWithPagination: builder.query<PaginatedOrderResponse, PaginationParams>({
       query: (params) => ({
         url: `/orders/page`,
         method: 'GET',
         params: {
           offset: params?.offset || 0,
           pageSize: params?.pageSize || 10,
-          sortBy: params?.sortBy || 'id'
+          sortBy: params?.sortBy || 'id',
+          buyerManagerId: params?.buyerManagerId,
+          supplierManagerId: params?.supplierManagerId,
+          buyerCompanyId: params?.buyerCompanyId,
+          supplierCompanyId: params?.supplierCompanyId,
+          sourceWarehouseId: params?.sourceWarehouseId,
+          destinationWarehouseId: params?.destinationWarehouseId
         }
-      })
+      }),
+      providesTags: ['Order']
     }),
     getOrderById: builder.query<OrderDTO, number>({
       query: (id) => ({
