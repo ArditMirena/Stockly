@@ -231,7 +231,6 @@ export const {
     useUpdateCompanyMutation,
     useDeleteCompanyMutation,
     useGetCompaniesByTypeQuery,
-    useGetCompaniesByTypeWithPaginationQuery,
     useSearchCompaniesQuery,
     useGetCompaniesCountQuery,
     useGetCountriesQuery,

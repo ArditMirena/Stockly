@@ -32,6 +32,7 @@ import {
   PiWarningBold,
   PiCurrencyDollarBold
 } from 'react-icons/pi';
+// import { loadStripe } from '@stripe/stripe-js';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
 
@@ -80,7 +81,8 @@ const OrdersDashboard = () => {
   // Error and loading state
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  // const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // API hooks
   const [assignProduct] = useAssignProductToWarehouseMutation();
@@ -138,6 +140,7 @@ const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
     setProductId(null);
     setQuantity(1);
     setFormErrors([]);
+    setError(null);
   };
 
   const handleOpenModal = (order: OrderDTO | null, type: ModalType) => {
@@ -165,9 +168,11 @@ const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
     setModalType('create');
     resetForm();
     setIsSubmitting(false);
+    // setIsCreatingCheckout(false);
   };
 
   const handleSubmit = async () => {
+    setError(null);
     setIsSubmitting(true);
     
     // Validate form
@@ -214,8 +219,119 @@ const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
     } finally {
       setIsSubmitting(false);
     }
-  };
 
+    /*
+    const handleSubmit = async () => {
+      setError(null);
+      setIsSubmitting(true);
+      setIsCreatingCheckout(true);
+      
+      // Validate form
+      const errors = validateOrderForm(buyerId, warehouseId, productId, quantity);
+      if (errors.length > 0) {
+        setFormErrors(errors);
+        setIsSubmitting(false);
+        setIsCreatingCheckout(false);
+        return;
+      }
+
+      let orderResponse = null;
+      let stripeData = null;
+
+      try {
+        console.log('1. Starting order creation...');
+
+        // 1. Create the Order
+        const payload: any = {
+          buyerId: parseInt(buyerId!, 10),
+          sourceWarehouseId: parseInt(warehouseId!, 10),
+          items: [{
+            productId: parseInt(productId!, 10),
+            quantity: Number(quantity)
+          }]
+        };
+        
+        if (destinationWarehouseId) {
+          payload.destinationWarehouseId = parseInt(destinationWarehouseId, 10);
+        }
+
+        const result = await createOrder(payload);
+        
+        if ('error' in result) {
+          throw new Error(result.error?.data?.message || 'Order creation failed');
+        }
+
+        orderResponse = result.data;
+        console.log('✅ Order created:', orderResponse);
+
+        // 2. Create Stripe Checkout Session
+        console.log('2. Creating Stripe session...');
+        const stripeResponse = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            orderId: orderResponse.id,
+          }),
+        });
+
+        if (!stripeResponse.ok) {
+          const errorText = await stripeResponse.text();
+          throw new Error(`Stripe error: ${errorText}`);
+        }
+
+        stripeData = await stripeResponse.json();
+        console.log('✅ Stripe session created:', stripeData);
+
+        // 3. Redirect to Stripe Checkout
+        const stripe = await loadStripe('pk_test_51RSOJhRs6J5EqLQsNzbpo1hWYfC5wjSghPWrGUfdDgdf6b6h6rDCmaGiEAbae5jAIuGxNeahSqob6ZydO4JmjXuu00Qmidd6oC');
+        if (!stripe) {
+          throw new Error('Stripe failed to initialize');
+        }
+
+        const { error: stripeError } = await stripe.redirectToCheckout({
+          sessionId: stripeData.id,
+        });
+
+        if (stripeError) {
+          throw new Error(stripeError.message);
+        }
+
+        showNotification({
+          title: 'Success',
+          message: 'Order created and redirecting to payment...',
+          color: 'green',
+        });
+        
+        handleCloseModal();
+        refetchOrders();
+
+      } catch (error: any) {
+        console.error('❌ Full error:', error);
+        setError(error.message || 'Checkout process failed');
+        
+        showNotification({
+          title: 'Error',
+          message: error.message || 'Failed to create order and checkout. Please try again.',
+          color: 'red',
+        });
+      } finally {
+        setIsSubmitting(false);
+        setIsCreatingCheckout(false);
+
+        // Log final responses for debugging
+        if (orderResponse) {
+          console.log('📦 Final Order Response:', orderResponse);
+        }
+        if (stripeData) {
+          console.log('💳 Final Stripe Session:', stripeData);
+        }
+      }
+    };
+    */
+  };
   const handleCreateShipment = async () => {
     if (!selectedOrder || !selectedOrder.items || selectedOrder.items.length === 0) return;
 
@@ -247,85 +363,8 @@ const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
         color: 'red',
       });
       console.error(error);
-const handleSubmit = async () => {
-  setError(null);
-  setIsCreatingCheckout(true);
-
-  let orderResponse = null;
-  let stripeData = null;
-
-  try {
-    console.log('1. Starting order creation...');
-
-    // 1. Create the Order
-    orderResponse = await createOrder({
-      warehouseId: parseInt(warehouseId || '0', 10),
-      buyerId: parseInt(buyerId || '0', 10),
-      items: [
-        {
-          productId: parseInt(productId || '0', 10),
-          quantity: Number(quantity),
-        },
-      ],
-    });
-
-    if ('error' in orderResponse) {
-      throw new Error(orderResponse.error.message || 'Order creation failed');
     }
-
-    console.log('✅ Order created:', orderResponse);
-
-    // 2. Create Stripe Checkout Session
-    console.log('2. Creating Stripe session...');
-    const stripeResponse = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // 🔐 Include cookies for auth
-      body: JSON.stringify({
-        orderId: orderResponse.id,
-      }),
-    });
-
-    if (!stripeResponse.ok) {
-      const errorText = await stripeResponse.text();
-      throw new Error(`Stripe error: ${errorText}`);
-    }
-
-    stripeData = await stripeResponse.json();
-    console.log('✅ Stripe session created:', stripeData);
-
-    // 3. Redirect to Stripe Checkout
-    const stripe = await loadStripe('pk_test_51RSOJhRs6J5EqLQsNzbpo1hWYfC5wjSghPWrGUfdDgdf6b6h6rDCmaGiEAbae5jAIuGxNeahSqob6ZydO4JmjXuu00Qmidd6oC');
-    if (!stripe) {
-      throw new Error('Stripe failed to initialize');
-    }
-
-    const { error } = await stripe.redirectToCheckout({
-      sessionId: stripeData.id,
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-  } catch (error) {
-    console.error('❌ Full error:', error);
-    setError(error.message || 'Checkout process failed');
-    handleCloseModal();
-  } finally {
-    setIsCreatingCheckout(false);
-
-    // 🧠 Expose `orderResponse` and `stripeData` if you need to use them after
-    if (orderResponse) {
-      console.log('📦 Final Order Response:', orderResponse);
-    }
-    if (stripeData) {
-      console.log('💳 Final Stripe Session:', stripeData);
-    }
-  }
-};
+  };
 
   // Get selected product details
   const selectedProduct = productId ? warehouseProducts.find(product => product.id === Number(productId)) : undefined;
@@ -508,7 +547,7 @@ const handleSubmit = async () => {
       {/* Enhanced Modal with error handling built-in */}
       <DashboardCrudModal
         opened={modalOpen}
-                title={
+        title={
           modalType === 'create' ? 'Create New Order' :
           modalType === 'edit' ? `Edit Order #${selectedOrder?.id}` :
           `Order Details #${selectedOrder?.id}`
@@ -516,11 +555,26 @@ const handleSubmit = async () => {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         modalType={modalType}
+        // SIMPLIFIED: Removed Stripe checkout loading state
         isSubmitting={isSubmitting}
         errors={formErrors}
         size="lg"
       >
         <Stack gap="md">
+          {/* Error Display */}
+          {error && (
+            <Alert 
+              icon={<PiWarningBold size={16} />} 
+              title="Error" 
+              color="red"
+              variant="light"
+              onClose={() => setError(null)}
+              withCloseButton
+            >
+              {error}
+            </Alert>
+          )}
+
           {/* Order Information Section */}
           <div>
             <Text fw={600} mb="sm">Order Information</Text>
@@ -765,6 +819,19 @@ const handleSubmit = async () => {
               )}
             </div>
           )}
+
+          {/* COMMENTED OUT: Checkout Loading Indicator
+          {isCreatingCheckout && (
+            <Alert 
+              icon={<Loader size={16} />} 
+              title="Processing Payment" 
+              color="blue"
+              variant="light"
+            >
+              Creating order and redirecting to Stripe checkout...
+            </Alert>
+          )}
+          */}
         </Stack>
       </DashboardCrudModal>
     </>
