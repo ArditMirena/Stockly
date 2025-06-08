@@ -97,6 +97,13 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
     }
 
     @Override
+    public List<WarehouseDTO> getWarehousesByManagerId(Long managerId) {
+        return warehouseRepository.findByManagerId(managerId).stream()
+                .map(warehouseMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Long getWarehousesCount(){
         return warehouseRepository.count();
     }

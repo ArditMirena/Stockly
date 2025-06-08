@@ -26,4 +26,10 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long>, Jpa
             @Param("managerId") Long managerId,
             Pageable pageable
     );
+
+    @Query("SELECT w FROM Warehouse w " +
+            "JOIN w.company c " +
+            "JOIN c.manager m " +
+            "WHERE m.id = :managerId")
+    List<Warehouse> findByManagerId(@Param("managerId") Long managerId);
 }
