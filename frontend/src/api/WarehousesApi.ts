@@ -162,6 +162,13 @@ export const warehousesApi = createApi({
                 method: 'POST',
             }),
         }),
+        getWarehousesByManager: builder.query<WarehouseDTO[], number>({
+            query: (managerId) => ({
+                url: `/warehouses/manager/${managerId}`,
+                method: 'GET'
+            }),
+            providesTags: ['Warehouse']
+        }),
         getWarehouseProductsWithPagination: builder.query<PaginatedWarehouseProductResponse, PaginationParams>({
             query: (params) => ({
                 url: '/warehouses/products/page',
@@ -188,5 +195,6 @@ export const {
     useGetWarehousesCountQuery,
     useAssignProductToWarehouseMutation,
     useGetWarehouseProductsWithPaginationQuery,
-    useAddWarehouseMutation
+    useAddWarehouseMutation,
+    useGetWarehousesByManager
 } = warehousesApi;

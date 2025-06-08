@@ -19,7 +19,7 @@ public interface WarehouseQueryService {
     Page<WarehouseDTO> getAllWarehousesWithPagination(Long companyId, Long managerId, Pageable pageable);
     Page<WarehouseDTO> getWarehousesByCompanyWithPagination(Long companyId, Pageable pageable);
     List<WarehouseProductDTO> getProductsByWarehouseId(Long id);
-
+    List<WarehouseDTO> getWarehousesByManagerId(Long managerId);
     Long getWarehousesCount();
 
 }

@@ -25,7 +25,6 @@ import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold, PiWarehouseBold, P
 import DashboardTable, { Column } from '../../components/DashboardTable';
 import {
     useGetCompaniesWithPaginationQuery,
-    useGetCompaniesByTypeWithPaginationQuery,
     useSearchCompaniesQuery,
     useDeleteCompanyMutation,
     useAddCompanyMutation,
@@ -79,7 +78,7 @@ const CompaniesDashboard = () => {
         data: paginatedResponse,
         isLoading: isPaginatedLoading,
     } = companyTypeFilter
-        ? useGetCompaniesByTypeWithPaginationQuery({
+        ? useGetCompaniesWithPaginationQuery({
             offset: page,
             pageSize,
             sortBy: 'id',

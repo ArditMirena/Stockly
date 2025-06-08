@@ -114,5 +114,13 @@ public class WarehouseQueryController {
                 pageRequest
         ));
     }
+
+    @GetMapping("/manager/{managerId}")
+    public ResponseEntity<List<WarehouseDTO>> getWarehousesByManagerId(
+            @PathVariable Long managerId
+    ) {
+        List<WarehouseDTO> warehouses = warehouseQueryService.getWarehousesByManagerId(managerId);
+        return ResponseEntity.ok(warehouses);
+    }
     
 }
