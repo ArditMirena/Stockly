@@ -31,7 +31,7 @@ import { LoadingOverlay } from '@mantine/core';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isInitialized, isLoading } = useSelector((state: RootState) => state.auth);
+  const { isInitialized, isLoading } = useSelector((state: RootState) => (state.auth as { isInitialized: boolean; isLoading: boolean }));
 
   useEffect(() => {
     setupResponseInterceptor(() => {
@@ -143,5 +143,4 @@ function App() {
     </Router>
   )
 }
-
 export default App

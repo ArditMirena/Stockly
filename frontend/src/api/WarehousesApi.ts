@@ -196,5 +196,5 @@ export const {
     useAssignProductToWarehouseMutation,
     useGetWarehouseProductsWithPaginationQuery,
     useAddWarehouseMutation,
-    useGetWarehousesByManager
+    useGetWarehousesByManagerQuery
 } = warehousesApi;

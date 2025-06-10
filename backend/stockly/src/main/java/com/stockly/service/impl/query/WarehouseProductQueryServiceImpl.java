@@ -3,6 +3,7 @@ package com.stockly.service.impl.query;
 import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.mapper.WarehouseProductMapper;
 import com.stockly.model.WarehouseProduct;
+import com.stockly.repository.PredictionResultRepository;
 import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.service.query.WarehouseProductQueryService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class WarehouseProductQueryServiceImpl implements WarehouseProductQueryService {
     private final WarehouseProductRepository warehouseProductRepository;
     private final WarehouseProductMapper warehouseProductMapper;
+    private final PredictionResultRepository predictionResultRepository;
 
     @Override
     public Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest) {

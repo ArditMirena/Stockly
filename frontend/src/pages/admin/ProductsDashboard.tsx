@@ -188,6 +188,7 @@ const ProductsDashboard = () => {
         ) : (
           <>
             <DashboardTable
+            title='Predictions'
               tableData={tableData}
               allColumns={columns}
               enableSort
