@@ -25,6 +25,7 @@ public class WarehouseProductMapper {
                 .quantity(warehouseProduct.getQuantity())
                 .availability(warehouseProduct.getAvailability())
                 .unitPrice(warehouseProduct.getProduct().getPrice())
+                .automatedRestock(warehouseProduct.isAutomatedRestock())
                 .build();
     }
 
@@ -35,6 +36,7 @@ public class WarehouseProductMapper {
         warehouseProduct.setId(dto.getId());
         warehouseProduct.setQuantity(dto.getQuantity());
         warehouseProduct.setAvailability(dto.getAvailability());
+        warehouseProduct.setAutomatedRestock(dto.isAutomatedRestock());
 
         // Map only IDs for associated entities
         Warehouse warehouse = new Warehouse();

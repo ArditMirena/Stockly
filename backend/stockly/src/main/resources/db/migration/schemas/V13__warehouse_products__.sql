@@ -10,6 +10,8 @@ CREATE TABLE warehouse_products (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
+    automated_restock boolean NOT NULL DEFAULT FALSE,
+
     CONSTRAINT fk_wp_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
     CONSTRAINT fk_wp_product FOREIGN KEY (product_id) REFERENCES products(id)
 );

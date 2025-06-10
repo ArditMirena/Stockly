@@ -59,6 +59,9 @@ public class Order {
     @UpdateTimestamp
     private Date updatedAt;
 
+    @Column(name = "description")
+    private String description;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_warehouse_id")
     private Warehouse sourceWarehouse;

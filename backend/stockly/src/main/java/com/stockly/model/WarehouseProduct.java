@@ -44,6 +44,9 @@ public class WarehouseProduct {
     @UpdateTimestamp
     private Instant updatedAt;
 
+    @Column(name = "automated_restock")
+    private boolean automatedRestock;
+
     public void updateAvailability() {
         if (quantity == null || quantity <= 0) {
             this.availability = AvailabilityStatus.OUT_OF_STOCK.name();

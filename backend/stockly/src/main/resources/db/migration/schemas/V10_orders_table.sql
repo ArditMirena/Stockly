@@ -10,6 +10,7 @@ CREATE TABLE orders (
     shipment_id VARCHAR(255) NULL,
     total_price DECIMAL(19,4) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description VARCHAR(250),
 
     CONSTRAINT fk_order_buyer
         FOREIGN KEY (buyer_id) REFERENCES company(id),

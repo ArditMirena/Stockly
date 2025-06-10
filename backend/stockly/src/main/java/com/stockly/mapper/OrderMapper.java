@@ -35,6 +35,7 @@ public class OrderMapper {
         dto.setTotalPrice(order.getTotalPrice());
         dto.setShipmentId(order.getShipmentId());
         dto.setUpdatedAt(order.getUpdatedAt());
+        dto.setDescription(order.getDescription());
 
         if (order.getBuyer() != null) {
             dto.setBuyerId(order.getBuyer().getId());
@@ -78,6 +79,8 @@ public class OrderMapper {
         order.setOrderDate(dto.getOrderDate());
         order.setDeliveryDate(dto.getDeliveryDate());
         order.setShipmentId(dto.getShipmentId());
+        order.setUpdatedAt(dto.getUpdatedAt());
+        order.setDescription(dto.getDescription());
 
         if (dto.getStatus() != null) {
             order.setStatus(OrderStatus.valueOf(dto.getStatus()));

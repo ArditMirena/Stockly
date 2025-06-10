@@ -36,4 +36,5 @@ public class WarehouseProductDTO {
     private String productSku;
     private String productThumbnail;
     private BigDecimal unitPrice;
+    private boolean automatedRestock;
 }
