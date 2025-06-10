@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   useCreateOrderMutation,
   useGetOrdersWithPaginationQuery,
   useSearchOrdersQuery,
   OrderDTO,
 } from '../../api/ordersApi';
-import { useGetAllWarehousesQuery, useGetWarehouseProductsQuery, useAssignProductToWarehouseMutation } from '../../api/WarehousesApi';
+import { useGetAllWarehousesQuery, useGetWarehouseProductsQuery, useAssignProductToWarehouseMutation, useGetWarehousesByManagerQuery } from '../../api/WarehousesApi';
 import { useGetCompaniesQuery } from '../../api/CompaniesApi';
 import { useCreateShipmentMutation } from '../../api/ShipmentsApi';
 import {
@@ -35,6 +36,8 @@ import {
 // import { loadStripe } from '@stripe/stripe-js';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
+import { ROLES } from '../../utils/Roles';
+import { RootState } from '../../redux/store';
 
 // Status color mapping for better visual feedback
 const getStatusColor = (status: string) => {
@@ -89,8 +92,20 @@ const OrdersDashboard = () => {
   const [createOrder] = useCreateOrderMutation();
   const [createShipment, { isLoading: isCreatingShipment }] = useCreateShipmentMutation();
 
+  const user = useSelector((state: RootState) => state.auth.user);
+
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetAllWarehousesQuery();
   const { data: buyers = [], isLoading: isLoadingBuyers } = useGetCompaniesQuery();
+  // const { data: buyers = [], isLoading: isLoadingBuyers } = useGetCompaniesQuery(
+  //   user?.role === ROLES.BUYER ? { managerId: user.id } : undefined
+  // );
+
+  // const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetWarehousesByManagerQuery(
+  //   user?.id || 0,
+  //   { 
+  //     skip: !user?.id || (user?.role !== ROLES.BUYER && user?.role !== ROLES.SUPPLIER)
+  //   }
+  // );
 
   const { 
     data: warehouseProducts = [], 
@@ -109,6 +124,8 @@ const OrdersDashboard = () => {
   } = useGetOrdersWithPaginationQuery({
     offset: page,
     pageSize: 10,
+    ...(user?.role === ROLES.BUYER && { buyerManagerId: user.id }),
+    ...(user?.role === ROLES.SUPPLIER && { supplierManagerId: user.id }),
   });
 
   const {
@@ -156,11 +173,13 @@ const OrdersDashboard = () => {
       if (order.items && order.items.length > 0) {
         setProductId(order.items[0].productId.toString());
         setQuantity(order.items[0].quantity);
+        
       }
     } else {
       resetForm();
     }
   };
+  
 
   const handleCloseModal = () => {
     setModalOpen(false);
@@ -367,7 +386,7 @@ const OrdersDashboard = () => {
   };
 
   // Get selected product details
-  const selectedProduct = productId ? warehouseProducts.find(product => product.id === Number(productId)) : undefined;
+  const selectedProduct = productId ? warehouseProducts.find(product => product.productId === Number(productId)) : undefined;
   const unitPrice = selectedProduct?.unitPrice || 0;
   const availableQuantity = selectedProduct?.quantity || 0;
   const totalPrice = unitPrice * quantity;
@@ -555,7 +574,6 @@ const OrdersDashboard = () => {
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         modalType={modalType}
-        // SIMPLIFIED: Removed Stripe checkout loading state
         isSubmitting={isSubmitting}
         errors={formErrors}
         size="lg"
@@ -626,7 +644,7 @@ const OrdersDashboard = () => {
                   placeholder={warehouseId ? "Select a product" : "First select a warehouse"}
                   data={warehouseProducts.map(p => ({ 
                     label: p.productTitle, 
-                    value: p.id.toString(),
+                    value: p.productId.toString(),
                     description: `Stock: ${p.quantity || 0} units • $${(p.unitPrice || 0).toFixed(2)}/unit`
                   }))}
                   value={productId}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   Paper,
   Title,
@@ -15,14 +16,19 @@ import {
   useGetWarehouseProductsWithPaginationQuery,
 } from '../../api/WarehousesApi';
 import { PiMagnifyingGlassBold } from 'react-icons/pi';
+import { ROLES } from '../../utils/Roles';
+import { RootState } from '../../redux/store';
 
 const WarehouseProductsDashboard = () => {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const user = useSelector((state: RootState) => state.auth.user);
   
   const { data: paginatedResponse, isLoading } = useGetWarehouseProductsWithPaginationQuery({
     offset: page,
-    pageSize: 10
+    pageSize: 10,
+    ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
   });
 
   const columns: Column<WarehouseProductDTO>[] = [
@@ -92,6 +98,7 @@ const WarehouseProductsDashboard = () => {
           </Box>
         ) : (
           <DashboardTable
+            title='Warehouse Products'
             tableData={tableData}
             allColumns={columns}
             enableSort

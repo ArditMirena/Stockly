@@ -1,54 +1,126 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
-    Paper,
-    Title,
     Divider,
     Stack,
     Group,
-    ActionIcon,
     Box,
     Modal,
     Button,
     Text,
     TextInput,
     Badge,
-    Menu,
     Select,
-    Notification,
     Loader,
     Tabs,
     Checkbox,
+    Card,
+    Grid,
+    Alert,
 } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { useDebouncedValue } from '@mantine/hooks';
-import { PiTrashBold, PiMagnifyingGlassBold, PiCaretDownBold, PiWarehouseBold, PiPencilSimpleLineBold, PiEyeBold, PiPlusBold } from 'react-icons/pi';
-import DashboardTable, { Column } from '../../components/DashboardTable';
+import { showNotification } from '@mantine/notifications';
+import { 
+    PiTrashBold,
+    PiPencilSimpleLineBold, 
+    PiEyeBold,
+    PiBuildingsBold,
+    PiWarningBold,
+    PiFactoryBold,
+    PiStorefrontBold,
+    PiShoppingCartBold
+} from 'react-icons/pi';
+import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import {
     useGetCompaniesWithPaginationQuery,
     useSearchCompaniesQuery,
     useDeleteCompanyMutation,
     useAddCompanyMutation,
+    useUpdateCompanyMutation,
     Company,
     AddressDTO,
     useGetCountriesQuery,
     useGetCitiesByCountryQuery,
 } from '../../api/CompaniesApi';
 import { useGetUsersQuery } from '../../api/UsersApi';
-import DashboardCrudModal from '../../components/DashboardCrudModal';
+import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
+import { ROLES } from '../../utils/Roles';
+import { RootState } from '../../redux/store';
+
+// Company type color mapping
+const getCompanyTypeColor = (type: string) => {
+    switch (type?.toLowerCase()) {
+        case 'supplier': return 'blue';
+        case 'manufacturer': return 'orange';
+        case 'buyer': return 'green';
+        default: return 'gray';
+    }
+};
+
+// Company type icon mapping
+const getCompanyTypeIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+        case 'supplier': return <PiStorefrontBold size={14} />;
+        case 'manufacturer': return <PiFactoryBold size={14} />;
+        case 'buyer': return <PiShoppingCartBold size={14} />;
+        default: return <PiBuildingsBold size={14} />;
+    }
+};
+
+// Form validation helper
+const validateCompanyForm = (
+    companyName: string,
+    email: string,
+    phoneNumber: string,
+    street: string,
+    postalCode: string,
+    selectedCity: number | null,
+    selectedManager: number | null,
+    activeTab: string,
+    businessType: string,
+    userRole: string | undefined
+) => {
+    const errors: string[] = [];
+    
+    if (!companyName.trim()) errors.push('Company name is required');
+    if (!email.trim()) errors.push('Email is required');
+    if (!phoneNumber.trim()) errors.push('Phone number is required');
+    if (!street.trim()) errors.push('Street address is required');
+    if (!postalCode.trim()) errors.push('Postal code is required');
+    if (!selectedCity) errors.push('City is required');
+    
+    // Only require manager selection for admin users
+    if (userRole === ROLES.SUPER_ADMIN && !selectedManager) {
+        errors.push('Manager is required');
+    }
+    
+    if (activeTab === 'buyer' && !businessType.trim()) {
+        errors.push('Business type is required for buyers');
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+        errors.push('Please enter a valid email address');
+    }
+
+    console.log('Validation Errors:', errors);
+    
+    return errors;
+};
 
 const CompaniesDashboard = () => {
     const [page, setPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
-    const [companyTypeFilter, setCompanyTypeFilter] = useState<string | null>(null);
     const pageSize = 10;
     const navigate = useNavigate();
 
     // Modal state
     const [modalOpen, setModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<'view' | 'edit' | null>(null);
+    const [modalType, setModalType] = useState<ModalType>('create');
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'supplier' | 'manufacturer' | 'buyer'>('supplier');
 
     // Form state
@@ -63,7 +135,18 @@ const CompaniesDashboard = () => {
     const [selectedManager, setSelectedManager] = useState<number | null>(null);
     const [hasProductionFacility, setHasProductionFacility] = useState(false);
 
-    const [addCompany, { isLoading: isAddingCompany }] = useAddCompanyMutation();
+    // Error and loading state
+    const [formErrors, setFormErrors] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const user = useSelector((state: RootState) => state.auth.user);
+
+    // API hooks
+    const [addCompany] = useAddCompanyMutation();
+    const [updateCompany] = useUpdateCompanyMutation();
+    const [deleteCompany] = useDeleteCompanyMutation();
+    
     const { data: countries = [], isLoading: isCountriesLoading } = useGetCountriesQuery();
     const {
         data: cities = [],
@@ -77,33 +160,43 @@ const CompaniesDashboard = () => {
     const {
         data: paginatedResponse,
         isLoading: isPaginatedLoading,
-    } = companyTypeFilter
-        ? useGetCompaniesWithPaginationQuery({
+        refetch: refetchCompanies,
+        error: companiesError
+    } = useGetCompaniesWithPaginationQuery({
             offset: page,
             pageSize,
             sortBy: 'id',
-            companyType: companyTypeFilter
-        })
-        : useGetCompaniesWithPaginationQuery({
-            offset: page,
-            pageSize,
-            sortBy: 'id',
+            ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
         });
 
     const {
         data: searchedCompanies,
         isFetching: isSearchLoading,
+        error: searchError
     } = useSearchCompaniesQuery(debouncedSearch, {
         skip: debouncedSearch.length === 0,
     });
 
-    const [deleteCompany] = useDeleteCompanyMutation();
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
+    // Clear form errors when form values change
+    useEffect(() => {
+        if (formErrors.length > 0) {
+            setFormErrors([]);
+        }
+    }, [companyName, email, phoneNumber, street, postalCode, selectedCity, selectedManager, businessType]);
+
+    // Reset city when country changes
+    useEffect(() => {
+        if (selectedCountry) {
+            setSelectedCity(null);
+        }
+    }, [selectedCountry]);
+
     const countryOptions = countries
-        .slice() // Create a copy to avoid mutating the original array
-        .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically by name
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map(country => ({
             value: country.id.toString(),
             label: country.name,
@@ -114,9 +207,45 @@ const CompaniesDashboard = () => {
         label: city.name,
     }));
 
+    const managerOptions = users.map(user => ({
+        value: user.id.toString(),
+        label: `${user.email} (${user.role})`,
+        description: user.role
+    }));
+
+    const resetForm = () => {
+        setCompanyName('');
+        setEmail('');
+        setPhoneNumber('');
+        setBusinessType('');
+        setSelectedManager(null);
+        setHasProductionFacility(false);
+        setStreet('');
+        setPostalCode('');
+        setSelectedCountry(null);
+        setSelectedCity(null);
+        setActiveTab('supplier');
+        setFormErrors([]);
+        setError(null);
+    };
+
     const handleDelete = async () => {
         if (deleteId !== null) {
-            await deleteCompany(deleteId);
+            try {
+                await deleteCompany(deleteId).unwrap();
+                showNotification({
+                    title: 'Success',
+                    message: 'Company deleted successfully',
+                    color: 'green',
+                });
+                refetchCompanies();
+            } catch (error: any) {
+                showNotification({
+                    title: 'Error',
+                    message: error?.data?.message || 'Failed to delete company',
+                    color: 'red',
+                });
+            }
             setConfirmOpen(false);
             setDeleteId(null);
         }
@@ -128,12 +257,12 @@ const CompaniesDashboard = () => {
         });
     };
 
-    const handleOpenModal = (company: Company | null, type: 'view' | 'edit') => {
+    const handleOpenModal = (company: Company | null, type: ModalType) => {
         setSelectedCompany(company);
         setModalType(type);
         setModalOpen(true);
 
-        if (company) {
+        if (company && type !== 'create') {
             setCompanyName(company.companyName);
             setEmail(company.email);
             setPhoneNumber(company.phoneNumber);
@@ -154,118 +283,170 @@ const CompaniesDashboard = () => {
                 setStreet(company.address.street);
                 setPostalCode(company.address.postalCode);
                 setSelectedCity(company.address.cityId);
-                // Initialize country based on city (this assumes you have a way to get country from city)
-                // You might need to adjust this based on your actual data structure
-                setSelectedCountry(company.address.countryId?.toString() || null);
+                setSelectedCountry(company.address.country?.toString() || null);
             }
         } else {
-            // Reset form for new company
-            setCompanyName('');
-            setEmail('');
-            setPhoneNumber('');
-            setBusinessType('');
-            setSelectedManager(null);
-            setHasProductionFacility(false);
-            setStreet('');
-            setPostalCode('');
-            setSelectedCountry(null);
-            setSelectedCity(null);
-            setActiveTab('supplier');
+            resetForm();
+            // Auto-set manager ID for buyer/supplier users
+            if (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) {
+                setSelectedManager(user.id);
+            }
         }
     };
 
     const handleCloseModal = () => {
         setModalOpen(false);
         setSelectedCompany(null);
-        setModalType(null);
-        setError(null);
+        setModalType('create');
+        resetForm();
+        setIsSubmitting(false);
     };
 
     const handleSubmit = async () => {
+        console.log('handleSubmit called!');
         setError(null);
+        setIsSubmitting(true);
 
-        // Common validation for all company types
-        const commonErrors = [];
-        if (!companyName) commonErrors.push('Company name is required');
-        if (!email) commonErrors.push('Email is required');
-        if (!phoneNumber) commonErrors.push('Phone number is required');
-        if (!street) commonErrors.push('Street address is required');
-        if (!postalCode) commonErrors.push('Postal code is required');
-        if (!selectedCity) commonErrors.push('City is required');
-        if (!selectedManager) commonErrors.push('Manager is required');
+        // Validate form
+        const errors = validateCompanyForm(
+            companyName,
+            email,
+            phoneNumber,
+            street,
+            postalCode,
+            selectedCity,
+            selectedManager,
+            activeTab,
+            businessType,
+            user?.role
+        );
 
-        // Tab-specific validation
-        if (activeTab === 'buyer' && !businessType) {
-            commonErrors.push('Business type is required for buyers');
-        }
-
-        if (commonErrors.length > 0) {
-            setError(commonErrors.join(', '));
+        if (errors.length > 0) {
+            setFormErrors(errors);
+            setIsSubmitting(false);
             return;
         }
 
         try {
-            const companyData = {
-                companyName,
-                email,
-                phoneNumber,
+            const companyData: any = {
+                companyName: companyName.trim(),
+                email: email.trim(),
+                phoneNumber: phoneNumber.trim(),
                 address: {
-                    street,
-                    postalCode,
+                    street: street.trim(),
+                    postalCode: postalCode.trim(),
                     cityId: selectedCity,
                 },
-                manager: selectedManager,
-                ...(activeTab === 'buyer' && { businessType }),
+                manager: selectedManager || user?.id, // Use current user ID if no manager selected
+                ...(activeTab === 'buyer' && { businessType: businessType.trim() }),
                 ...(activeTab === 'manufacturer' && { hasProductionFacility: true }),
             };
+            console.log('Company Data:', companyData);
 
-            await addCompany(companyData).unwrap();
+            if (selectedCompany && modalType === 'edit') {
+                await updateCompany({ id: selectedCompany.id, ...companyData }).unwrap();
+                showNotification({
+                    title: 'Success',
+                    message: 'Company updated successfully',
+                    color: 'green',
+                });
+            } else {
+                await addCompany(companyData).unwrap();
+                showNotification({
+                    title: 'Success',
+                    message: 'Company created successfully',
+                    color: 'green',
+                });
+            }
+
             handleCloseModal();
-        } catch (err) {
+            refetchCompanies();
+        } catch (err: any) {
             console.error('Failed to save company:', err);
-            setError('Failed to save company. Please try again.');
+            const errorMessage = err?.data?.message || 'Failed to save company. Please try again.';
+            setError(errorMessage);
+            showNotification({
+                title: 'Error',
+                message: errorMessage,
+                color: 'red',
+            });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
+    // Define table columns
     const columns: Column<Company>[] = [
         {
             accessorKey: 'id',
             header: 'ID',
             enableSorting: true,
-            cell: (info) => info.getValue(),
+            cell: (info) => (
+                <Text fw={500} c="blue">
+                    #{info.getValue() as string}
+                </Text>
+            ),
+            size: 80,
         },
         {
             accessorKey: 'companyName',
             header: 'Company Name',
             enableSorting: true,
-            cell: (info) => info.getValue(),
+            cell: (info) => (
+                <Text fw={500} size="sm">
+                    {info.getValue() as string}
+                </Text>
+            ),
         },
         {
             accessorKey: 'email',
             header: 'Email',
             enableSorting: false,
-            cell: (info) => info.getValue(),
+            cell: (info) => (
+                <Text size="sm" c="dimmed">
+                    {info.getValue() as string}
+                </Text>
+            ),
         },
         {
             accessorKey: 'phoneNumber',
             header: 'Phone',
             enableSorting: false,
-            cell: (info) => info.getValue(),
+            cell: (info) => (
+                <Text size="sm">
+                    {info.getValue() as string}
+                </Text>
+            ),
         },
         {
             accessorKey: 'address',
-            header: 'Address',
+            header: 'Location',
             enableSorting: false,
             cell: (info) => {
                 const address = info.getValue() as AddressDTO;
-                return address ? `${address.street}, ${address.postalCode}` : 'N/A';
+                return address ? (
+                    <div>
+                        <Text size="sm">{address.street}</Text>
+                        <Text size="xs" c="dimmed">{address.postalCode}</Text>
+                    </div>
+                ) : (
+                    <Text size="sm" c="dimmed">N/A</Text>
+                );
             },
         },
-        {
+                {
             accessorKey: 'createdAt',
             header: 'Created',
             enableSorting: true,
-            cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+            cell: (info) => (
+                <Text size="sm">
+                    {new Date(info.getValue() as string).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    })}
+                </Text>
+            ),
         },
         {
             accessorKey: 'companyType',
@@ -273,14 +454,17 @@ const CompaniesDashboard = () => {
             enableSorting: false,
             cell: (info) => {
                 const type = info.getValue() as string;
-                let color = 'gray';
-                if (type === 'SUPPLIER') color = 'blue';
-                if (type === 'MANUFACTURER') color = 'orange';
-                if (type === 'BUYER') color = 'green';
+                const color = getCompanyTypeColor(type);
+                const icon = getCompanyTypeIcon(type);
 
                 return (
                     <Group gap="xs">
-                        <Badge color={color}>
+                        <Badge 
+                            color={color} 
+                            variant="light"
+                            leftSection={icon}
+                            size="sm"
+                        >
                             {type}
                         </Badge>
                         {(type === 'SUPPLIER' || type === 'MANUFACTURER') && (
@@ -298,195 +482,298 @@ const CompaniesDashboard = () => {
             },
             size: 220
         },
+    ];
+
+    // Define table actions
+    const actions: DashboardAction<Company>[] = [
         {
-            accessorKey: 'id',
-            header: 'Actions',
-            enableSorting: false,
-            cell: ({ row }) => {
-                const company = row.original;
-                return (
-                    <Group justify="center">
-                        <ActionIcon color="green" variant="light" onClick={() => handleOpenModal(company, 'view')}>
-                            <PiEyeBold size={18} />
-                        </ActionIcon>
-                        <ActionIcon color="blue" variant="light" onClick={() => handleOpenModal(company, 'edit')}>
-                            <PiPencilSimpleLineBold size={18} />
-                        </ActionIcon>
-                        <ActionIcon
-                            color="red"
-                            variant="light"
-                            onClick={() => {
-                                setDeleteId(company.id);
-                                setConfirmOpen(true);
-                            }}
-                        >
-                            <PiTrashBold size={18} />
-                        </ActionIcon>
-                    </Group>
-                );
-            },
+            icon: <PiEyeBold size={16} />,
+            color: 'green',
+            title: 'View Company',
+            onClick: (company) => handleOpenModal(company, 'view')
+        },
+        {
+            icon: <PiPencilSimpleLineBold size={16} />,
+            color: 'blue',
+            title: 'Edit Company',
+            onClick: (company) => handleOpenModal(company, 'edit')
+        },
+        {
+            icon: <PiTrashBold size={16} />,
+            color: 'red',
+            title: 'Delete Company',
+            onClick: (company) => {
+                setDeleteId(company.id);
+                setConfirmOpen(true);
+            }
         }
     ];
 
     const tableData = debouncedSearch.length > 0 ? searchedCompanies || [] : paginatedResponse?.content || [];
     const totalPages = debouncedSearch.length > 0 ? 1 : paginatedResponse?.totalPages || 1;
+    const isLoading = isPaginatedLoading || isSearchLoading;
+    const hasError = companiesError || searchError;
 
     return (
-        <Paper>
-            <Stack>
-                <Group justify="space-between">
-                    <Title order={3}>Companies Dashboard</Title>
-                    <Group>
-                        <Menu shadow="md" width={200}>
-                            <Menu.Target>
-                                <Button
-                                    rightSection={<PiCaretDownBold size={14} />}
-                                    variant="outline"
-                                >
-                                    {companyTypeFilter ? `${companyTypeFilter}S` : 'All Companies'}
-                                </Button>
-                            </Menu.Target>
-                            <Menu.Dropdown>
-                                <Menu.Item onClick={() => setCompanyTypeFilter(null)}>
-                                    All Companies
-                                </Menu.Item>
-                                <Menu.Item onClick={() => setCompanyTypeFilter('BUYER')}>
-                                    Buyers
-                                </Menu.Item>
-                                <Menu.Item onClick={() => setCompanyTypeFilter('SUPPLIER')}>
-                                    Suppliers
-                                </Menu.Item>
-                                <Menu.Item onClick={() => setCompanyTypeFilter('MANUFACTURER')}>
-                                    Manufacturers
-                                </Menu.Item>
-                            </Menu.Dropdown>
-                        </Menu>
-                        <TextInput
-                            placeholder="Search companies..."
-                            leftSection={<PiMagnifyingGlassBold size={16} />}
-                            w={250}
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setPage(0);
-                                setSearchTerm(e.currentTarget.value);
-                            }}
-                        />
-                        <Button
-                            leftSection={<PiPlusBold size={16} />}
-                            onClick={() => handleOpenModal(null, 'edit')}
-                        >
-                            Add Company
-                        </Button>
-                    </Group>
-                </Group>
+        <>
+            {/* Enhanced Table with all functionality built-in */}
+            <DashboardTable
+                tableData={tableData}
+                allColumns={columns}
+                actions={actions}
+                totalPages={totalPages}
+                currentPage={page}
+                fetchData={setPage}
+                searchTerm={searchTerm}
+                onSearchChange={(term) => {
+                    setPage(0);
+                    setSearchTerm(term);
+                }}
+                title="Companies Dashboard"
+                subtitle="Manage and track all companies in your system"
+                titleIcon={<PiBuildingsBold size={28} />}
+                onCreateNew={() => handleOpenModal(null, 'create')}
+                createButtonLabel="Add Company"
+                createButtonLoading={isCountriesLoading || isUsersLoading}
+                isLoading={isLoading}
+                error={hasError}
+                enableSort
+                enableSearch
+            />
 
-                <Divider />
-
-                {(isPaginatedLoading || isSearchLoading) ? (
-                    <Box py="xl" style={{ textAlign: 'center' }}>
-                        <Loader />
-                    </Box>
-                ) : (
-                    <DashboardTable
-                        tableData={tableData}
-                        allColumns={columns}
-                        enableSort
-                        totalPages={totalPages}
-                        currentPage={page}
-                        fetchData={setPage}
-                    />
-                )}
-
-                <Modal
-                    opened={confirmOpen}
-                    onClose={() => setConfirmOpen(false)}
-                    title="Confirm Delete"
-                    centered
-                >
-                    <Text>Are you sure you want to delete this company?</Text>
-                    <Group mt="md" justify="flex-end">
+            {/* Delete Confirmation Modal */}
+            <Modal
+                opened={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                title="Confirm Delete"
+                centered
+                size="sm"
+                style={{
+                    position: 'fixed',
+                    top: '0',
+                    left: '0'
+                }}
+            >
+                <Stack>
+                    <Alert 
+                        icon={<PiWarningBold size={16} />} 
+                        title="Warning" 
+                        color="red"
+                        variant="light"
+                    >
+                        Are you sure you want to delete this company? This action cannot be undone.
+                    </Alert>
+                    <Group justify="flex-end" mt="md">
                         <Button variant="default" onClick={() => setConfirmOpen(false)}>
                             Cancel
                         </Button>
                         <Button color="red" onClick={handleDelete}>
-                            Delete
+                            Delete Company
                         </Button>
                     </Group>
-                </Modal>
+                </Stack>
+            </Modal>
 
-                <DashboardCrudModal
-                    opened={modalOpen}
-                    title={modalType === 'edit' ? (selectedCompany ? 'Edit Company' : 'Add Company') : 'View Company'}
-                    onClose={handleCloseModal}
-                    onSubmit={modalType === 'edit' ? handleSubmit : undefined}
-                    submitLabel={selectedCompany ? 'Update' : 'Create'}
-                    isSubmitting={isAddingCompany}
-                    showSubmitButton={modalType === 'edit'}
-                    size="lg"
-                >
-                    <Tabs value={activeTab} onChange={(value) => setActiveTab(value as 'supplier' | 'manufacturer' | 'buyer')}>
-                        <Tabs.List>
-                            <Tabs.Tab value="supplier" disabled={modalType === 'view'}>Supplier</Tabs.Tab>
-                            <Tabs.Tab value="manufacturer" disabled={modalType === 'view'}>Manufacturer</Tabs.Tab>
-                            <Tabs.Tab value="buyer" disabled={modalType === 'view'}>Buyer</Tabs.Tab>
-                        </Tabs.List>
+            {/* Enhanced Modal with improved UX */}
+            <DashboardCrudModal
+                opened={modalOpen}
+                title={
+                    modalType === 'create' ? 'Create New Company' :
+                    modalType === 'edit' ? `Edit ${selectedCompany?.companyName}` :
+                    `Company Details - ${selectedCompany?.companyName}`
+                }
+                onClose={handleCloseModal}
+                onSubmit={handleSubmit}
+                modalType={modalType}
+                isSubmitting={isSubmitting}
+                errors={formErrors}
+                size="lg"
+            >
+    <Stack gap="md">
+        {/* Error Display */}
+        {error && (
+            <Alert 
+                icon={<PiWarningBold size={16} />} 
+                title="Error" 
+                color="red"
+                variant="light"
+                onClose={() => setError(null)}
+                withCloseButton
+            >
+                {error}
+            </Alert>
+        )}
 
-                        <Tabs.Panel value="supplier">
-                            <Stack mt="md">
+        {/* Company Type Selection Tabs */}
+        <div>
+            <Text fw={600} mb="sm">Company Type</Text>
+            <Tabs 
+                value={activeTab} 
+                onChange={(value) => setActiveTab(value as 'supplier' | 'manufacturer' | 'buyer')}
+                variant="pills"
+            >
+                <Tabs.List>
+                    <Tabs.Tab 
+                        value="supplier" 
+                        disabled={modalType === 'view'}
+                        leftSection={<PiStorefrontBold size={16} />}
+                    >
+                        Supplier
+                    </Tabs.Tab>
+                    <Tabs.Tab 
+                        value="manufacturer" 
+                        disabled={modalType === 'view'}
+                        leftSection={<PiFactoryBold size={16} />}
+                    >
+                        Manufacturer
+                    </Tabs.Tab>
+                    <Tabs.Tab 
+                        value="buyer" 
+                        disabled={modalType === 'view'}
+                        leftSection={<PiShoppingCartBold size={16} />}
+                    >
+                        Buyer
+                    </Tabs.Tab>
+                </Tabs.List>
+
+                {/* Common form fields for all tabs */}
+                <Box mt="md">
+                    {/* Basic Information Section */}
+                    <div>
+                        <Text fw={600} mb="sm">Basic Information</Text>
+                        <Grid>
+                            <Grid.Col span={6}>
                                 <TextInput
-                                    name="companyName"
                                     label="Company Name"
+                                    placeholder="Enter company name"
                                     value={companyName}
                                     onChange={(e) => setCompanyName(e.currentTarget.value)}
                                     disabled={modalType === 'view'}
                                     required
+                                    error={formErrors.includes('Company name is required') ? 'Company name is required' : null}
                                 />
+                            </Grid.Col>
+                            <Grid.Col span={6}>
                                 <TextInput
-                                    name="email"
                                     label="Email"
+                                    placeholder="Enter email address"
                                     value={email}
                                     onChange={(e) => setEmail(e.currentTarget.value)}
                                     disabled={modalType === 'view'}
                                     required
+                                    error={formErrors.some(e => e.includes('email')) ? 'Valid email is required' : null}
                                 />
+                            </Grid.Col>
+                            <Grid.Col span={6}>
                                 <TextInput
-                                    name="phoneNumber"
                                     label="Phone Number"
+                                    placeholder="Enter phone number"
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(e.currentTarget.value)}
                                     disabled={modalType === 'view'}
                                     required
+                                    error={formErrors.includes('Phone number is required') ? 'Phone number is required' : null}
                                 />
+                            </Grid.Col>
+                            <Grid.Col span={6}>
+                                {user?.role === ROLES.ADMIN ? (
+                                    <Select
+                                        label="Manager"
+                                        placeholder="Select manager"
+                                        value={selectedManager?.toString() || null}
+                                        onChange={(value) => setSelectedManager(value ? Number(value) : null)}
+                                        data={managerOptions}
+                                        disabled={modalType === 'view'}
+                                        required
+                                        searchable
+                                        error={formErrors.includes('Manager is required') ? 'Manager is required' : null}
+                                        rightSection={isUsersLoading ? <Loader size="xs"/> : null}
+                                    />
+                                ) : (
+                                    <TextInput
+                                        label="Manager"
+                                        value={user?.email || 'Current User'}
+                                        disabled
+                                        description="You will be assigned as the manager"
+                                    />
+                                )}
+                            </Grid.Col>
+                        </Grid>
+                    </div>
+
+                    {/* Type-specific fields */}
+                    <Tabs.Panel value="buyer">
+                        <div style={{ marginTop: '1rem' }}>
+                            <Text fw={600} mb="sm">Buyer Information</Text>
+                            <TextInput
+                                label="Business Type"
+                                placeholder="e.g., Retail, Wholesale, Manufacturing"
+                                value={businessType}
+                                onChange={(e) => setBusinessType(e.currentTarget.value)}
+                                disabled={modalType === 'view'}
+                                required
+                                error={formErrors.includes('Business type is required for buyers') ? 'Business type is required' : null}
+                                description="Specify the type of business this buyer operates"
+                            />
+                        </div>
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="manufacturer">
+                        <div style={{ marginTop: '1rem' }}>
+                            <Text fw={600} mb="sm">Manufacturing Information</Text>
+                            <Card withBorder p="md" bg="orange.0">
+                                <Group>
+                                    <PiFactoryBold size={20} color="orange" />
+                                    <div>
+                                        <Text fw={500}>Production Facility</Text>
+                                        <Text size="sm" c="dimmed">
+                                            This company will be marked as having production capabilities
+                                        </Text>
+                                    </div>
+                                    <Checkbox
+                                        checked={hasProductionFacility}
+                                        onChange={() => setHasProductionFacility(!hasProductionFacility)}
+                                        disabled={modalType === 'view'}
+                                        size="md"
+                                    />
+                                </Group>
+                            </Card>
+                        </div>
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="supplier">
+                        <div style={{ marginTop: '1rem' }}>
+                            <Alert 
+                                icon={<PiStorefrontBold size={16} />} 
+                                title="Supplier Company" 
+                                color="blue"
+                                variant="light"
+                            >
+                                This company will be set up as a supplier with basic information only.
+                            </Alert>
+                        </div>
+                    </Tabs.Panel>
+
+                    {/* Address Information Section */}
+                    <div style={{ marginTop: '1.5rem' }}>
+                        <Text fw={600} mb="sm">Address Information</Text>
+                        <Grid>
+                            <Grid.Col span={6}>
                                 <Select
-                                    name="manager"
-                                    label="Manager"
-                                    placeholder="Select manager"
-                                    value={selectedManager?.toString() || null}
-                                    onChange={(value) => setSelectedManager(value ? Number(value) : null)}
-                                    data={users.map(user => ({
-                                        value: user.id.toString(),
-                                        label: user.email
-                                    }))}
-                                    disabled={modalType === 'view'}
-                                    required
-                                    rightSection={isUsersLoading ? <Loader size="xs"/> : null}
-                                />
-                                <Select
-                                    name="country"
                                     label="Country"
                                     placeholder="Select country"
                                     value={selectedCountry}
-                                    onChange={(value) => {
-                                        setSelectedCountry(value);
-                                        setSelectedCity(null); // Reset city when country changes
-                                    }}
+                                    onChange={(value) => setSelectedCountry(value)}
                                     data={countryOptions}
                                     disabled={modalType === 'view'}
                                     required
+                                    searchable
+                                    error={formErrors.includes('Country is required') ? 'Country is required' : null}
                                     rightSection={isCountriesLoading ? <Loader size="xs"/> : null}
                                 />
+                            </Grid.Col>
+                            <Grid.Col span={6}>
                                 <Select
-                                    name="city"
                                     label="City"
                                     placeholder={selectedCountry ? "Select city" : "Select country first"}
                                     value={selectedCity?.toString() || null}
@@ -494,218 +781,179 @@ const CompaniesDashboard = () => {
                                     data={cityOptions}
                                     disabled={modalType === 'view' || !selectedCountry}
                                     required
+                                    searchable
+                                    error={formErrors.includes('City is required') ? 'City is required' : null}
                                     rightSection={isCitiesLoading ? <Loader size="xs"/> : null}
                                 />
+                            </Grid.Col>
+                            <Grid.Col span={8}>
                                 <TextInput
-                                    name="street"
                                     label="Street Address"
+                                    placeholder="Enter street address"
                                     value={street}
                                     onChange={(e) => setStreet(e.currentTarget.value)}
                                     disabled={modalType === 'view'}
                                     required
+                                    error={formErrors.includes('Street address is required') ? 'Street address is required' : null}
                                 />
+                            </Grid.Col>
+                            <Grid.Col span={4}>
                                 <TextInput
-                                    name="postalCode"
                                     label="Postal Code"
+                                    placeholder="Enter postal code"
                                     value={postalCode}
                                     onChange={(e) => setPostalCode(e.currentTarget.value)}
                                     disabled={modalType === 'view'}
                                     required
+                                    error={formErrors.includes('Postal code is required') ? 'Postal code is required' : null}
                                 />
-                            </Stack>
-                        </Tabs.Panel>
+                            </Grid.Col>
+                        </Grid>
+                    </div>
 
-                        <Tabs.Panel value="manufacturer">
-                            <Stack mt="md">
-                                <TextInput
-                                    name="companyName"
-                                    label="Company Name"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="email"
-                                    label="Email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="phoneNumber"
-                                    label="Phone Number"
-                                    value={phoneNumber}
-                                    onChange={(e) => setPhoneNumber(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <Checkbox
-                                    name="hasProductionFacility"
-                                    label="Has Production Facility"
-                                    checked={hasProductionFacility}
-                                    onChange={() => setHasProductionFacility(!hasProductionFacility)}
-                                    disabled={modalType === 'view'}
-                                />
-                                <Select
-                                    name="manager"
-                                    label="Manager"
-                                    placeholder="Select manager"
-                                    value={selectedManager?.toString() || null}
-                                    onChange={(value) => setSelectedManager(value ? Number(value) : null)}
-                                    data={users.map(user => ({
-                                        value: user.id.toString(),
-                                        label: user.email
-                                    }))}
-                                    disabled={modalType === 'view'}
-                                    required
-                                    rightSection={isUsersLoading ? <Loader size="xs"/> : null}
-                                />
-                                <Select
-                                    name="country"
-                                    label="Country"
-                                    placeholder="Select country"
-                                    value={selectedCountry}
-                                    onChange={(value) => {
-                                        setSelectedCountry(value);
-                                        setSelectedCity(null); // Reset city when country changes
-                                    }}
-                                    data={countryOptions}
-                                    disabled={modalType === 'view'}
-                                    required
-                                    rightSection={isCountriesLoading ? <Loader size="xs"/> : null}
-                                />
-                                <Select
-                                    name="city"
-                                    label="City"
-                                    placeholder={selectedCountry ? "Select city" : "Select country first"}
-                                    value={selectedCity?.toString() || null}
-                                    onChange={(value) => setSelectedCity(value ? Number(value) : null)}
-                                    data={cityOptions}
-                                    disabled={modalType === 'view' || !selectedCountry}
-                                    required
-                                    rightSection={isCitiesLoading ? <Loader size="xs"/> : null}
-                                />
-                                <TextInput
-                                    name="street"
-                                    label="Street Address"
-                                    value={street}
-                                    onChange={(e) => setStreet(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="postalCode"
-                                    label="Postal Code"
-                                    value={postalCode}
-                                    onChange={(e) => setPostalCode(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                            </Stack>
-                        </Tabs.Panel>
-
-                        <Tabs.Panel value="buyer">
-                            <Stack mt="md">
-                                <TextInput
-                                    name="companyName"
-                                    label="Company Name"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="email"
-                                    label="Email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="phoneNumber"
-                                    label="Phone Number"
-                                    value={phoneNumber}
-                                    onChange={(e) => setPhoneNumber(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="businessType"
-                                    label="Business Type"
-                                    value={businessType}
-                                    onChange={(e) => setBusinessType(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required={activeTab === 'buyer'}
-                                />
-                                <Select
-                                    name="manager"
-                                    label="Manager"
-                                    placeholder="Select manager"
-                                    value={selectedManager?.toString() || null}
-                                    onChange={(value) => setSelectedManager(value ? Number(value) : null)}
-                                    data={users.map(user => ({
-                                        value: user.id.toString(),
-                                        label: user.email
-                                    }))}
-                                    disabled={modalType === 'view'}
-                                    required
-                                    rightSection={isUsersLoading ? <Loader size="xs"/> : null}
-                                />
-                                <Select
-                                    name="country"
-                                    label="Country"
-                                    placeholder="Select country"
-                                    value={selectedCountry}
-                                    onChange={(value) => {
-                                        setSelectedCountry(value);
-                                        setSelectedCity(null); // Reset city when country changes
-                                    }}
-                                    data={countryOptions}
-                                    disabled={modalType === 'view'}
-                                    required
-                                    rightSection={isCountriesLoading ? <Loader size="xs"/> : null}
-                                />
-                                <Select
-                                    name="city"
-                                    label="City"
-                                    placeholder={selectedCountry ? "Select city" : "Select country first"}
-                                    value={selectedCity?.toString() || null}
-                                    onChange={(value) => setSelectedCity(value ? Number(value) : null)}
-                                    data={cityOptions}
-                                    disabled={modalType === 'view' || !selectedCountry}
-                                    required
-                                    rightSection={isCitiesLoading ? <Loader size="xs"/> : null}
-                                />
-                                <TextInput
-                                    name="street"
-                                    label="Street Address"
-                                    value={street}
-                                    onChange={(e) => setStreet(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                                <TextInput
-                                    name="postalCode"
-                                    label="Postal Code"
-                                    value={postalCode}
-                                    onChange={(e) => setPostalCode(e.currentTarget.value)}
-                                    disabled={modalType === 'view'}
-                                    required
-                                />
-                            </Stack>
-                        </Tabs.Panel>
-                    </Tabs>
-                    {error && (
-                        <Notification color="red" onClose={() => setError(null)} mt="md">
-                            {error}
-                        </Notification>
+                    {/* Rest of your existing content... */}
+                    {/* Company Summary for View Mode */}
+                    {modalType === 'view' && selectedCompany && (
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <Text fw={600} mb="sm">Company Summary</Text>
+                            <Card withBorder>
+                                <Grid>
+                                    <Grid.Col span={6}>
+                                        <Text size="sm" c="dimmed">Company Type:</Text>
+                                        <Badge
+                                            color={getCompanyTypeColor(selectedCompany.companyType || '')}
+                                            leftSection={getCompanyTypeIcon(selectedCompany.companyType || '')}
+                                            mt="xs"
+                                            size="md"
+                                        >
+                                            {selectedCompany.companyType}
+                                        </Badge>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <Text size="sm" c="dimmed">Created Date:</Text>
+                                        <Text fw={500}>
+                                            {new Date(selectedCompany.createdAt).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </Text>
+                                    </Grid.Col>
+                                    {selectedCompany.businessType && (
+                                        <Grid.Col span={6}>
+                                            <Text size="sm" c="dimmed">Business Type:</Text>
+                                            <Text fw={500}>{selectedCompany.businessType}</Text>
+                                        </Grid.Col>
+                                    )}
+                                    {selectedCompany.hasProductionFacility && (
+                                        <Grid.Col span={6}>
+                                            <Text size="sm" c="dimmed">Production Facility:</Text>
+                                            <Badge color="orange" variant="light" mt="xs">
+                                                <PiFactoryBold size={12} style={{ marginRight: 4 }} />
+                                                Available
+                                            </Badge>
+                                        </Grid.Col>
+                                    )}
+                                    <Grid.Col span={12}>
+                                        <Text size="sm" c="dimmed">Full Address:</Text>
+                                        <Text fw={500}>
+                                            {selectedCompany.address ? 
+                                                `${selectedCompany.address.street}, ${selectedCompany.address.postalCode}` : 
+                                                'No address provided'
+                                            }
+                                        </Text>
+                                    </Grid.Col>
+                                </Grid>
+                            </Card>
+                        </div>
                     )}
-                </DashboardCrudModal>
-            </Stack>
-        </Paper>
+
+                    {/* Warehouse Management Section for View Mode */}
+                    {modalType === 'view' && selectedCompany && 
+                     (selectedCompany.companyType === 'SUPPLIER' || selectedCompany.companyType === 'MANUFACTURER') && (
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <Text fw={600} mb="sm">Warehouse Management</Text>
+                            <Card withBorder>
+                                <Group justify="space-between" align="center">
+                                    <div>
+                                        <Text fw={500} mb="xs">Manage Warehouses</Text>
+                                        <Text size="sm" c="dimmed">
+                                            View and manage warehouses associated with this {selectedCompany.companyType.toLowerCase()}
+                                        </Text>
+                                    </div>
+                                    <Button
+                                        variant="light"
+                                        leftSection={<PiBuildingsBold size={16} />}
+                                        onClick={() => handleSupplierClick(selectedCompany.id, selectedCompany.companyName)}
+                                    >
+                                        View Warehouses
+                                    </Button>
+                                </Group>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* Form Summary for Create/Edit Mode */}
+                    {modalType !== 'view' && companyName && email && (
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <Divider />
+                            <Card withBorder p="md" bg="blue.0" mt="md">
+                                <Text fw={600} mb="sm">Company Summary</Text>
+                                <Grid>
+                                    <Grid.Col span={6}>
+                                        <Text size="sm" c="dimmed">Company:</Text>
+                                        <Text fw={500}>{companyName}</Text>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <Text size="sm" c="dimmed">Type:</Text>
+                                        <Badge
+                                            color={getCompanyTypeColor(activeTab)}
+                                            leftSection={getCompanyTypeIcon(activeTab)}
+                                            size="sm"
+                                            tt="capitalize"
+                                        >
+                                            {activeTab}
+                                        </Badge>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <Text size="sm" c="dimmed">Contact:</Text>
+                                        <Text fw={500}>{email}</Text>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <Text size="sm" c="dimmed">Manager:</Text>
+                                        <Text fw={500}>
+                                                        {user?.role === ROLES.ADMIN 
+                                                            ? (selectedManager ? users.find(u => u.id === selectedManager)?.email || 'Selected' : 'Not selected')
+                                                            : user?.email || 'Current User'
+                                                        }
+                                                    </Text>
+                                                </Grid.Col>
+                                                {activeTab === 'buyer' && businessType && (
+                                                    <Grid.Col span={12}>
+                                                        <Text size="sm" c="dimmed">Business Type:</Text>
+                                                        <Text fw={500}>{businessType}</Text>
+                                                    </Grid.Col>
+                                                )}
+                                                {activeTab === 'manufacturer' && (
+                                                    <Grid.Col span={12}>
+                                                        <Text size="sm" c="dimmed">Production Facility:</Text>
+                                                        <Badge color={hasProductionFacility ? "green" : "gray"} variant="light">
+                                                            {hasProductionFacility ? "Available" : "Not Available"}
+                                                        </Badge>
+                                                    </Grid.Col>
+                                                )}
+                                            </Grid>
+                                        </Card>
+                                    </div>
+                                )}
+                            </Box>
+                        </Tabs>
+                    </div>
+                </Stack>
+            </DashboardCrudModal>
+        </>
     );
 };
 

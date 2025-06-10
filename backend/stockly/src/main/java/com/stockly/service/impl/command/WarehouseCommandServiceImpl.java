@@ -77,10 +77,9 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
 
     @Override
     public void deleteWarehouse(Long id) {
-        if (!warehouseRepository.existsById(id)) {
-            throw new RuntimeException("Warehouse not found with id: " + id);
-        }
-        warehouseRepository.deleteById(id);
+        Warehouse warehouse = warehouseRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + id));
+        warehouseRepository.delete(warehouse);
     }
 
     @Autowired
