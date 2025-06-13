@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
   useGetUsersWithPaginationQuery,
-  useSearchUsersQuery,
   User,
   useUpdateUserMutation,
   useDeleteUserMutation,
@@ -125,14 +124,7 @@ const UsersDashboard = () => {
   } = useGetUsersWithPaginationQuery({
     offset: page,
     pageSize: 10,
-  });
-
-  const {
-    data: searchedUsers,
-    isFetching: isSearchLoading,
-    error: searchError
-  } = useSearchUsersQuery(debouncedSearch, {
-    skip: debouncedSearch.length === 0,
+    searchTerm: debouncedSearch,
   });
 
   // Clear form errors when form values change
@@ -340,10 +332,10 @@ const UsersDashboard = () => {
     }
   ];
 
-  const tableData = debouncedSearch.length > 0 ? searchedUsers || [] : paginatedResponse?.content || [];
-  const totalPages = debouncedSearch.length > 0 ? 1 : paginatedResponse?.totalPages || 1;
-  const isLoading = isPaginatedLoading || isSearchLoading;
-  const hasError = usersError || searchError;
+  const tableData = paginatedResponse?.content || [];
+  const totalPages = paginatedResponse?.totalPages || 1;
+  const isLoading = isPaginatedLoading;
+  const hasError = usersError;
 
   return (
     <>

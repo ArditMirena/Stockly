@@ -32,20 +32,15 @@ public class UserQueryServiceImpl implements UserQueryService {
         return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
 
-    public Page<UserDTO> getAllUsersWithPagination(PageRequest pageRequest) {
-        Page<User> users = userRepository.findAll(pageRequest);
+    public Page<UserDTO> getAllUsersWithPagination(PageRequest pageRequest, String searchTerm) {
+        Specification<User> spec = UserSpecification.unifiedSearch(searchTerm);
+        Page<User> users = userRepository.findAll(spec, pageRequest);
 
         List<UserDTO> userDTOs = users.stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
 
         return new PageImpl<>(userDTOs, pageRequest, users.getTotalElements());
-    }
-
-    public List<UserDTO> searchUsers(String searchTerm) {
-        final Specification<User> specification = UserSpecification.unifiedSearch(searchTerm);
-        final List<User> users = userRepository.findAll(specification);
-        return users.stream().map(userMapper::toDTO).collect(Collectors.toList());
     }
 
     @Override

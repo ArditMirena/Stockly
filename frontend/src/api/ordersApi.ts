@@ -76,6 +76,7 @@ interface PaginationParams {
   supplierCompanyId?: number;
   sourceWarehouseId?: number;
   destinationWarehouseId?: number;
+  searchTerm?: string;
 }
 
 export const ordersApi = createApi({
@@ -102,7 +103,8 @@ export const ordersApi = createApi({
           buyerCompanyId: params?.buyerCompanyId,
           supplierCompanyId: params?.supplierCompanyId,
           sourceWarehouseId: params?.sourceWarehouseId,
-          destinationWarehouseId: params?.destinationWarehouseId
+          destinationWarehouseId: params?.destinationWarehouseId,
+          searchTerm: params?.searchTerm
         }
       }),
       providesTags: ['Order']
@@ -145,13 +147,6 @@ export const ordersApi = createApi({
         method: 'DELETE',
       }),
     }),
-    searchOrders: builder.query<OrderDTO[], string | void>({
-      query: (searchTerm = "") => ({
-        url: '/orders/search',
-        method: 'GET',
-        params: { searchTerm },
-      }),
-    }),
     verifyBuyer: builder.mutation<boolean, number>({
       query: (buyerId) => ({
         url: `/buyers/verify/${buyerId}`,
@@ -176,7 +171,6 @@ export const {
   useUpdateOrderStatusMutation,
   useCancelOrderMutation,
   useDeleteOrderMutation,
-  useSearchOrdersQuery,
   useVerifyBuyerMutation,
   useGetOrdersCountQuery
 } = ordersApi;

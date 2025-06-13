@@ -48,21 +48,12 @@ public class UserQueryController {
 
     @GetMapping("/page")
     public ResponseEntity<Page<UserDTO>> getAllUsersWithPagination(
-            @RequestParam(value = "offset", required = false) Integer offset,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy
-    ) {
-        if(null == offset) offset = 0;
-        if(null == pageSize) pageSize = 10;
-        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
-        return ResponseEntity.ok(userQueryService.getAllUsersWithPagination(PageRequest.of(offset, pageSize, Sort.by(sortBy))));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<UserDTO>> searchUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String searchTerm
     ) {
-        return ResponseEntity.ok(userQueryService.searchUsers(searchTerm));
+        PageRequest pageRequest = PageRequest.of(page, size);
+        return ResponseEntity.ok(userQueryService.getAllUsersWithPagination(pageRequest, searchTerm));
     }
 
     @GetMapping("/count")

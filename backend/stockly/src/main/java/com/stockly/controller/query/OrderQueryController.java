@@ -94,7 +94,8 @@ public class OrderQueryController {
             @RequestParam(value = "buyerCompanyId", required = false) Long buyerCompanyId,
             @RequestParam(value = "supplierCompanyId", required = false) Long supplierCompanyId,
             @RequestParam(value = "sourceWarehouseId", required = false) Long sourceWarehouseId,
-            @RequestParam(value = "destinationWarehouseId", required = false) Long destinationWarehouseId
+            @RequestParam(value = "destinationWarehouseId", required = false) Long destinationWarehouseId,
+            @RequestParam(required = false) String searchTerm
     ) {
         if (null == offset) offset = 0;
         if (null == pageSize) pageSize = 10;
@@ -107,15 +108,9 @@ public class OrderQueryController {
                 buyerCompanyId,
                 supplierCompanyId,
                 sourceWarehouseId,
-                destinationWarehouseId
+                destinationWarehouseId,
+                searchTerm
         ));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<OrderDTO>> searchOrders(
-            @RequestParam(required = false) String searchTerm
-    ) {
-        return ResponseEntity.ok(orderQueryService.searchOrders(searchTerm));
     }
 
     @GetMapping("/count")

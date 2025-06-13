@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import {
   useCreateOrderMutation,
   useGetOrdersWithPaginationQuery,
-  useSearchOrdersQuery,
   OrderDTO,
 } from '../../api/ordersApi';
 import { useGetAllWarehousesQuery, useGetWarehouseProductsQuery, useAssignProductToWarehouseMutation, useGetWarehousesByManagerQuery } from '../../api/WarehousesApi';
@@ -109,8 +108,7 @@ const OrdersDashboard = () => {
 
   const { 
     data: warehouseProducts = [], 
-    isFetching: isFetchingProducts,
-    error: productsError
+    isFetching: isFetchingProducts
   } = useGetWarehouseProductsQuery(
     { warehouseId: Number(warehouseId) },
     { skip: !warehouseId }
@@ -126,14 +124,7 @@ const OrdersDashboard = () => {
     pageSize: 10,
     ...(user?.role === ROLES.BUYER && { buyerManagerId: user.id }),
     ...(user?.role === ROLES.SUPPLIER && { supplierManagerId: user.id }),
-  });
-
-  const {
-    data: searchedOrders,
-    isFetching: isSearchLoading,
-    error: searchError
-  } = useSearchOrdersQuery(debouncedSearch, {
-    skip: debouncedSearch.length === 0,
+    searchTerm: debouncedSearch,
   });
 
   // Reset product selection when warehouse changes
@@ -530,10 +521,10 @@ const OrdersDashboard = () => {
     }
   ];
 
-  const tableData = debouncedSearch.length > 0 ? searchedOrders || [] : paginatedResponse?.content || [];
-  const totalPages = debouncedSearch.length > 0 ? 1 : paginatedResponse?.totalPages || 1;
-  const isLoading = isPaginatedLoading || isSearchLoading;
-  const hasError = ordersError || searchError || productsError;
+  const tableData = paginatedResponse?.content || [];
+  const totalPages = paginatedResponse?.totalPages || 1;
+  const isLoading = isPaginatedLoading;
+  const hasError = ordersError;
 
   return (
     <>

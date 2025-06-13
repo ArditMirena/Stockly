@@ -7,9 +7,8 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 
 public interface UserQueryService {
-    public List<UserDTO> getAllUsers();
-    public Page<UserDTO> getAllUsersWithPagination(PageRequest pageRequest);
-    public List<UserDTO> searchUsers(String searchTerm);
+    List<UserDTO> getAllUsers();
+    Page<UserDTO> getAllUsersWithPagination(PageRequest pageRequest, String searchTerm);
 
     Long getUsersCount();
 }

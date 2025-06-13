@@ -39,6 +39,7 @@ interface PaginationParams {
     offset?: number;
     pageSize?: number;
     sortBy?: string;
+    searchTerm?: string;
 }
 
 export const usersApi = createApi ({
@@ -59,6 +60,7 @@ export const usersApi = createApi ({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id',
+                    searchTerm: params?.searchTerm || '',
                 }
             })
         }),
@@ -76,15 +78,6 @@ export const usersApi = createApi ({
                 method: 'DELETE'
             })
         }),
-        searchUsers: builder.query<User[], string | void>({
-            query: (searchTerm = "") => ({
-              url: `/users/search`,
-              method: 'GET',
-              params: {
-                searchTerm,
-              },
-            }),
-        }),
         getUsersCount: builder.query<number, void>({
             query: () => ({
                 url: `/users/count`,
@@ -99,6 +92,5 @@ export const {
     useGetUsersWithPaginationQuery,
     useUpdateUserMutation,
     useDeleteUserMutation,
-    useSearchUsersQuery,
     useGetUsersCountQuery
   } = usersApi;  

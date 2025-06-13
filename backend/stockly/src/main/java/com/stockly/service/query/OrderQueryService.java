@@ -29,9 +29,9 @@ public interface OrderQueryService {
             Long buyerCompanyId,
             Long supplierCompanyId,
             Long sourceWarehouseId,
-            Long destinationWarehouseId
+            Long destinationWarehouseId,
+            String searchTerm
     );
-    List<OrderDTO> searchOrders(String searchTerm);
 
 
 
