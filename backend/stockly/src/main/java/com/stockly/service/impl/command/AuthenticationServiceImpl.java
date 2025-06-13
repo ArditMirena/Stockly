@@ -15,7 +15,6 @@ import com.stockly.service.command.AuthenticationService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +55,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthResponse authenticate(LoginUserDTO input) {
         User user = userRepository.findByEmail(input.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(!passwordEncoder.matches(input.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Wrong password");
+        }
 
         if(!user.isEnabled()) {
             throw new RuntimeException("User account is not verified. Please verify your account!");

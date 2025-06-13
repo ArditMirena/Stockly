@@ -47,6 +47,7 @@ public class UserQueryController {
 
 
     @GetMapping("/page")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Page<UserDTO>> getAllUsersWithPagination(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

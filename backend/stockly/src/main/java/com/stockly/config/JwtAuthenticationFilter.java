@@ -22,9 +22,7 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
-
     private final JwtService jwtService;
-
     private final UserDetailsService userDetailsService;
 
     public JwtAuthenticationFilter(
@@ -71,7 +69,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (userEmail != null && authentication == null) {
                     UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                    if (jwtService.isTokenValid(token, userDetails)) {
+                    // Enhanced validation - check if token is valid and user account is in good standing
+                    if (jwtService.isTokenValid(token, userDetails) &&
+                            userDetails.isEnabled() &&
+                            userDetails.isAccountNonExpired() &&
+                            userDetails.isAccountNonLocked() &&
+                            userDetails.isCredentialsNonExpired()) {
+
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                                 userDetails,
                                 null,
@@ -80,9 +84,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        // Clear any existing authentication and return unauthorized
+                        SecurityContextHolder.clearContext();
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
+                        return;
                     }
                 }
             } catch (Exception exception) {
+                SecurityContextHolder.clearContext();
                 handlerExceptionResolver.resolveException(request, response, null, exception);
                 return;
             }
@@ -110,6 +122,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
-
 }
-

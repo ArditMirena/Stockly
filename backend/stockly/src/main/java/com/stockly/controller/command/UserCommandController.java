@@ -4,6 +4,7 @@ import com.stockly.dto.UserDTO;
 import com.stockly.service.command.UserCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,6 +14,7 @@ public class UserCommandController {
     private final UserCommandService userCommandService;
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
             @RequestBody UserDTO userDTO) {
@@ -21,6 +23,7 @@ public class UserCommandController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> deleteUser(
             @PathVariable Long id
     ){
