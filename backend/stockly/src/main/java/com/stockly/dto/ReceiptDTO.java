@@ -20,6 +20,9 @@ public class ReceiptDTO {
     private CompanySummaryDTO buyer;
     private CompanySummaryDTO supplier;
 
+    private WarehouseSummaryDTO destinationWarehouse;
+    private WarehouseSummaryDTO sourceWarehouse;
+
     private BigDecimal totalPrice;
 
     private List<ReceiptItemDTO> items;
