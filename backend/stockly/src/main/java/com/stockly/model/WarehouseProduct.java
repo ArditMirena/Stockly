@@ -1,5 +1,6 @@
 package com.stockly.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.stockly.model.enums.AvailabilityStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,10 +25,12 @@ public class WarehouseProduct {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "warehouse_id", nullable = false)
+    @JsonIgnore
     private Warehouse warehouse;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
     private Product product;
 
     @Column(nullable = false)

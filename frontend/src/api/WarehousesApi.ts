@@ -21,6 +21,7 @@ export interface WarehouseProductDTO {
     warehouseName: string;
     productId: number;
     quantity: number;
+    automatedRestock: boolean;
     availability: string;
     createdAt: string;
     updatedAt: string;
@@ -183,6 +184,33 @@ export const warehousesApi = createApi({
             }),
             providesTags: ['Warehouse']
         }),
+        addWarehouseProduct: builder.mutation<void, { productId: number; quantity: number; warehouseId: number }>({
+            query: ({ productId, quantity, warehouseId }) => ({
+                url: `/warehouse-products`,
+                method: 'POST',
+                data: {
+                    productId,
+                    quantity,
+                    warehouseId
+                }
+            }),
+        }),
+        updateWarehouseProduct: builder.mutation<void, { id: number; quantity: number; automatedRestock: boolean}>({
+            query: ({ id, quantity, automatedRestock }) => ({
+                url: `/warehouse-products/${id}`,
+                method: 'PUT',
+                data: {
+                    quantity,
+                    automatedRestock
+                }
+            }),
+        }),
+        deleteWarehouseProduct: builder.mutation<void, number>({
+            query: (id) => ({
+                url: `/warehouse-products/${id}`,
+                method: 'DELETE',
+            }),
+        })
     }),
 });
 
@@ -196,5 +224,8 @@ export const {
     useAssignProductToWarehouseMutation,
     useGetWarehouseProductsWithPaginationQuery,
     useAddWarehouseMutation,
-    useGetWarehousesByManagerQuery
+    useGetWarehousesByManagerQuery,
+    useAddWarehouseProductMutation,
+    useUpdateWarehouseProductMutation,
+    useDeleteWarehouseProductMutation
 } = warehousesApi;

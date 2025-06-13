@@ -37,6 +37,10 @@ public class PredictionResult {
     private DemandForecast demandForecast;
 
     private Recommendation recommendation;
+
+    public Integer getRecommendationRestock() {
+        return recommendation.getSuggestedRestock();
+    }
 }
 
 @Getter

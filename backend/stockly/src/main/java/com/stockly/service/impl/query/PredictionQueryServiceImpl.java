@@ -26,7 +26,7 @@ public class PredictionQueryServiceImpl implements PredictionQueryService {
     @Override
     public List<PredictionResult> getPredictions(String month) {
         validateMonthFormat(month);
-        String collectionName = COLLECTION_PREFIX + month;
+        String collectionName = COLLECTION_PREFIX + "202505";
         return mongoTemplate.findAll(PredictionResult.class, collectionName);
     }
 
@@ -40,12 +40,12 @@ public class PredictionQueryServiceImpl implements PredictionQueryService {
     }
 
     @Override
-    public List<PredictionResult> getPredictionsByProductId(String month, long productId) {
+    public PredictionResult getPredictionsByProductId(String month, Long productId) {
         validateMonthFormat(month);
         String collectionName = COLLECTION_PREFIX + month;
 
         Query query = new Query(Criteria.where("product_id").is(productId));
-        return mongoTemplate.find(query, PredictionResult.class, collectionName);
+        return mongoTemplate.findOne(query, PredictionResult.class, collectionName);
     }
 
     @Override

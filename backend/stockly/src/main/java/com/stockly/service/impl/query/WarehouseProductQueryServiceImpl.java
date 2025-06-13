@@ -2,9 +2,11 @@ package com.stockly.service.impl.query;
 
 import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.mapper.WarehouseProductMapper;
+import com.stockly.model.PredictionResult;
 import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.PredictionResultRepository;
 import com.stockly.repository.WarehouseProductRepository;
+import com.stockly.service.query.PredictionQueryService;
 import com.stockly.service.query.WarehouseProductQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
 public class WarehouseProductQueryServiceImpl implements WarehouseProductQueryService {
     private final WarehouseProductRepository warehouseProductRepository;
     private final WarehouseProductMapper warehouseProductMapper;
-    private final PredictionResultRepository predictionResultRepository;
+    private final PredictionQueryService predictionQueryService;
 
     @Override
     public Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest) {
@@ -47,5 +49,32 @@ public class WarehouseProductQueryServiceImpl implements WarehouseProductQuerySe
                 pageable
         );
         return warehouseProducts.map(warehouseProductMapper::toDTO);
+    }
+
+    @Override
+    public void orderAutomationWarehouseProducts(String month){
+        List<WarehouseProduct> productsToAutomate = warehouseProductRepository.findAll();
+
+        for (WarehouseProduct wp : productsToAutomate) {
+            if (!wp.isAutomatedRestock()) {
+                continue;
+            }
+
+            Long productId = wp.getProduct().getId();
+
+            PredictionResult prediction = predictionQueryService.getPredictionsByProductId(month, productId);
+
+            if (prediction == null || prediction.getRecommendation() == null) {
+                continue; // Skip if no prediction
+            }
+
+            int suggestedRestock = prediction.getRecommendationRestock();
+            int currentStock = wp.getQuantity();
+
+            if(currentStock < suggestedRestock){
+                wp.setQuantity(suggestedRestock);
+                warehouseProductRepository.save(wp);
+            }
+        }
     }
 }

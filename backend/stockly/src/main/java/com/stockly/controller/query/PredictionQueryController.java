@@ -32,7 +32,7 @@ public class PredictionQueryController {
     }
 
     @GetMapping("/{month}/product/{productId}")
-    public List<PredictionResult> getPredictionsByProduct(
+    public PredictionResult getPredictionsByProduct(
             @PathVariable String month,
             @PathVariable long productId) {
         return predictionQueryService.getPredictionsByProductId(month, productId);
@@ -51,7 +51,7 @@ public class PredictionQueryController {
     }
 
     @GetMapping("/current/product/{productId}")
-    public List<PredictionResult> getCurrentMonthPredictionsByProduct(
+    public PredictionResult getCurrentMonthPredictionsByProduct(
             @PathVariable long productId) {
         String currentMonth = predictionQueryService.getCurrentMonth();
         return predictionQueryService.getPredictionsByProductId(currentMonth, productId);

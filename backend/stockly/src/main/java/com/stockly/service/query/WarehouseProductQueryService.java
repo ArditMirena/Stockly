@@ -12,4 +12,5 @@ public interface WarehouseProductQueryService {
             Long managerId,
             Pageable pageable
     );
+    void orderAutomationWarehouseProducts(String month);
 }

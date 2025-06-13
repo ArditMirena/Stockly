@@ -7,7 +7,7 @@ import java.util.List;
 public interface PredictionQueryService {
     List<PredictionResult> getPredictions(String month);
     List<PredictionResult> getPredictionsByWarehouseId(String month, long warehouseId);
-    List<PredictionResult> getPredictionsByProductId(String month, long productId);
+    PredictionResult getPredictionsByProductId(String month, Long productId);
     List<PredictionResult> getCurrentMonthPredictions();
     String getCurrentMonth();
 }
