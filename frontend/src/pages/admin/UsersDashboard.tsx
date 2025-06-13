@@ -255,7 +255,7 @@ const UsersDashboard = () => {
       cell: ({ row }) => {
         const user = row.original;
         return (
-          <Group gap="sm">
+          <Group gap="sm" style={{ display: 'flex', justifyContent: 'center' }}>
             <Avatar 
               size="sm" 
               color={getAvatarColor(user.username)}
@@ -579,10 +579,16 @@ const UsersDashboard = () => {
         centered
         size="sm"
         style={{
-            position: 'fixed',
-            top: '0',
-            left: '0'
-          }}
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          zIndex: 20
+        }}
+        styles={{
+          overlay: {
+            zIndex: 20 // Also need to set overlay zIndex
+          }
+        }}
       >
         <Stack gap="md">
           <Alert 

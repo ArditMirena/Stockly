@@ -265,7 +265,13 @@ const ProductsDashboard = () => {
           style={{
             position: 'fixed',
             top: '0',
-            left: '0'
+            left: '0',
+            zIndex: 20
+          }}
+          styles={{
+            overlay: {
+              zIndex: 20 // Also need to set overlay zIndex
+            }
           }}
         >
           <Text>Are you sure you want to delete this product?</Text>

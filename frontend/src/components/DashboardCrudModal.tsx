@@ -1,4 +1,4 @@
-import { Modal, Button, Stack, Group, Alert, Text } from '@mantine/core';
+import { Modal, Button, Stack, Group, Alert } from '@mantine/core';
 import { ReactNode } from 'react';
 import { PiWarningBold } from 'react-icons/pi';
 
@@ -57,7 +57,13 @@ export default function DashboardCrudModal({
       style={{
         position: 'fixed',
         top: '0',
-        left: '0'
+        left: '0',
+        zIndex: 20
+      }}
+      styles={{
+        overlay: {
+          zIndex: 20 // Also need to set overlay zIndex
+        }
       }}
     >
       <form onSubmit={(e) => {

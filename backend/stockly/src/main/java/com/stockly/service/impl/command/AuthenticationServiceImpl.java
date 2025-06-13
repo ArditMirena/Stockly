@@ -72,18 +72,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthResponse refreshAccessToken(String refreshToken) {
-        if(!jwtService.isTokenValid(refreshToken, null)) {
-            throw new RuntimeException("Invalid refresh token");
+        try {
+            String email = jwtService.extractUsername(refreshToken);
+            if (email == null) {
+                throw new RuntimeException("Invalid refresh token - no username found");
+            }
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            if (!user.isEnabled()) {
+                throw new RuntimeException("User account is disabled");
+            }
+
+            if (!jwtService.isTokenValid(refreshToken, user)) {
+                throw new RuntimeException("Invalid refresh token");
+            }
+
+            String accessToken = jwtService.generateToken(user);
+            String newRefreshToken = jwtService.generateRefreshToken(user);
+
+            return new AuthResponse(accessToken, newRefreshToken, "Refresh successful");
+
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid refresh token: " + e.getMessage());
         }
-
-        String email = jwtService.extractUsername(refreshToken);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String accessToken = jwtService.generateToken(user);
-        String newRefreshToken = jwtService.generateRefreshToken(user);
-
-        return new AuthResponse(accessToken, newRefreshToken, "Refresh successful");
     }
 
     public void verifyUser(VerifyUserDTO input){
