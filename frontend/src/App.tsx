@@ -18,6 +18,7 @@ import WarehousesDashboard from './pages/admin/WarehousesDashboard'
 import TrackShipment from './pages/admin/TrackShipment'
 import PredictionsDashboard from './pages/admin/PredictionsDashboard'
 import WarehouseProductsDashboard from './pages/admin/WarehouseProductsDashboard'
+import ReceiptsDashboard from "./pages/admin/ReceiptsDashboard.tsx";
 
 import ProtectedRoute from './components/PrivateRoute'
 import { ROLES } from './utils/Roles'
@@ -73,6 +74,7 @@ function App() {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<AdminHome />} />
           <Route path="companies" element={<CompaniesDashboard />} />
+          <Route path="receipts" element={<ReceiptsDashboard />} />
 
           {/* SUPERADMIN only routes */}
           <Route

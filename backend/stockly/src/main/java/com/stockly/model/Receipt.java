@@ -37,18 +37,36 @@ public class Receipt {
     @JoinColumn(name = "supplier_id")
     private Company supplier;
 
+    @ManyToOne
+    @JoinColumn(name = "destination_warehouse_id")
+    private Warehouse destinationWarehouse;
+
+    @ManyToOne
+    @JoinColumn(name = "source_warehouse_id")
+    private Warehouse sourceWarehouse;
+
     // Historical snapshots
     private String buyerCompanyName;
     private String buyerEmail;
     private String buyerPhoneNumber;
     private String buyerAddress;
     private String buyerCompanyType;
+    private Long buyerManagerId;
+    private String buyerManagerName;
+    private String buyerManagerEmail;
+    private String destinationWarehouseName;
+    private String destinationWarehouseAddress;
 
     private String supplierCompanyName;
     private String supplierEmail;
     private String supplierPhoneNumber;
     private String supplierAddress;
     private String supplierCompanyType;
+    private Long supplierManagerId;
+    private String supplierManagerName;
+    private String supplierManagerEmail;
+    private String sourceWarehouseName;
+    private String sourceWarehouseAddress;
 
     private BigDecimal totalPrice;
 

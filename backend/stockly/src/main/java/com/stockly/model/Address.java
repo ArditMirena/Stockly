@@ -27,4 +27,8 @@ public class Address {
     @ManyToOne
     @JoinColumn(name = "city_id")
     private City city;
+
+    public String toString() {
+        return street + " " + postalCode + " " + city.getName() + " " + city.getCountry().getName();
+    }
 }

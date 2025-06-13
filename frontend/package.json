@@ -25,6 +25,7 @@
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
+    "file-saver": "^2.0.5",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "react": "^19.0.0",

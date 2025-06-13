@@ -93,4 +93,15 @@ export const setupResponseInterceptor = (onUnauthorized: () => void) => {
   );
 };
 
+export const downloadReceiptWithAxios = async (orderId: number): Promise<Blob> => {
+  const response = await api.get(`/receipts/${orderId}/download`, {
+    responseType: 'blob',
+    headers: {
+      'Accept': 'application/pdf'
+    },
+  });
+
+  return response.data;
+};
+
 export default api;

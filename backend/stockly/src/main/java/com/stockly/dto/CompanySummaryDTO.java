@@ -12,5 +12,8 @@ public class CompanySummaryDTO {
     private String phoneNumber;
     private String address;
     private String companyType;
+    private Long managerId;
+    private String managerName;
+    private String managerEmail;
 }
 

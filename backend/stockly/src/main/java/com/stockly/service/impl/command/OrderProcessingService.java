@@ -2,6 +2,7 @@ package com.stockly.service.impl.command;
 
 import com.stockly.dto.OrderDTO;
 import com.stockly.dto.OrderItemDTO;
+import com.stockly.dto.ReceiptDTO;
 import com.stockly.dto.request.OrderRequest;
 import com.stockly.dto.request.OrderItemRequest;
 import com.stockly.exception.BusinessException;
@@ -16,6 +17,7 @@ import com.stockly.repository.ProductRepository;
 import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.OrderCommandService;
+import com.stockly.service.command.ReceiptCommandService;
 import com.stockly.service.command.WarehouseCommandService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,13 +38,12 @@ public class OrderProcessingService {
     private final ProductRepository productRepository;
     private final WarehouseProductRepository warehouseProductRepository;
     private final OrderMapper orderMapper;
+    private final ReceiptCommandService receiptCommandService;
 
     public OrderDTO processOrder(OrderRequest request) {
         // 1. Validate warehouse
         Warehouse sourceWarehouse = warehouseRepository.findById(request.getSourceWarehouseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: "+ request.getSourceWarehouseId()));
-
-
 
         // 2. Check product availability in warehouse
         checkProductAvailability(sourceWarehouse, request.getItems());
@@ -59,7 +60,19 @@ public class OrderProcessingService {
         // 4. Update warehouse inventory
         updateWarehouseInventory(sourceWarehouse, request.getItems());
 
+        // 5. Create receipt
+        createReceiptForOrder(order.getId());
+
         return orderMapper.toDto(order);
+    }
+
+    private void createReceiptForOrder(Long orderId) {
+        try {
+            ReceiptDTO receiptDTO = receiptCommandService.generateReceiptDTO(orderId);
+            receiptCommandService.saveReceipt(receiptDTO);
+        } catch (Exception e) {
+            // Silently handle the error to not interrupt order processing
+        }
     }
 
     private void checkProductAvailability(Warehouse warehouse, List<OrderItemRequest> items) {
