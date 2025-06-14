@@ -4,6 +4,7 @@ import com.stockly.model.Warehouse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -34,4 +35,7 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long>, Jpa
             "JOIN c.manager m " +
             "WHERE m.id = :managerId")
     List<Warehouse> findByManagerId(@Param("managerId") Long managerId);
+
+    @Query("SELECT DISTINCT w FROM Warehouse w LEFT JOIN FETCH w.warehouseProducts wp LEFT JOIN FETCH wp.product")
+    List<Warehouse> findAllWithProducts();
 }

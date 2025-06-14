@@ -1,47 +1,39 @@
-/*
 package com.stockly.boostrap;
 
-import com.stockly.dto.request.OrderItemRequest;
 import com.stockly.model.*;
 import com.stockly.model.enums.OrderStatus;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.repository.OrderRepository;
-import com.stockly.repository.ProductRepository;
 import com.stockly.repository.WarehouseRepository;
-import com.stockly.service.impl.command.OrderProcessingService;
+import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
+@org.springframework.core.annotation.Order(1)
 public class OrderSeeder implements CommandLineRunner {
 
     private final OrderRepository orderRepository;
     private final CompanyRepository companyRepository;
     private final WarehouseRepository warehouseRepository;
-    private final ProductRepository productRepository;
-    private final OrderProcessingService orderProcessingService;
 
     public OrderSeeder(OrderRepository orderRepository,
                        CompanyRepository companyRepository,
-                       WarehouseRepository warehouseRepository,
-                       ProductRepository productRepository,
-                       OrderProcessingService orderProcessingService) {
+                       WarehouseRepository warehouseRepository) {
         this.orderRepository = orderRepository;
         this.companyRepository = companyRepository;
         this.warehouseRepository = warehouseRepository;
-        this.productRepository = productRepository;
-        this.orderProcessingService = orderProcessingService;
     }
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
         if (orderRepository.count() == 0) {
             seedOrders();
@@ -49,100 +41,213 @@ public class OrderSeeder implements CommandLineRunner {
     }
 
     private void seedOrders() {
-        // Get all buyers and suppliers
-        List<Company> buyers = companyRepository.findByCompanyType("BUYER");
-        List<Company> suppliers = companyRepository.findByCompanyType("SUPPLIER");
+        List<Order> allOrders = new ArrayList<>();
 
-        // Create orders for each buyer
-        for (Company buyer : buyers) {
-            // Create between 3-8 orders per buyer
-            int orderCount = 3 + new Random().nextInt(6);
+        // Get all companies categorized
+        List<Company> allCompanies = companyRepository.findAll();
+        List<Company> buyers = allCompanies.stream()
+                .filter(c -> "BUYER".equals(c.getCompanyType()))
+                .collect(Collectors.toList());
+        List<Company> suppliers = allCompanies.stream()
+                .filter(c -> "SUPPLIER".equals(c.getCompanyType()))
+                .collect(Collectors.toList());
+        List<Company> manufacturers = allCompanies.stream()
+                .filter(c -> "MANUFACTURER".equals(c.getCompanyType()))
+                .collect(Collectors.toList());
 
-            for (int i = 0; i < orderCount; i++) {
-                // Select a random supplier
-                Company supplier = suppliers.get(new Random().nextInt(suppliers.size()));
+        // Get all warehouses with products
+        List<Warehouse> allWarehouses = warehouseRepository.findAllWithProducts();
 
-                // Get warehouses for this supplier
-                List<Warehouse> supplierWarehouses = warehouseRepository.findByCompanyId(supplier.getId());
-                if (supplierWarehouses.isEmpty()) continue;
+        // Create 70-80% supplier-to-supplier transfer orders
+        int totalOrders = 100; // Adjust based on your needs
+        int supplierAsBuyerOrders = (int)(totalOrders * 0.75);
 
-                Warehouse warehouse = supplierWarehouses.get(0);
+        for (int i = 0; i < supplierAsBuyerOrders; i++) {
+            // Random supplier as buyer
+            Company buyer = suppliers.get(ThreadLocalRandom.current().nextInt(suppliers.size()));
 
-                // Create order with random date in the past 6 months
-                Order order = new Order();
-                order.setBuyer(buyer);
-                order.setSupplier(supplier);
-                order.setWarehouse(warehouse);
-                order.setOrderDate(generateRandomPastDate());
-                order.setStatus(OrderStatus.CREATED);
+            // Find a different supplier to buy from
+            List<Company> possibleSuppliers = suppliers.stream()
+                    .filter(s -> !s.getId().equals(buyer.getId()))
+                    .collect(Collectors.toList());
 
-                // Add 1-5 items to the order
-                int itemCount = 1 + new Random().nextInt(5);
-                Set<Long> addedProductIds = new HashSet<>();
+            if (!possibleSuppliers.isEmpty()) {
+                Company supplier = possibleSuppliers.get(
+                        ThreadLocalRandom.current().nextInt(possibleSuppliers.size()));
 
-                // Get products available in this warehouse
-                List<Product> warehouseProducts = productRepository.findProductsByWarehouseId(warehouse.getId());
-                List<OrderItemRequest> orderItemRequests = new ArrayList<>(); // To collect items for inventory update
-
-                for (int j = 0; j < itemCount && !warehouseProducts.isEmpty(); j++) {
-                    // Select a random product from the warehouse
-                    Product product = warehouseProducts.get(new Random().nextInt(warehouseProducts.size()));
-
-                    // Ensure we don't add the same product twice
-                    if (addedProductIds.contains(product.getId())) {
-                        continue;
-                    }
-                    addedProductIds.add(product.getId());
-
-                    // Generate realistic quantity (1-20 for most items, more for groceries)
-                    int quantity = product.getId() >= 16 && product.getId() <= 19 ?
-                            10 + new Random().nextInt(40) : // Groceries: 10-50
-                            1 + new Random().nextInt(20);   // Others: 1-20
-
-                    // Create order item
-                    OrderItem orderItem = new OrderItem();
-                    orderItem.setProduct(product);
-                    orderItem.setQuantity(quantity);
-                    orderItem.setUnitPrice(product.getPrice());
-                    orderItem.calculateTotalPrice();
-
-                    order.addItem(orderItem);
-
-                    // Create OrderItemRequest for inventory update
-                    OrderItemRequest itemRequest = new OrderItemRequest();
-                    itemRequest.setProductId(product.getId());
-                    itemRequest.setQuantity(quantity);
-                    orderItemRequests.add(itemRequest);
-                }
-
-                if (!order.getItems().isEmpty()) {
-                    Order savedOrder = orderRepository.save(order);
-
-                    // Update warehouse inventory only if order is not cancelled/rejected
-                    if (order.getStatus() != OrderStatus.CANCELLED) {
-                        try {
-                            orderProcessingService.updateWarehouseInventory(warehouse, orderItemRequests);
-                        } catch (Exception e) {
-                            // Handle inventory update failure (log it, but don't stop seeding)
-                            System.err.println("Failed to update inventory for order " + savedOrder.getId() + ": " + e.getMessage());
-                        }
-                    }
-                }
+                createOrder(buyer, supplier, allWarehouses, allOrders, true);
             }
         }
+
+        // Create remaining orders (20-25%) with manufacturers as buyers
+        int manufacturerAsBuyerOrders = (int)(totalOrders * 0.20);
+
+        for (int i = 0; i < manufacturerAsBuyerOrders; i++) {
+            Company buyer = manufacturers.get(ThreadLocalRandom.current().nextInt(manufacturers.size()));
+            Company supplier = suppliers.get(ThreadLocalRandom.current().nextInt(suppliers.size()));
+            createOrder(buyer, supplier, allWarehouses, allOrders, true);
+        }
+
+        // Create few (5%) regular buyer orders
+        int regularBuyerOrders = totalOrders - supplierAsBuyerOrders - manufacturerAsBuyerOrders;
+
+        for (int i = 0; i < regularBuyerOrders; i++) {
+            Company buyer = buyers.get(ThreadLocalRandom.current().nextInt(buyers.size()));
+            Company supplier = suppliers.get(ThreadLocalRandom.current().nextInt(suppliers.size()));
+            createOrder(buyer, supplier, allWarehouses, allOrders, false);
+        }
+
+        orderRepository.saveAll(allOrders);
     }
 
-    private Instant generateRandomPastDate() {
-        // Generate a random date in the past 6 months
-        long sixMonthsAgo = LocalDateTime.now().minusMonths(6).toEpochSecond(ZoneOffset.UTC);
-        long now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+    private void createOrder(Company buyer, Company supplier,
+                             List<Warehouse> allWarehouses,
+                             List<Order> allOrders,
+                             boolean isTransferOrder) {
+        Order order = new Order();
+        order.setBuyer(buyer);
+        order.setSupplier(supplier);
+        order.setOrderDate(generateRandomPastDate(365));
+        order.setStatus(getWeightedRandomStatus(isTransferOrder));
+        order.setDescription(isTransferOrder ?
+                "Stock transfer #" + (allOrders.size() + 1) :
+                "Customer order #" + (allOrders.size() + 1));
 
-        long randomEpochSecond = ThreadLocalRandom.current().nextLong(sixMonthsAgo, now);
-        return Instant.ofEpochSecond(randomEpochSecond);
+        // Set source warehouse (from supplier)
+        List<Warehouse> supplierWarehouses = allWarehouses.stream()
+                .filter(w -> w.getCompany().getId().equals(supplier.getId()))
+                .filter(w -> !w.getWarehouseProducts().isEmpty())
+                .collect(Collectors.toList());
+
+        if (!supplierWarehouses.isEmpty()) {
+            order.setSourceWarehouse(
+                    supplierWarehouses.get(ThreadLocalRandom.current().nextInt(supplierWarehouses.size())));
+        }
+
+        // For transfer orders, set destination warehouse (buyer's warehouse)
+        if (isTransferOrder) {
+            List<Warehouse> buyerWarehouses = allWarehouses.stream()
+                    .filter(w -> w.getCompany().getId().equals(buyer.getId()))
+                    .collect(Collectors.toList());
+
+            if (!buyerWarehouses.isEmpty()) {
+                order.setDestinationWarehouse(
+                        buyerWarehouses.get(ThreadLocalRandom.current().nextInt(buyerWarehouses.size())));
+            }
+        }
+
+        if (addOrderItems(order, supplierWarehouses)) {
+            allOrders.add(order);
+        }
+    }
+    
+
+    private OrderStatus getWeightedRandomStatus(boolean isSupplierOrder) {
+        double rand = ThreadLocalRandom.current().nextDouble();
+
+        if (isSupplierOrder) {
+            // Higher probability of COMPLETED status for supplier-to-supplier orders
+            if (rand < 0.7) return OrderStatus.DELIVERED;
+            if (rand < 0.85) return OrderStatus.SHIPPED;
+            if (rand < 0.95) return OrderStatus.PROCESSING;
+        } else {
+            // Regular buyer orders have more varied statuses
+            if (rand < 0.5) return OrderStatus.DELIVERED;
+            if (rand < 0.75) return OrderStatus.SHIPPED;
+            if (rand < 0.9) return OrderStatus.PROCESSING;
+        }
+        return OrderStatus.CANCELLED;
     }
 
-    private OrderStatus getRandomOrderStatus() {
-        OrderStatus[] statuses = OrderStatus.values();
-        return statuses[new Random().nextInt(statuses.length)];
+    private boolean sameIndustry(String buyerBusinessType, String supplierName) {
+        if (buyerBusinessType == null) return false;
+        String buyerIndustry = buyerBusinessType.replace(" Retail", "");
+        return supplierName.contains(buyerIndustry);
     }
-}*/
+
+    private Instant generateRandomPastDate(int daysBack) {
+        long now = Instant.now().getEpochSecond();
+        long past = now - (daysBack * 86400L);
+        return Instant.ofEpochSecond(ThreadLocalRandom.current().nextLong(past, now));
+    }
+
+    private boolean addOrderItems(Order order, List<Warehouse> sourceWarehouses) {
+        // Select 1-2 source warehouses randomly
+        Collections.shuffle(sourceWarehouses);
+        int warehouseCount = Math.min(1 + ThreadLocalRandom.current().nextInt(2), sourceWarehouses.size());
+        List<Warehouse> selectedWarehouses = sourceWarehouses.subList(0, warehouseCount);
+
+        // Add items from these warehouses
+        Set<Long> addedProductIds = new HashSet<>();
+        int itemCount = 1 + ThreadLocalRandom.current().nextInt(5); // 1-5 items
+        boolean itemsAdded = false;
+
+        for (int j = 0; j < itemCount && !selectedWarehouses.isEmpty(); j++) {
+            Warehouse warehouse = selectedWarehouses.get(
+                    ThreadLocalRandom.current().nextInt(selectedWarehouses.size()));
+
+            List<WarehouseProduct> availableProducts = warehouse.getWarehouseProducts().stream()
+                    .filter(wp -> wp.getQuantity() > 0)
+                    .filter(wp -> !addedProductIds.contains(wp.getProduct().getId()))
+                    .collect(Collectors.toList());
+
+            if (availableProducts.isEmpty()) {
+                selectedWarehouses.remove(warehouse);
+                continue;
+            }
+
+            WarehouseProduct wp = availableProducts.get(
+                    ThreadLocalRandom.current().nextInt(availableProducts.size()));
+            Product product = wp.getProduct();
+            addedProductIds.add(product.getId());
+
+            int quantity = generateRealisticQuantity(product.getId(), wp.getQuantity());
+
+            OrderItem item = new OrderItem();
+            item.setProduct(product);
+            item.setQuantity(quantity);
+            item.setUnitPrice(product.getPrice());
+            item.calculateTotalPrice();
+
+            order.addItem(item);
+
+            if (order.getSourceWarehouse() == null) {
+                order.setSourceWarehouse(warehouse);
+            }
+
+            if (order.getStatus() != OrderStatus.CANCELLED) {
+                wp.setQuantity(wp.getQuantity() - quantity);
+            }
+
+            itemsAdded = true;
+        }
+
+        if (itemsAdded) {
+            order.setTotalPrice(order.getItems().stream()
+                    .map(OrderItem::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+            if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED) {
+                order.setShipmentId("SH" + Instant.now().getEpochSecond() +
+                        ThreadLocalRandom.current().nextInt(100, 999));
+            }
+        }
+
+        return itemsAdded;
+    }
+
+
+    private int generateRealisticQuantity(Long productId, int maxAvailable) {
+        int baseQuantity;
+        if (productId <= 20) {    // Small items (tech/electronics)
+            baseQuantity = 1 + ThreadLocalRandom.current().nextInt(10);
+        } else if (productId <= 40) {  // Fashion items
+            baseQuantity = 1 + ThreadLocalRandom.current().nextInt(5);
+        } else if (productId <= 60) {  // Food items
+            baseQuantity = 5 + ThreadLocalRandom.current().nextInt(20);
+        } else {                       // Large items (furniture/auto)
+            baseQuantity = 1 + ThreadLocalRandom.current().nextInt(3);
+        }
+        return Math.min(baseQuantity, maxAvailable);
+    }
+}
