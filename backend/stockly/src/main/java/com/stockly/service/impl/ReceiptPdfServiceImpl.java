@@ -103,8 +103,14 @@ public class ReceiptPdfServiceImpl implements ReceiptPdfService {
         PdfPCell destination = new PdfPCell();
         destination.setBorder(Rectangle.NO_BORDER);
         destination.addElement(new Paragraph("Destination Warehouse", HEADER_FONT));
-        destination.addElement(new Paragraph(receipt.getDestinationWarehouse().getName(), NORMAL_FONT));
-        destination.addElement(new Paragraph(receipt.getDestinationWarehouse().getAddress(), NORMAL_FONT));
+
+        if (receipt.getDestinationWarehouse() != null) {
+            destination.addElement(new Paragraph(receipt.getDestinationWarehouse().getName(), NORMAL_FONT));
+            destination.addElement(new Paragraph(receipt.getDestinationWarehouse().getAddress(), NORMAL_FONT));
+        } else {
+            destination.addElement(new Paragraph("Not specified", NORMAL_FONT));
+            destination.addElement(new Paragraph("-", NORMAL_FONT));
+        }
 
         table.addCell(destination);
         table.addCell(source);
