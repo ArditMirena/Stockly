@@ -120,6 +120,8 @@ public class ReceiptMapper {
             receipt.setDestinationWarehouse(destWarehouse);
             receipt.setDestinationWarehouseName(dto.getDestinationWarehouse().getName());
             receipt.setDestinationWarehouseAddress(dto.getDestinationWarehouse().getAddress());
+        } else {
+            receipt.setDestinationWarehouse(null);
         }
 
         if (dto.getSourceWarehouse() != null) {
@@ -177,6 +179,8 @@ public class ReceiptMapper {
             receipt.setDestinationWarehouseName(destWarehouse.getName());
             receipt.setDestinationWarehouseAddress(
                     destWarehouse.getAddress() != null ? destWarehouse.getAddress().toString() : null);
+        } else {
+            receipt.setDestinationWarehouse(null);
         }
 
         if (order.getSourceWarehouse() != null) {
