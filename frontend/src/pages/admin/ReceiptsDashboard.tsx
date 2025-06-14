@@ -1,5 +1,5 @@
-// src/pages/ReceiptsDashboard.tsx
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { downloadReceiptWithAxios } from "../../utils/api.tsx";
 import {
     useGetReceiptsWithPaginationQuery,
@@ -38,6 +38,8 @@ import {
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
 import { saveAs } from 'file-saver';
+import { ROLES } from '../../utils/Roles';
+import { RootState } from '../../redux/store';
 
 // Status color mapping
 const getStatusColor = (status: string) => {
@@ -66,14 +68,21 @@ const ReceiptsDashboard = () => {
     const [sendReceipt, { isLoading: isSendingReceipt }] = useSendReceiptMutation();
     const [downloadReceipt, { isLoading: isDownloadingReceipt }] = useDownloadReceiptMutation();
 
+    const user = useSelector((state: RootState) => state.auth.user);
+
     const {
         data: paginatedResponse,
         isLoading: isPaginatedLoading,
-        refetch: refetchReceipts,
         error: receiptsError
     } = useGetReceiptsWithPaginationQuery({
         offset: page,
         pageSize: 10,
+        ...(user?.role === ROLES.BUYER && { 
+            buyerManagerId: user.id
+        }),
+        ...(user?.role === ROLES.SUPPLIER && { 
+            supplierManagerId: user.id
+        }),
     });
 
     const {

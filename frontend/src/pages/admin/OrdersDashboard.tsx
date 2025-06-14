@@ -6,7 +6,7 @@ import {
   OrderDTO,
 } from '../../api/ordersApi';
 import { useGetAllWarehousesQuery, useGetWarehouseProductsQuery, useAssignProductToWarehouseMutation, useGetWarehousesByManagerQuery } from '../../api/WarehousesApi';
-import { useGetCompaniesQuery } from '../../api/CompaniesApi';
+import { useGetCompaniesByManagerIdQuery, useGetCompaniesQuery } from '../../api/CompaniesApi';
 import { useCreateShipmentMutation } from '../../api/ShipmentsApi';
 import {
   Select,
@@ -94,7 +94,16 @@ const OrdersDashboard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
 
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetAllWarehousesQuery();
-  const { data: buyers = [], isLoading: isLoadingBuyers } = useGetCompaniesQuery();
+
+  const { data: myWarehouses = [], isLoading: isLoadingMyWarehouses } = 
+    (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER)
+      ? useGetWarehousesByManagerQuery(user.id)
+      : useGetAllWarehousesQuery();
+
+  const { data: companies = [], isLoading: isLoadingCompanies } = 
+    (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) 
+      ? useGetCompaniesByManagerIdQuery(user.id)
+      : useGetCompaniesQuery();
 
   const {
     data: warehouseProducts = [],
@@ -112,8 +121,8 @@ const OrdersDashboard = () => {
   } = useGetOrdersWithPaginationQuery({
     offset: page,
     pageSize: 10,
-    ...(user?.role === ROLES.BUYER && { buyerManagerId: user.id }),
-    ...(user?.role === ROLES.SUPPLIER && { supplierManagerId: user.id }),
+    ...(user?.role === ROLES.BUYER && { managerId: user.id }),
+    ...(user?.role === ROLES.SUPPLIER && { buyerManagerId: user.id, supplierManagerId: user.id }),
     searchTerm: debouncedSearch,
   });
 
@@ -209,7 +218,7 @@ const OrdersDashboard = () => {
       const result = await createOrder(payload);
 
       if ('error' in result) {
-        throw new Error(result.error?.data?.message || 'Order creation failed');
+        throw new Error('Order creation failed');
       }
 
       orderResponse = result.data;
@@ -487,7 +496,7 @@ const OrdersDashboard = () => {
         titleIcon={<PiPackageBold size={28} />}
         onCreateNew={() => handleOpenModal(null, 'create')}
         createButtonLabel="Create Order"
-        createButtonLoading={isLoadingBuyers || isLoadingWarehouses}
+        createButtonLoading={isLoadingCompanies || isLoadingWarehouses || isLoadingMyWarehouses}
         isLoading={isLoading}
         error={hasError}
         enableSort
@@ -532,7 +541,7 @@ const OrdersDashboard = () => {
                 <Select
                   label="Buyer Company"
                   placeholder="Select a buyer"
-                  data={buyers.map(b => ({
+                  data={companies.map(b => ({
                     label: b.companyName,
                     value: b.id.toString(),
                     description: b.email
@@ -681,7 +690,7 @@ const OrdersDashboard = () => {
             <Select
               label="Destination Warehouse"
               placeholder="Select destination warehouse (optional)"
-              data={warehouses
+              data={myWarehouses
                 .filter(w => w.id.toString() !== warehouseId)
                 .map(w => ({
                   label: w.name,

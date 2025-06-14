@@ -109,8 +109,8 @@ const menuData: MenuItem[] = [
   {
     label: 'Reports',
     icon: PiFileTextBold,
-    link: '/admin/reports',
-    roles: [ROLES.SUPER_ADMIN],
+    link: '/admin/receipts',
+    roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER],
   },
   // {
   //   label: 'Settings',

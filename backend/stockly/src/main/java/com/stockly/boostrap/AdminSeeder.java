@@ -29,42 +29,30 @@ public class AdminSeeder implements ApplicationListener<ContextRefreshedEvent> {
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        this.createSuperAdministrator();
+        this.seedUsersPerRole();
     }
 
-    public void createSuperAdministrator() {
-        RegisterUserDTO userDto = new RegisterUserDTO();
-        userDto.setUsername("superadmin");
-        userDto.setEmail("super.admin@email.com");
-        userDto.setPassword("123456");
+    public void seedUsersPerRole() {
+        for (RoleEnum roleEnum : RoleEnum.values()) {
+            String email = roleEnum.name().toLowerCase() + "@email.com";
+            String username = roleEnum.name().toLowerCase();
 
-        Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.SUPER_ADMIN);
+            Optional<User> existingUser = userRepository.findByEmail(email);
+            Optional<Role> roleOpt = roleRepository.findByName(roleEnum);
 
-        Optional<User> optionalUser = userRepository.findByEmail(userDto.getEmail());
+            if (existingUser.isEmpty() && roleOpt.isPresent()) {
+                User user = new User();
+                user.setUsername(username);
+                user.setEmail(email);
+                user.setPassword(passwordEncoder.encode("123qwe"));
+                user.setVerificationCode(null);
+                user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
+                user.setEnabled(true);
+                user.setRole(roleOpt.get());
 
-        if (optionalRole.isEmpty() || optionalUser.isPresent()) {
-            return;
+                userRepository.save(user);
+                System.out.println("Seeded user for role: " + roleEnum.name());
+            }
         }
-
-        User user = new User();
-        user.setUsername(userDto.getUsername());
-        user.setEmail(userDto.getEmail());
-        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-
-        String verificationCode = generateVerificationCode();
-        user.setVerificationCode(verificationCode);
-        user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
-
-        user.setEnabled(true);
-
-        user.setRole(optionalRole.get());
-
-        userRepository.save(user);
-    }
-
-    private String generateVerificationCode() {
-        Random random = new Random();
-        int code = random.nextInt(900000) + 100000; // Generate a 6-digit code
-        return String.valueOf(code);
     }
 }

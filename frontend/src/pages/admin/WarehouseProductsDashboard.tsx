@@ -37,7 +37,8 @@ import {
   useGetAllWarehousesQuery,
   useAddWarehouseProductMutation,
   useUpdateWarehouseProductMutation,
-  useDeleteWarehouseProductMutation
+  useDeleteWarehouseProductMutation,
+  useGetWarehousesByManagerQuery
 } from '../../api/WarehousesApi';
 import { useGetProductsQuery } from '../../api/ProductsApi';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
@@ -108,7 +109,10 @@ const WarehouseProductsDashboard = () => {
   const [updateWarehouseProduct] = useUpdateWarehouseProductMutation();
   const [deleteWarehouseProduct] = useDeleteWarehouseProductMutation();
 
-  const { data: warehouses = [], isLoading: isWarehousesLoading } = useGetAllWarehousesQuery();
+  const { data: warehouses = [], isLoading: isWarehousesLoading } = 
+      (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER)
+        ? useGetWarehousesByManagerQuery(user.id)
+        : useGetAllWarehousesQuery();
   const { data: products = [], isLoading: isProductsLoading } = useGetProductsQuery();
 
   const { 

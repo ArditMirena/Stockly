@@ -37,7 +37,7 @@ import {
     useAddWarehouseMutation,
     WarehouseDTO
 } from '../../api/WarehousesApi';
-import { useGetCompaniesQuery, useGetCountriesQuery, useGetCitiesByCountryQuery } from '../../api/CompaniesApi';
+import { useGetCompaniesQuery, useGetCountriesQuery, useGetCitiesByCountryQuery, useGetCompaniesByManagerIdQuery } from '../../api/CompaniesApi';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
 import { ROLES } from '../../utils/Roles';
 import { RootState } from '../../redux/store';
@@ -113,7 +113,12 @@ const WarehousesDashboard = () => {
     const user = useSelector((state: RootState) => state.auth.user);
 
     // API hooks
-    const { data: allCompanies = [], isLoading: isLoadingCompanies } = useGetCompaniesQuery();
+    const { data: companies = [], isLoading: isLoadingCompanies } = 
+        (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) 
+          ? useGetCompaniesByManagerIdQuery(user.id)
+          : useGetCompaniesQuery();
+
+
     const { data: countries = [], isLoading: isCountriesLoading } = useGetCountriesQuery();
     const {
         data: cities = [],
@@ -156,14 +161,14 @@ const WarehousesDashboard = () => {
 
     // Filter companies based on type
     const filteredCompanies = useMemo(() => {
-        return allCompanies.filter(company => {
+        return companies.filter(company => {
             if (selectedCompanyType === 'SUPPLIER') {
                 return !company.businessType && !company.hasProductionFacility;
             } else { // MANUFACTURER
                 return !company.businessType && company.hasProductionFacility;
             }
         });
-    }, [allCompanies, selectedCompanyType]);
+    }, [companies, selectedCompanyType]);
 
     // Options for selects
     const companyOptions = filteredCompanies.map(company => ({
@@ -187,7 +192,7 @@ const WarehousesDashboard = () => {
 
     const companyFilterOptions = [
         { value: '', label: 'All Companies' },
-        ...allCompanies.map(company => ({
+        ...companies.map(company => ({
             value: company.id.toString(),
             label: company.companyName
         }))
@@ -245,7 +250,7 @@ const WarehousesDashboard = () => {
             }
             
             // Set company
-            const company = allCompanies.find(c => c.id === warehouse.companyId);
+            const company = companies.find(c => c.id === warehouse.companyId);
             if (company) {
                 setSelectedCompany(warehouse.companyId.toString());
                 setSelectedCompanyType(
@@ -354,7 +359,7 @@ const WarehousesDashboard = () => {
 
     // Get selected company details for display
     const selectedCompanyDetails = selectedCompany ? 
-        allCompanies.find(c => c.id.toString() === selectedCompany) : null;
+        companies.find(c => c.id.toString() === selectedCompany) : null;
 
     // Define table columns
     const columns: Column<WarehouseDTO>[] = [
@@ -384,7 +389,7 @@ const WarehousesDashboard = () => {
             header: 'Company',
             enableSorting: true,
             cell: (info) => {
-                const company = allCompanies.find(c => c.id === info.getValue());
+                const company = companies.find(c => c.id === info.getValue());
                 return company ? (
                     <div>
                         <Text size="sm" fw={500}>
@@ -495,7 +500,7 @@ const WarehousesDashboard = () => {
                                     </Text>
                                 }
                             >
-                                {allCompanies.find(c => c.id === companyFilter)?.companyName || `Company ${companyFilter}`}
+                                {companies.find(c => c.id === companyFilter)?.companyName || `Company ${companyFilter}`}
                             </Badge>
                         )}
                     </Group>
@@ -745,7 +750,7 @@ const WarehousesDashboard = () => {
                                     <Grid.Col span={6}>
                                         <Text size="sm" c="dimmed">Company:</Text>
                                         <Text fw={500}>
-                                            {allCompanies.find(c => c.id === selectedWarehouse.companyId)?.companyName || 'Unknown'}
+                                            {companies.find(c => c.id === selectedWarehouse.companyId)?.companyName || 'Unknown'}
                                         </Text>
                                     </Grid.Col>
                                     <Grid.Col span={6}>
@@ -810,13 +815,13 @@ const WarehousesDashboard = () => {
                                     </Text>
                                     <Badge
                                         color={getCompanyTypeBadgeColor(
-                                            allCompanies.find(c => c.id === warehouseToDelete.companyId)
+                                            companies.find(c => c.id === warehouseToDelete.companyId)
                                         )}
                                         variant="light"
                                         size="xs"
                                         mt="xs"
                                     >
-                                        {allCompanies.find(c => c.id === warehouseToDelete.companyId)?.companyName || 'Unknown Company'}
+                                        {companies.find(c => c.id === warehouseToDelete.companyId)?.companyName || 'Unknown Company'}
                                     </Badge>
                                 </div>
                             </Group>

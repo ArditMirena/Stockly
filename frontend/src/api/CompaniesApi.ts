@@ -218,6 +218,14 @@ export const companiesApi = createApi({
                 method: 'GET'
             }),
             providesTags: (result, error, id) => [{ type: 'City', id }]
+        }),
+
+        getCompaniesByManagerId: builder.query<Company[], number>({
+            query: (managerId) => ({
+                url: `/companies/manager/${managerId}`,
+                method: 'GET'
+            }),
+            providesTags: (result, error, managerId) => [{ type: 'Company', id: managerId }]
         })
     }),
 });
@@ -239,5 +247,6 @@ export const {
     useGetCitiesQuery,
     useGetCitiesByCountryQuery,
     useSearchCitiesQuery,
-    useGetCityByIdQuery
+    useGetCityByIdQuery,
+    useGetCompaniesByManagerIdQuery
 } = companiesApi;
