@@ -32,7 +32,7 @@ import {
   PiWarningBold,
   PiCurrencyDollarBold
 } from 'react-icons/pi';
-// import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
 import { ROLES } from '../../utils/Roles';
@@ -53,12 +53,12 @@ const getStatusColor = (status: string) => {
 // Form validation helper
 const validateOrderForm = (buyerId: string | null, warehouseId: string | null, productId: string | null, quantity: number) => {
   const errors: string[] = [];
-  
+
   if (!buyerId) errors.push('Buyer is required');
   if (!warehouseId) errors.push('Warehouse is required');
   if (!productId) errors.push('Product is required');
   if (quantity < 1) errors.push('Quantity must be at least 1');
-  
+
   return errors;
 };
 
@@ -67,7 +67,7 @@ const OrdersDashboard = () => {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
-  
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<ModalType>('create');
@@ -79,11 +79,11 @@ const OrdersDashboard = () => {
   const [destinationWarehouseId, setDestinationWarehouseId] = useState<string | null>(null);
   const [productId, setProductId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
-  
+
   // Error and loading state
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false); // UNCOMMENTED STATE
   const [error, setError] = useState<string | null>(null);
 
   // API hooks
@@ -95,19 +95,9 @@ const OrdersDashboard = () => {
 
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetAllWarehousesQuery();
   const { data: buyers = [], isLoading: isLoadingBuyers } = useGetCompaniesQuery();
-  // const { data: buyers = [], isLoading: isLoadingBuyers } = useGetCompaniesQuery(
-  //   user?.role === ROLES.BUYER ? { managerId: user.id } : undefined
-  // );
 
-  // const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetWarehousesByManagerQuery(
-  //   user?.id || 0,
-  //   { 
-  //     skip: !user?.id || (user?.role !== ROLES.BUYER && user?.role !== ROLES.SUPPLIER)
-  //   }
-  // );
-
-  const { 
-    data: warehouseProducts = [], 
+  const {
+    data: warehouseProducts = [],
     isFetching: isFetchingProducts
   } = useGetWarehouseProductsQuery(
     { warehouseId: Number(warehouseId) },
@@ -164,13 +154,13 @@ const OrdersDashboard = () => {
       if (order.items && order.items.length > 0) {
         setProductId(order.items[0].productId.toString());
         setQuantity(order.items[0].quantity);
-        
+
       }
     } else {
       resetForm();
     }
   };
-  
+
 
   const handleCloseModal = () => {
     setModalOpen(false);
@@ -178,22 +168,31 @@ const OrdersDashboard = () => {
     setModalType('create');
     resetForm();
     setIsSubmitting(false);
-    // setIsCreatingCheckout(false);
+    setIsCreatingCheckout(false); // ADDED
   };
+
 
   const handleSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
-    
+    setIsCreatingCheckout(true);
+
     // Validate form
     const errors = validateOrderForm(buyerId, warehouseId, productId, quantity);
     if (errors.length > 0) {
       setFormErrors(errors);
       setIsSubmitting(false);
+      setIsCreatingCheckout(false);
       return;
     }
 
+    let orderResponse = null;
+    let stripeData = null;
+
     try {
+      console.log('1. Starting order creation...');
+
+      // 1. Create the Order
       const payload: any = {
         buyerId: parseInt(buyerId!, 10),
         sourceWarehouseId: parseInt(warehouseId!, 10),
@@ -202,152 +201,93 @@ const OrdersDashboard = () => {
           quantity: Number(quantity)
         }]
       };
-      
+
       if (destinationWarehouseId) {
         payload.destinationWarehouseId = parseInt(destinationWarehouseId, 10);
       }
 
-      await createOrder(payload).unwrap();
-      
+      const result = await createOrder(payload);
+
+      if ('error' in result) {
+        throw new Error(result.error?.data?.message || 'Order creation failed');
+      }
+
+      orderResponse = result.data;
+      console.log('✅ Order created:', orderResponse);
+
+      // 2. Create Stripe Checkout Session
+      console.log('2. Creating Stripe session...');
+      const stripeResponse = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          orderId: orderResponse.id,
+        }),
+      });
+
+      if (!stripeResponse.ok) {
+        const errorText = await stripeResponse.text();
+        throw new Error(`Stripe error: ${errorText}`);
+      }
+
+      stripeData = await stripeResponse.json();
+      console.log('✅ Stripe session created:', stripeData);
+
+      // 3. Redirect to Stripe Checkout
+      const stripe = await loadStripe('pk_test_51RSOJhRs6J5EqLQsNzbpo1hWYfC5wjSghPWrGUfdDgdf6b6h6rDCmaGiEAbae5jAIuGxNeahSqob6ZydO4JmjXuu00Qmidd6oC');
+      if (!stripe) {
+        throw new Error('Stripe failed to initialize');
+      }
+
+      const { error: stripeError } = await stripe.redirectToCheckout({
+        sessionId: stripeData.id,
+      });
+
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
+
       showNotification({
         title: 'Success',
-        message: `Order ${selectedOrder ? 'updated' : 'created'} successfully`,
+        message: 'Order created and redirecting to payment...',
         color: 'green',
       });
-      
+
       handleCloseModal();
       refetchOrders();
-    } catch (err: any) {
-      console.error('Failed to save order:', err);
-      
-      const errorMessage = err?.data?.message || 'Failed to save order. Please try again.';
+
+    } catch (error: any) {
+      console.error('❌ Full error:', error);
+      setError(error.message || 'Checkout process failed');
+
       showNotification({
         title: 'Error',
-        message: errorMessage,
+        message: error.message || 'Failed to create order and checkout. Please try again.',
         color: 'red',
       });
     } finally {
       setIsSubmitting(false);
+      setIsCreatingCheckout(false);
+
+      // Log final responses for debugging
+      if (orderResponse) {
+        console.log('📦 Final Order Response:', orderResponse);
+      }
+      if (stripeData) {
+        console.log('💳 Final Stripe Session:', stripeData);
+      }
     }
-
-    /*
-    const handleSubmit = async () => {
-      setError(null);
-      setIsSubmitting(true);
-      setIsCreatingCheckout(true);
-      
-      // Validate form
-      const errors = validateOrderForm(buyerId, warehouseId, productId, quantity);
-      if (errors.length > 0) {
-        setFormErrors(errors);
-        setIsSubmitting(false);
-        setIsCreatingCheckout(false);
-        return;
-      }
-
-      let orderResponse = null;
-      let stripeData = null;
-
-      try {
-        console.log('1. Starting order creation...');
-
-        // 1. Create the Order
-        const payload: any = {
-          buyerId: parseInt(buyerId!, 10),
-          sourceWarehouseId: parseInt(warehouseId!, 10),
-          items: [{
-            productId: parseInt(productId!, 10),
-            quantity: Number(quantity)
-          }]
-        };
-        
-        if (destinationWarehouseId) {
-          payload.destinationWarehouseId = parseInt(destinationWarehouseId, 10);
-        }
-
-        const result = await createOrder(payload);
-        
-        if ('error' in result) {
-          throw new Error(result.error?.data?.message || 'Order creation failed');
-        }
-
-        orderResponse = result.data;
-        console.log('✅ Order created:', orderResponse);
-
-        // 2. Create Stripe Checkout Session
-        console.log('2. Creating Stripe session...');
-        const stripeResponse = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            orderId: orderResponse.id,
-          }),
-        });
-
-        if (!stripeResponse.ok) {
-          const errorText = await stripeResponse.text();
-          throw new Error(`Stripe error: ${errorText}`);
-        }
-
-        stripeData = await stripeResponse.json();
-        console.log('✅ Stripe session created:', stripeData);
-
-        // 3. Redirect to Stripe Checkout
-        const stripe = await loadStripe('pk_test_51RSOJhRs6J5EqLQsNzbpo1hWYfC5wjSghPWrGUfdDgdf6b6h6rDCmaGiEAbae5jAIuGxNeahSqob6ZydO4JmjXuu00Qmidd6oC');
-        if (!stripe) {
-          throw new Error('Stripe failed to initialize');
-        }
-
-        const { error: stripeError } = await stripe.redirectToCheckout({
-          sessionId: stripeData.id,
-        });
-
-        if (stripeError) {
-          throw new Error(stripeError.message);
-        }
-
-        showNotification({
-          title: 'Success',
-          message: 'Order created and redirecting to payment...',
-          color: 'green',
-        });
-        
-        handleCloseModal();
-        refetchOrders();
-
-      } catch (error: any) {
-        console.error('❌ Full error:', error);
-        setError(error.message || 'Checkout process failed');
-        
-        showNotification({
-          title: 'Error',
-          message: error.message || 'Failed to create order and checkout. Please try again.',
-          color: 'red',
-        });
-      } finally {
-        setIsSubmitting(false);
-        setIsCreatingCheckout(false);
-
-        // Log final responses for debugging
-        if (orderResponse) {
-          console.log('📦 Final Order Response:', orderResponse);
-        }
-        if (stripeData) {
-          console.log('💳 Final Stripe Session:', stripeData);
-        }
-      }
-    };
-    */
   };
+
   const handleCreateShipment = async () => {
     if (!selectedOrder || !selectedOrder.items || selectedOrder.items.length === 0) return;
 
     try {
       await createShipment(selectedOrder.id).unwrap();
-      
+
       // If destination warehouse is specified, assign product to it
       if (destinationWarehouseId) {
         const orderItem = selectedOrder.items[0];
@@ -357,7 +297,7 @@ const OrdersDashboard = () => {
           warehouseId: parseInt(destinationWarehouseId, 10),
         }).unwrap();
       }
-      
+
       handleCloseModal();
       showNotification({
         title: 'Shipment Created',
@@ -463,9 +403,9 @@ const OrdersDashboard = () => {
       cell: (info) => {
         const status = info.getValue() as string;
         return (
-          <Badge 
-            color={getStatusColor(status)} 
-            variant="filled" 
+          <Badge
+            color={getStatusColor(status)}
+            variant="filled"
             size="sm"
           >
             {status || 'Unknown'}
@@ -572,9 +512,9 @@ const OrdersDashboard = () => {
         <Stack gap="md">
           {/* Error Display */}
           {error && (
-            <Alert 
-              icon={<PiWarningBold size={16} />} 
-              title="Error" 
+            <Alert
+              icon={<PiWarningBold size={16} />}
+              title="Error"
               color="red"
               variant="light"
               onClose={() => setError(null)}
@@ -592,10 +532,10 @@ const OrdersDashboard = () => {
                 <Select
                   label="Buyer Company"
                   placeholder="Select a buyer"
-                  data={buyers.map(b => ({ 
-                    label: b.companyName, 
+                  data={buyers.map(b => ({
+                    label: b.companyName,
                     value: b.id.toString(),
-                    description: b.email 
+                    description: b.email
                   }))}
                   value={buyerId}
                   onChange={setBuyerId}
@@ -609,8 +549,8 @@ const OrdersDashboard = () => {
                 <Select
                   label="Source Warehouse"
                   placeholder="Select source warehouse"
-                  data={warehouses.map(w => ({ 
-                    label: w.name, 
+                  data={warehouses.map(w => ({
+                    label: w.name,
                     value: w.id.toString(),
                     description: `${w.address.cityId}, ${w.address.country}`
                   }))}
@@ -633,8 +573,8 @@ const OrdersDashboard = () => {
                 <Select
                   label="Product"
                   placeholder={warehouseId ? "Select a product" : "First select a warehouse"}
-                  data={warehouseProducts.map(p => ({ 
-                    label: p.productTitle, 
+                  data={warehouseProducts.map(p => ({
+                    label: p.productTitle,
                     value: p.productId.toString(),
                     description: `Stock: ${p.quantity || 0} units • $${(p.unitPrice || 0).toFixed(2)}/unit`
                   }))}
@@ -691,11 +631,11 @@ const OrdersDashboard = () => {
                     </Text>
                   </Grid.Col>
                 </Grid>
-                
+
                 {quantity > availableQuantity && (
-                  <Alert 
-                    icon={<PiWarningBold size={14} />} 
-                    title="Insufficient Stock" 
+                  <Alert
+                    icon={<PiWarningBold size={14} />}
+                    title="Insufficient Stock"
                     color="orange"
                     variant="light"
                     mt="xs"
@@ -802,9 +742,9 @@ const OrdersDashboard = () => {
             <div>
               <Text fw={600} mb="sm">Shipment Management</Text>
               {selectedOrder.shipmentId ? (
-                <Alert 
-                  icon={<PiTruckBold size={16} />} 
-                  title="Shipment Created" 
+                <Alert
+                  icon={<PiTruckBold size={16} />}
+                  title="Shipment Created"
                   color="green"
                   variant="light"
                 >
@@ -829,18 +769,17 @@ const OrdersDashboard = () => {
             </div>
           )}
 
-          {/* COMMENTED OUT: Checkout Loading Indicator
+          {/* RESTORED CHECKOUT LOADING INDICATOR */}
           {isCreatingCheckout && (
-            <Alert 
-              icon={<Loader size={16} />} 
-              title="Processing Payment" 
+            <Alert
+              icon={<Loader size={16} />}
+              title="Processing Payment"
               color="blue"
               variant="light"
             >
               Creating order and redirecting to Stripe checkout...
             </Alert>
           )}
-          */}
         </Stack>
       </DashboardCrudModal>
     </>
