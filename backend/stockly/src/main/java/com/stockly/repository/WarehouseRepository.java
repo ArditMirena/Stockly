@@ -11,9 +11,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long>, JpaSpecificationExecutor<Warehouse> {
+    Optional<Warehouse> findByName(String name);
     List<Warehouse> findByCompanyId(Long companyId);
     boolean existsByName(String name);
 

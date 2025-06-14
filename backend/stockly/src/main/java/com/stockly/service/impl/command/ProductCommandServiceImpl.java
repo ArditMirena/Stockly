@@ -9,6 +9,9 @@
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
 
+    import java.time.Instant;
+    import java.time.LocalDateTime;
+
     @Service
     @RequiredArgsConstructor
     @Transactional
@@ -19,6 +22,8 @@
         @Override
         public ProductDTO createProduct(ProductDTO productDTO) {
             Product product = ProductMapper.toEntity(productDTO);
+            product.setCreatedAt(Instant.now());
+            product.setUpdatedAt(Instant.now());
             Product saved = productRepository.save(product);
             return ProductMapper.toDTO(saved);
         }

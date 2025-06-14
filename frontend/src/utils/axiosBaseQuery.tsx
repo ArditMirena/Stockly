@@ -9,13 +9,23 @@ export const axiosBaseQuery =
       method: AxiosRequestConfig['method'];
       data?: AxiosRequestConfig['data'];
       params?: AxiosRequestConfig['params'];
+      headers?: AxiosRequestConfig['headers'];
     },
     unknown,
     unknown
   > =>
-  async ({ url, method, data, params }) => {
+  async ({ url, method, data, params, headers }) => {
     try {
-      const result = await api({ url, method, data, params });
+      // Let axios handle FormData headers automatically
+      const config: AxiosRequestConfig = {
+        url,
+        method,
+        data,
+        params,
+        headers: data instanceof FormData ? undefined : headers, // Don't set headers for FormData
+      };
+
+      const result = await api(config);
       return { data: result.data };
     } catch (axiosError) {
       const err = axiosError as AxiosError;

@@ -8,10 +8,20 @@ interface ErrorResponse {
 const api = axios.create({
   baseURL: "http://localhost:8080/api/v1",
   withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
+
+api.interceptors.request.use(
+  (config) => {
+    // Only set JSON content type if it's not FormData
+    if (!(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 let isRefreshing = false;
 let failedQueue: {

@@ -51,7 +51,6 @@ public class AdminSeeder implements ApplicationListener<ContextRefreshedEvent> {
                 user.setRole(roleOpt.get());
 
                 userRepository.save(user);
-                System.out.println("Seeded user for role: " + roleEnum.name());
             }
         }
     }

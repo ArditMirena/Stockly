@@ -210,7 +210,14 @@ export const warehousesApi = createApi({
                 url: `/warehouse-products/${id}`,
                 method: 'DELETE',
             }),
-        })
+        }),
+        importWarehouseProducts: builder.mutation<string, FormData>({
+            query: (formData) => ({
+                url: `/warehouse-products/import-warehouse-products`,
+                method: 'POST',
+                data: formData,
+            }),
+        }),
     }),
 });
 
@@ -227,5 +234,6 @@ export const {
     useGetWarehousesByManagerQuery,
     useAddWarehouseProductMutation,
     useUpdateWarehouseProductMutation,
-    useDeleteWarehouseProductMutation
+    useDeleteWarehouseProductMutation,
+    useImportWarehouseProductsMutation
 } = warehousesApi;

@@ -16,7 +16,11 @@ import {
   Grid,
   Alert,
   ActionIcon,
-  Tooltip
+  Tooltip,
+  FileInput,
+  List,
+  ThemeIcon,
+  Paper
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
@@ -29,6 +33,9 @@ import {
   PiRobotBold,
   PiTrendUpBold,
   PiInfoBold,
+  PiUploadBold,
+  PiFileCsvBold,
+  PiDownloadBold
 } from 'react-icons/pi';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import {
@@ -38,7 +45,8 @@ import {
   useAddWarehouseProductMutation,
   useUpdateWarehouseProductMutation,
   useDeleteWarehouseProductMutation,
-  useGetWarehousesByManagerQuery
+  useGetWarehousesByManagerQuery,
+  useImportWarehouseProductsMutation
 } from '../../api/WarehousesApi';
 import { useGetProductsQuery } from '../../api/ProductsApi';
 import DashboardCrudModal, { ModalType } from '../../components/DashboardCrudModal';
@@ -91,6 +99,11 @@ const WarehouseProductsDashboard = () => {
   const [modalType, setModalType] = useState<ModalType>('create');
   const [selectedWarehouseProduct, setSelectedWarehouseProduct] = useState<WarehouseProductDTO | null>(null);
 
+  // Import modal state
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
   // Form state
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null);
@@ -108,6 +121,7 @@ const WarehouseProductsDashboard = () => {
   const [addWarehouseProduct] = useAddWarehouseProductMutation();
   const [updateWarehouseProduct] = useUpdateWarehouseProductMutation();
   const [deleteWarehouseProduct] = useDeleteWarehouseProductMutation();
+  const [importWarehouseProducts] = useImportWarehouseProductsMutation();
 
   const { data: warehouses = [], isLoading: isWarehousesLoading } = 
       (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER)
@@ -144,7 +158,7 @@ const WarehouseProductsDashboard = () => {
 
   const productOptions = products.map(product => ({
     value: product.id.toString(),
-    label: `${product.title} - $${product.price?.toFixed(2) || '0.00'}`,
+    label: `${product.title} - ${product.price?.toFixed(2) || '0.00'}`,
     description: product.sku
   }));
 
@@ -155,6 +169,11 @@ const WarehouseProductsDashboard = () => {
     setAutomatedRestock(false);
     setFormErrors([]);
     setError(null);
+  };
+
+  const resetImportForm = () => {
+    setSelectedFile(null);
+    setIsImporting(false);
   };
 
   const handleDelete = async () => {
@@ -200,6 +219,54 @@ const WarehouseProductsDashboard = () => {
     setModalType('create');
     resetForm();
     setIsSubmitting(false);
+  };
+
+  const handleOpenImportModal = () => {
+    setImportModalOpen(true);
+    resetImportForm();
+  };
+
+  const handleCloseImportModal = () => {
+    setImportModalOpen(false);
+    resetImportForm();
+  };
+
+  const handleImportSubmit = async () => {
+    if (!selectedFile) {
+      showNotification({
+        title: 'Error',
+        message: 'Please select an Excel file to import',
+        color: 'red',
+      });
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const result = await importWarehouseProducts(formData).unwrap();
+      
+      showNotification({
+        title: 'Success',
+        message: result || 'Warehouse products imported successfully',
+        color: 'green',
+      });
+
+      handleCloseImportModal();
+      refetchWarehouseProducts();
+    } catch (error: any) {
+      console.error('Import failed:', error);
+      showNotification({
+        title: 'Import Failed',
+        message: error?.data?.message || 'Failed to import warehouse products. Please check your file format and try again.',
+        color: 'red',
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -258,6 +325,26 @@ const WarehouseProductsDashboard = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Generate sample Excel template
+  const generateSampleTemplate = () => {
+    const sampleData = [
+      ['warehouseId', 'warehouseName', 'productTitle', 'productSku', 'productPrice', 'quantity'],
+      ['1', 'Main Warehouse', 'Sample Product 1', 'SKU001', '29.99', '100'],
+      ['2', 'Secondary Warehouse', 'Sample Product 2', 'SKU002', '49.99', '50'],
+    ];
+
+    const csvContent = sampleData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'warehouse_products_template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   // Define table columns
@@ -393,6 +480,29 @@ const WarehouseProductsDashboard = () => {
 
   return (
     <>
+      {/* Header Section with Import Button */}
+      <Stack gap="md" mb="lg">
+        <Group justify="space-between" align="flex-end">
+          <div>
+            <Group gap="sm" mb="xs">
+              
+            </Group>
+            
+          </div>
+          <Group gap="sm">
+            <Button
+              leftSection={<PiUploadBold size={16} />}
+              variant="light"
+              color="pink"
+              onClick={handleOpenImportModal}
+              disabled={isWarehousesLoading || isProductsLoading}
+            >
+              Import from Excel
+            </Button>
+          </Group>
+        </Group>
+      </Stack>
+
       {/* Enhanced Table with all functionality built-in */}
       <DashboardTable
         tableData={tableData}
@@ -417,6 +527,155 @@ const WarehouseProductsDashboard = () => {
         enableSort
         enableSearch
       />
+
+      {/* Import Modal */}
+      <Modal
+        opened={importModalOpen}
+        onClose={handleCloseImportModal}
+        title="Import Warehouse Products from Excel"
+        size="lg"
+        centered
+        style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            zIndex: 20
+        }}
+        styles={{
+            overlay: {
+            zIndex: 20
+            }
+        }}
+      >
+        <Stack gap="lg">
+          {/* Import Instructions */}
+          <Alert 
+            icon={<PiInfoBold size={16} />} 
+            title="Excel File Requirements" 
+            color="blue"
+            variant="light"
+          >
+            <Text size="sm" mb="sm">
+              Your Excel file must contain the following columns in this exact order:
+            </Text>
+            <List size="sm" spacing="xs">
+              <List.Item>
+                <Text fw={500}>warehouseId</Text> - The ID of the warehouse where products will be added
+              </List.Item>
+              <List.Item>
+                <Text fw={500}>warehouseName</Text> - The name of the warehouse (for reference)
+              </List.Item>
+              <List.Item>
+                <Text fw={500}>productTitle</Text> - The title/name of the product
+              </List.Item>
+              <List.Item>
+                <Text fw={500}>productSku</Text> - The SKU code of the product
+              </List.Item>
+              <List.Item>
+                <Text fw={500}>productPrice</Text> - The unit price of the product
+              </List.Item>
+              <List.Item>
+                <Text fw={500}>quantity</Text> - The quantity to add to the warehouse
+              </List.Item>
+            </List>
+          </Alert>
+
+          {/* Sample Template Download */}
+          <Paper withBorder p="md" bg="green.0">
+            <Group justify="space-between">
+              <div>
+                <Text fw={600} c="green" mb="xs">
+                  <ThemeIcon color="green" variant="light" size="sm" mr="xs">
+                    <PiFileCsvBold size={14} />
+                  </ThemeIcon>
+                  Download Sample Template
+                </Text>
+                <Text size="sm" c="dimmed">
+                  Download a sample CSV template with the correct format and example data
+                </Text>
+              </div>
+              <Button
+                leftSection={<PiDownloadBold size={16} />}
+                variant="light"
+                color="green"
+                onClick={generateSampleTemplate}
+              >
+                Download Template
+              </Button>
+            </Group>
+          </Paper>
+
+          {/* File Upload */}
+          <div>
+            <Text fw={500} mb="sm">Select Excel File</Text>
+            <FileInput
+              placeholder="Choose your Excel file (.xlsx, .xls, .csv)"
+              value={selectedFile}
+              onChange={setSelectedFile}
+              accept=".xlsx,.xls,.csv"
+              leftSection={<PiFileCsvBold size={16} />}
+              description="Supported formats: Excel (.xlsx, .xls) and CSV (.csv)"
+              error={!selectedFile && isImporting ? 'Please select a file' : null}
+            />
+          </div>
+
+          {/* Import Guidelines */}
+          <Alert 
+            icon={<PiWarningBold size={16} />} 
+            title="Important Guidelines" 
+            color="orange"
+            variant="light"
+          >
+            <List size="sm" spacing="xs">
+              <List.Item>Ensure all warehouse IDs exist in your system</List.Item>
+              <List.Item>Product titles and SKUs should match existing products or new ones will be created</List.Item>
+              <List.Item>Quantities must be positive numbers</List.Item>
+              <List.Item>Prices should be in decimal format (e.g., 29.99)</List.Item>
+              <List.Item>The first row should contain column headers</List.Item>
+            </List>
+          </Alert>
+
+          {/* Available Warehouses Reference */}
+          {warehouses.length > 0 && (
+            <div>
+              <Text fw={500} mb="sm">Available Warehouses</Text>
+              <Paper withBorder p="sm" bg="gray.0">
+                <Grid>
+                  {warehouses.map((warehouse) => (
+                    <Grid.Col span={6} key={warehouse.id}>
+                      <Group gap="xs">
+                        <Badge variant="light" color="blue">
+                          ID: {warehouse.id}
+                        </Badge>
+                        <Text size="sm">{warehouse.name}</Text>
+                      </Group>
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </Paper>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <Group justify="flex-end" mt="md">
+            <Button 
+              variant="default" 
+              onClick={handleCloseImportModal}
+              disabled={isImporting}
+            >
+              Cancel
+            </Button>
+            <Button
+              leftSection={<PiUploadBold size={16} />}
+              onClick={handleImportSubmit}
+              loading={isImporting}
+              disabled={!selectedFile}
+            >
+              {isImporting ? 'Importing...' : 'Import Products'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -624,7 +883,7 @@ const WarehouseProductsDashboard = () => {
                         ⚠️ Low stock alert - Consider restocking soon
                       </Text>
                     )}
-                    {selectedWarehouseProduct.quantity <= 0 && (
+                                        {selectedWarehouseProduct.quantity <= 0 && (
                       <Text size="sm" c="red" mt="xs">
                         🚫 Out of stock - Immediate restocking required
                       </Text>

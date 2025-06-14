@@ -46,6 +46,8 @@ dependencies {
 	implementation 'com.easypost:easypost-api-client:8.0.0'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
 	implementation("com.stripe:stripe-java:29.0.0")
+	implementation 'org.apache.poi:poi-ooxml:5.2.3'
+	implementation 'org.apache.commons:commons-collections4:4.4'
 }
 
 tasks.named('test') {

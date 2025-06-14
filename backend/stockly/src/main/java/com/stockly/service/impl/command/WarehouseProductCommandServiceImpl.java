@@ -1,9 +1,8 @@
 package com.stockly.service.impl.command;
 
 import com.stockly.dto.WarehouseProductDTO;
-import com.stockly.exception.ResourceNotFoundException;
+import com.stockly.dto.WarehouseProductExcelDTO;
 import com.stockly.model.Product;
-import com.stockly.model.User;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.ProductRepository;
@@ -11,8 +10,12 @@ import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.WarehouseProductCommandService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -72,4 +75,54 @@ public class WarehouseProductCommandServiceImpl implements WarehouseProductComma
         // Save the new WarehouseProduct entity to the repository
         warehouseProductRepository.save(warehouseProduct);
     }
+
+    @Override
+    public WarehouseProduct importWarehouseProductFromExcel(WarehouseProductExcelDTO dto) {
+        Warehouse warehouse = null;
+        if (dto.getWarehouseId() != null) {
+            warehouse = warehouseRepository.findById(dto.getWarehouseId())
+                    .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + dto.getWarehouseId()));
+        } else if (dto.getWarehouseName() != null) {
+            warehouse = warehouseRepository.findByName(dto.getWarehouseName())
+                    .orElseThrow(() -> new RuntimeException("Warehouse not found with name: " + dto.getWarehouseName()));
+        } else {
+            throw new RuntimeException("Warehouse ID or name must be provided");
+        }
+
+        Product product = productRepository.findBySku(dto.getProductSku())
+                .orElseGet(() -> {
+                    Product newProduct = new Product();
+                    newProduct.setSku(dto.getProductSku());
+                    newProduct.setTitle(dto.getProductTitle());
+                    newProduct.setPrice(dto.getProductPrice());
+                    newProduct.setCreatedAt(Instant.now());
+                    newProduct.setUpdatedAt(Instant.now());
+                    return productRepository.save(newProduct);
+                });
+
+        Optional<WarehouseProduct> existing = warehouseProductRepository.findByWarehouseAndProduct(warehouse, product);
+
+        if (existing.isPresent()) {
+            WarehouseProduct wp = existing.get();
+            wp.setQuantity(wp.getQuantity() + dto.getQuantity());
+            return warehouseProductRepository.save(wp);
+        } else {
+            WarehouseProduct wp = new WarehouseProduct();
+            wp.setWarehouse(warehouse);
+            wp.setProduct(product);
+            wp.setQuantity(dto.getQuantity());
+            return warehouseProductRepository.save(wp);
+        }
+    }
+
+    @Override
+    public List<WarehouseProduct> importWarehouseProductsFromExcel(List<WarehouseProductExcelDTO> importList) {
+        List<WarehouseProduct> saved = new ArrayList<>();
+        for (WarehouseProductExcelDTO dto : importList) {
+            WarehouseProduct wp = importWarehouseProductFromExcel(dto);
+            saved.add(wp);
+        }
+        return saved;
+    }
+
 }
