@@ -2,9 +2,11 @@ package com.stockly.boostrap;
 
 import com.stockly.model.*;
 import com.stockly.model.enums.OrderStatus;
+import com.stockly.dto.ReceiptDTO;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.repository.OrderRepository;
 import com.stockly.repository.WarehouseRepository;
+import com.stockly.service.command.ReceiptCommandService;
 import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -23,13 +25,16 @@ public class OrderSeeder implements CommandLineRunner {
     private final OrderRepository orderRepository;
     private final CompanyRepository companyRepository;
     private final WarehouseRepository warehouseRepository;
+    private final ReceiptCommandService receiptCommandService;
 
     public OrderSeeder(OrderRepository orderRepository,
                        CompanyRepository companyRepository,
-                       WarehouseRepository warehouseRepository) {
+                       WarehouseRepository warehouseRepository,
+                       ReceiptCommandService receiptCommandService) {
         this.orderRepository = orderRepository;
         this.companyRepository = companyRepository;
         this.warehouseRepository = warehouseRepository;
+        this.receiptCommandService = receiptCommandService;
     }
 
     @Override
@@ -98,6 +103,21 @@ public class OrderSeeder implements CommandLineRunner {
         }
 
         orderRepository.saveAll(allOrders);
+
+        generateReceiptsForOrders(allOrders);
+    }
+
+    private void generateReceiptsForOrders(List<Order> orders) {
+        for (Order order : orders) {
+            try {
+                ReceiptDTO receiptDTO = receiptCommandService.generateReceiptDTO(order.getId());
+                receiptCommandService.saveReceipt(receiptDTO);
+
+            } catch (Exception e) {
+                // Log error but continue with other orders
+                System.err.println("Failed to generate receipt for order " + order.getId() + ": " + e.getMessage());
+            }
+        }
     }
 
     private void createOrder(Company buyer, Company supplier,

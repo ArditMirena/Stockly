@@ -403,6 +403,81 @@ const WarehouseProductsDashboard = () => {
       },
     },
     {
+      accessorKey: 'daysRemaining',
+      header: 'Days Left',
+      enableSorting: true,
+      cell: (info) => {
+        const days = info.getValue() as number | null;
+        if (days === null) {
+          return (
+              <Tooltip label="No forecast available">
+                <Badge color="gray" variant="light">
+                  N/A
+                </Badge>
+              </Tooltip>
+          );
+        }
+        const color = days > 14 ? 'green' : days > 7 ? 'yellow' : 'red';
+        return (
+            <Tooltip label={`Estimated days until stock runs out`}>
+              <Badge color={color} variant="light">
+                {days} days
+              </Badge>
+            </Tooltip>
+        );
+      },
+    },
+    {
+      accessorKey: 'weeklyPredictedDemand',
+      header: 'Weekly Demand',
+      enableSorting: true,
+      cell: (info) => {
+        const demand = info.getValue() as number | null;
+        if (demand === null) {
+          return (
+              <Tooltip label="No forecast available">
+                <Badge color="gray" variant="light">
+                  N/A
+                </Badge>
+              </Tooltip>
+          );
+        }
+        return (
+            <Tooltip label={`Predicted weekly demand based on historical data`}>
+              <Badge color="blue" variant="light">
+                ~{Math.round(demand)} units
+              </Badge>
+            </Tooltip>
+        );
+      },
+    },
+    {
+      accessorKey: 'suggestedRestock',
+      header: 'Suggested Restock',
+      enableSorting: true,
+      cell: (info) => {
+        const restock = info.getValue() as number | null;
+        if (restock === null) {
+          return (
+              <Tooltip label="No restock suggestion available">
+                <Badge color="gray" variant="light">
+                  N/A
+                </Badge>
+              </Tooltip>
+          );
+        }
+        return (
+            <Tooltip label={`AI-suggested restock quantity to meet demand`}>
+              <Group gap="xs">
+                <Badge color="teal" variant="light" leftSection={<PiRobotBold size={12} />}>
+                  {Math.round(restock)} units
+                </Badge>
+              </Group>
+            </Tooltip>
+        );
+      },
+    },
+    {
       accessorKey: 'automatedRestock',
       header: 'Auto Restock',
       enableSorting: false,

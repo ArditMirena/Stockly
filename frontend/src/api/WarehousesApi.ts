@@ -29,6 +29,9 @@ export interface WarehouseProductDTO {
     productSku: string;
     productThumbnail: string;
     unitPrice: number;
+    daysRemaining: number;
+    weeklyPredictedDemand: number;
+    suggestedRestock: number;
 }
 
 interface PaginatedWarehouseResponse {

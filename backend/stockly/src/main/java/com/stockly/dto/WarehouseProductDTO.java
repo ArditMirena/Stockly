@@ -37,4 +37,8 @@ public class WarehouseProductDTO {
     private String productThumbnail;
     private BigDecimal unitPrice;
     private boolean automatedRestock;
+
+    private Double daysRemaining;
+    private Double weeklyPredictedDemand;
+    private Integer suggestedRestock;
 }

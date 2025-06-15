@@ -2,6 +2,7 @@ package com.stockly.boostrap;
 
 import com.stockly.model.*;
 import com.stockly.repository.CompanyRepository;
+import com.stockly.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.core.annotation.Order;
@@ -15,6 +16,8 @@ import java.util.stream.IntStream;
 public class CompanySeeder implements CommandLineRunner {
 
     private final CompanyRepository companyRepository;
+    private final UserRepository userRepository;
+
     private final Map<String, String[]> COMPANY_NAMES_BY_INDUSTRY = Map.of(
             "Technology", new String[]{
                     "Quantum Computing Inc", "Neuralink Technologies", "Blockchain Innovations",
@@ -65,8 +68,9 @@ public class CompanySeeder implements CommandLineRunner {
             "Metropolitan", "Coastal", "Mountain", "Industrial"
     };
 
-    public CompanySeeder(CompanyRepository companyRepository) {
+    public CompanySeeder(CompanyRepository companyRepository, UserRepository userRepository) {
         this.companyRepository = companyRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -83,6 +87,11 @@ public class CompanySeeder implements CommandLineRunner {
                 .boxed()
                 .toList();
 
+        // Get users with specific roles
+        User buyerManager = userRepository.findByEmail("buyer@email.com")
+                .orElseThrow(() -> new RuntimeException("Buyer user not found"));
+        User supplierManager = userRepository.findByEmail("supplier@email.com")
+                .orElseThrow(() -> new RuntimeException("Supplier user not found"));
 
         // Create buyers (5 per industry)
         COMPANY_NAMES_BY_INDUSTRY.forEach((industry, names) -> {
@@ -92,7 +101,8 @@ public class CompanySeeder implements CommandLineRunner {
                             name,
                             generateEmail(name),
                             generatePhoneNumber(),
-                            industry + " Retail"
+                            industry + " Retail",
+                            buyerManager
                     )));
         });
 
@@ -108,7 +118,8 @@ public class CompanySeeder implements CommandLineRunner {
                                 generateEmail(name),
                                 generatePhoneNumber(),
                                 productIds,
-                                ThreadLocalRandom.current().nextInt(1, 4) // 1-3 warehouses
+                                ThreadLocalRandom.current().nextInt(1, 4), // 1-3 warehouses
+                                supplierManager
                         ));
                     });
         });
@@ -125,7 +136,8 @@ public class CompanySeeder implements CommandLineRunner {
                                 generateEmail(name),
                                 generatePhoneNumber(),
                                 productIds,
-                                ThreadLocalRandom.current().nextInt(2, 4) // 2-3 warehouses
+                                ThreadLocalRandom.current().nextInt(2, 4), // 2-3 warehouses
+                                supplierManager
                         ));
                     });
         });
@@ -133,31 +145,24 @@ public class CompanySeeder implements CommandLineRunner {
         companyRepository.saveAll(allCompanies);
     }
 
-    private Company createBuyer(String name, String email, String phone, String businessType) {
+    private Company createBuyer(String name, String email, String phone, String businessType, User manager) {
         Company company = new Company();
         company.setCompanyName(name);
         company.setEmail(email);
         company.setPhoneNumber(phone);
         company.setBusinessType(businessType);
         company.setAddress(createRandomAddress());
-
-        User manager = new User();
-        manager.setId(1L);
         company.setManager(manager);
-
         return company;
     }
 
     private Company createSupplierWithWarehouses(String name, String email, String phone,
-                                                 List<Long> productIds, int warehouseCount) {
+                                                 List<Long> productIds, int warehouseCount, User manager) {
         Company company = new Company();
         company.setCompanyName(name);
         company.setEmail(email);
         company.setPhoneNumber(phone);
         company.setAddress(createRandomAddress());
-
-        User manager = new User();
-        manager.setId(1L);
         company.setManager(manager);
 
         // Create warehouses
@@ -190,16 +195,13 @@ public class CompanySeeder implements CommandLineRunner {
     }
 
     private Company createManufacturerWithWarehouses(String name, String email, String phone,
-                                                     List<Long> productIds, int warehouseCount) {
+                                                     List<Long> productIds, int warehouseCount, User manager) {
         Company company = new Company();
         company.setCompanyName(name);
         company.setEmail(email);
         company.setPhoneNumber(phone);
         company.setAddress(createRandomAddress());
         company.setHasProductionFacility(true);
-
-        User manager = new User();
-        manager.setId(1L);
         company.setManager(manager);
 
         // Create warehouses

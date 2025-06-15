@@ -80,7 +80,7 @@ public class OrderQueryController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             Instant startDate) {
 
-        Instant queryDate = (startDate != null) ? startDate : Instant.now().minus(30, ChronoUnit.DAYS);
+        Instant queryDate = (startDate != null) ? startDate : Instant.now().minus(365, ChronoUnit.DAYS);
         return ResponseEntity.ok(orderExportService.exportOrders(queryDate));
     }
 

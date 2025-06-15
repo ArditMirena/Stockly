@@ -78,36 +78,21 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
 
     @Query(nativeQuery = true, value = """
-    WITH numbered_orders AS (
-        SELECT
-            oi.product_id,
-            o.source_warehouse_id,
-            o.order_date,
-            oi.quantity,
-            wp.quantity as current_db_stock,
-            ROW_NUMBER() OVER (
-                PARTITION BY oi.product_id, o.source_warehouse_id 
-                ORDER BY o.order_date DESC
-            ) as row_num
-        FROM orders o
-        JOIN order_items oi ON o.id = oi.order_id
-        JOIN warehouse_products wp ON 
-            wp.product_id = oi.product_id AND 
-            wp.warehouse_id = o.sourceWarehouse_id
-        WHERE o.order_date >= :startDate
-    )
     SELECT
-        product_id AS productId,
-        source_warehouse_id AS warehouseId,
-        order_date AS orderDate,
-        quantity AS quantity,
-        CASE
-            WHEN row_num = 1 THEN current_db_stock  -- Show actual current stock for most recent order
-            ELSE current_db_stock + quantity        -- Show stock before deduction for historical orders
-        END AS currentStock
-    FROM numbered_orders
-    ORDER BY order_date
-""")
+        oi.product_id AS productId,
+        o.source_warehouse_id AS warehouseId,
+        o.order_date AS orderDate,
+        oi.quantity AS quantity,
+        wp.quantity AS current_db_stock,
+        wp.quantity AS currentStock
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN warehouse_products wp ON 
+        wp.product_id = oi.product_id AND 
+        wp.warehouse_id = o.source_warehouse_id
+    WHERE o.order_date >= :startDate
+    ORDER BY o.order_date
+    """)
     List<OrderExportProjection> findOrdersForExport(@Param("startDate") Instant startDate);
 
 
