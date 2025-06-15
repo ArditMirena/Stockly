@@ -122,7 +122,7 @@ const OrdersDashboard = () => {
     offset: page,
     pageSize: 10,
     ...(user?.role === ROLES.BUYER && { managerId: user.id }),
-    ...(user?.role === ROLES.SUPPLIER && { buyerManagerId: user.id, supplierManagerId: user.id }),
+    ...(user?.role === ROLES.SUPPLIER && { managerId: user.id}),
     searchTerm: debouncedSearch,
   });
 

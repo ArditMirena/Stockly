@@ -86,6 +86,15 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     }
 
     @Override
+    @Transactional
+    public List<OrderDTO> getOrdersByManagerId(Long managerId) {
+        Specification<Order> spec = Specification.where(OrderSpecification.byManagerId(managerId));
+        return orderRepository.findAll(spec).stream()
+                .map(orderMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public BigDecimal getTotalRevenueBySupplier(Long supplierId) {
         List<Order> orders = orderRepository.findBySupplierId(supplierId);
         return orders.stream()
@@ -108,6 +117,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
             Pageable pageable,
             Long buyerManagerId,
             Long supplierManagerId,
+            Long managerId,
             Long buyerCompanyId,
             Long supplierCompanyId,
             Long sourceWarehouseId,
@@ -115,14 +125,13 @@ public class OrderQueryServiceImpl implements OrderQueryService {
             String searchTerm
     ) {
         Specification<Order> spec = OrderSpecification.unifiedSearch(searchTerm);
+
+        if (managerId != null) {
+            spec = spec.and(OrderSpecification.byManagerId(managerId));
+        }
         Page<Order> orders = orderRepository.findAll(spec, pageable);
 
-        List<OrderDTO> orderDTOS = orders
-                .stream()
-                .map(orderMapper::toDto)
-                .collect(Collectors.toList());
-
-        return new PageImpl<>(orderDTOS, pageable, orderDTOS.size() );
+        return orders.map(orderMapper::toDto);
     }
 
     @Override

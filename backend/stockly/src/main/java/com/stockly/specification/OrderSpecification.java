@@ -30,6 +30,18 @@ public class OrderSpecification {
         };
     }
 
+    public static Specification<Order> byManagerId(Long managerId) {
+        return (root, query, cb) -> {
+            if (managerId == null) return null;
+            var buyerJoin = root.join("buyer", JoinType.LEFT);
+            var supplierJoin = root.join("supplier", JoinType.LEFT);
+            return cb.or(
+                    cb.equal(buyerJoin.get("manager").get("id"), managerId),
+                    cb.equal(supplierJoin.get("manager").get("id"), managerId)
+            );
+        };
+    }
+
     public static Specification<Order> bySupplier(Long supplierId) {
         return (root, query, criteriaBuilder) -> {
             if (supplierId == null) {

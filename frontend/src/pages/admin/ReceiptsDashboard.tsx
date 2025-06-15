@@ -78,10 +78,10 @@ const ReceiptsDashboard = () => {
         offset: page,
         pageSize: 10,
         ...(user?.role === ROLES.BUYER && { 
-            buyerManagerId: user.id
+            managerId: user.id
         }),
         ...(user?.role === ROLES.SUPPLIER && { 
-            supplierManagerId: user.id
+            managerId: user.id
         }),
     });
 

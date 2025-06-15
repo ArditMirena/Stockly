@@ -29,6 +29,10 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     private final WarehouseRepository warehouseRepository;
     private final WarehouseMapper warehouseMapper;
     private final CompanyRepository companyRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private WarehouseProductRepository warehouseProductRepository;
 
     @Override
     public WarehouseDTO createWarehouse(WarehouseDTO warehouseDTO) {
@@ -82,26 +86,6 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
         warehouseRepository.delete(warehouse);
     }
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private WarehouseProductRepository warehouseProductRepository;
-
-//    public void assignProductToWarehouse(Long warehouseId, Long productId, String dtoAvailability) {
-//        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-//                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
-//
-//        Product product = productRepository.findById(productId)
-//                .orElseThrow(() -> new RuntimeException("Product not found"));
-//
-//        WarehouseProduct wp = new WarehouseProduct();
-//        wp.setWarehouse(warehouse);
-//        wp.setProduct(product);
-//        wp.setAvailability("available"); // or set this based on some logic or parameter
-//
-//        warehouseProductRepository.save(wp);
-//    }
 
     @Override
     public void assignProductToWarehouse(Long productId, Integer quantity, Long warehouseId) {

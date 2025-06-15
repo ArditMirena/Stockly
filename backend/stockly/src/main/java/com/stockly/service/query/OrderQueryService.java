@@ -19,6 +19,7 @@ public interface OrderQueryService {
     List<OrderDTO> getOrdersBetweenDates(Date startDate, Date endDate);
     BigDecimal getTotalRevenueBySupplier(Long supplierId);
     Long countOrdersByStatus(String status);
+    List<OrderDTO> getOrdersByManagerId(Long managerId);
 
     Long getOrdersCount();
 
@@ -26,6 +27,7 @@ public interface OrderQueryService {
             Pageable pageable,
             Long buyerManagerId,
             Long supplierManagerId,
+            Long managerId,
             Long buyerCompanyId,
             Long supplierCompanyId,
             Long sourceWarehouseId,

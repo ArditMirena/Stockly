@@ -52,6 +52,7 @@ interface PaginationParams {
     supplierCompanyId?: number;
     sourceWarehouseId?: number;
     destinationWarehouseId?: number;
+    managerId?: number;
 }
 
 interface PaginatedReceiptResponse {
@@ -104,7 +105,8 @@ export const receiptsApi = createApi({
                     buyerCompanyId: params?.buyerCompanyId,
                     supplierCompanyId: params?.supplierCompanyId,
                     sourceWarehouseId: params?.sourceWarehouseId,
-                    destinationWarehouseId: params?.destinationWarehouseId
+                    destinationWarehouseId: params?.destinationWarehouseId,
+                    managerId: params?. managerId
                 }
             }),
             providesTags: ['Receipt']

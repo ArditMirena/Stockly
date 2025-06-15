@@ -72,6 +72,7 @@ interface PaginationParams {
   sortBy?: string;
   buyerManagerId?: number;
   supplierManagerId?: number;
+  managerId?: number;
   buyerCompanyId?: number;
   supplierCompanyId?: number;
   sourceWarehouseId?: number;
@@ -100,6 +101,7 @@ export const ordersApi = createApi({
           sortBy: params?.sortBy || 'id',
           buyerManagerId: params?.buyerManagerId,
           supplierManagerId: params?.supplierManagerId,
+          managerId: params?.managerId,
           buyerCompanyId: params?.buyerCompanyId,
           supplierCompanyId: params?.supplierCompanyId,
           sourceWarehouseId: params?.sourceWarehouseId,

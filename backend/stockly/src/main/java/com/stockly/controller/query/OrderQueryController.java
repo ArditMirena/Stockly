@@ -86,31 +86,31 @@ public class OrderQueryController {
 
     @GetMapping("/page")
     public ResponseEntity<Page<OrderDTO>> getAllOrdersWithPagination(
-            @RequestParam(value = "offset", required = false) Integer offset,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
             @RequestParam(value = "buyerManagerId", required = false) Long buyerManagerId,
             @RequestParam(value = "supplierManagerId", required = false) Long supplierManagerId,
+            @RequestParam(value = "managerId", required = false) Long managerId,
             @RequestParam(value = "buyerCompanyId", required = false) Long buyerCompanyId,
             @RequestParam(value = "supplierCompanyId", required = false) Long supplierCompanyId,
             @RequestParam(value = "sourceWarehouseId", required = false) Long sourceWarehouseId,
             @RequestParam(value = "destinationWarehouseId", required = false) Long destinationWarehouseId,
             @RequestParam(required = false) String searchTerm
     ) {
-        if (null == offset) offset = 0;
-        if (null == pageSize) pageSize = 10;
-        if (StringUtils.isEmpty(sortBy)) sortBy = "id";
-
-        return ResponseEntity.ok(orderQueryService.getAllOrdersWithPagination(
-                PageRequest.of(offset, pageSize, Sort.by(sortBy)),
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
+        Page<OrderDTO> orders = orderQueryService.getAllOrdersWithPagination(
+                pageRequest,
                 buyerManagerId,
                 supplierManagerId,
+                managerId,
                 buyerCompanyId,
                 supplierCompanyId,
                 sourceWarehouseId,
                 destinationWarehouseId,
                 searchTerm
-        ));
+        );
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/count")
