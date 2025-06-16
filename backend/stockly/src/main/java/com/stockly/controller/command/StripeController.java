@@ -6,10 +6,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,11 +20,18 @@ public class StripeController {
     private OrderRepository orderRepository;
 
     @PostMapping("/create-checkout-session")
-    public ResponseEntity<Map<String, Object>> createCheckoutSession() {
+    public ResponseEntity<Map<String, Object>> createCheckoutSession(
+            @RequestBody Map<String, String> payload // Add request body parameter
+    ) {
         try {
+            String successUrl = payload.getOrDefault(
+                    "successUrl",
+                    "http://localhost:5173/payment-success" // Default
+            );
+
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl("http://localhost:5173/success")
+                    .setSuccessUrl(successUrl) // Use dynamic URL
                     .setCancelUrl("http://localhost:5173/cancel")
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
