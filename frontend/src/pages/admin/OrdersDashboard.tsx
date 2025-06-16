@@ -225,6 +225,7 @@ const OrdersDashboard = () => {
         credentials: 'include',
         body: JSON.stringify({
           orderId: orderResponse.id,
+         successUrl: window.location.origin + '/payment-success',
         }),
       });
 
