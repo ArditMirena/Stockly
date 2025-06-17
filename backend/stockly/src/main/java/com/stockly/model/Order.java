@@ -70,6 +70,12 @@ public class Order {
     @JoinColumn(name = "destination_warehouse_id", nullable = true)
     private Warehouse destinationWarehouse;
 
+    @Column(name = "source_warehouse_name")
+    private String sourceWarehouseName;
+
+    @Column(name = "destination_warehouse_name")
+    private String destinationWarehouseName;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -86,4 +92,16 @@ public class Order {
                 .map(OrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    @PrePersist
+    @PreUpdate
+    private void setWarehouseNames() {
+        if (sourceWarehouse != null) {
+            sourceWarehouseName = sourceWarehouse.getName();
+        }
+        if (destinationWarehouse != null) {
+            destinationWarehouseName = destinationWarehouse.getName();
+        }
+    }
+
 }

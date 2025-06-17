@@ -9,10 +9,7 @@ import com.stockly.model.Company;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
-import com.stockly.repository.CompanyRepository;
-import com.stockly.repository.ProductRepository;
-import com.stockly.repository.WarehouseProductRepository;
-import com.stockly.repository.WarehouseRepository;
+import com.stockly.repository.*;
 import com.stockly.service.command.WarehouseCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +26,7 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     private final WarehouseRepository warehouseRepository;
     private final WarehouseMapper warehouseMapper;
     private final CompanyRepository companyRepository;
+    private final OrderRepository orderRepository;
     @Autowired
     private ProductRepository productRepository;
     @Autowired
@@ -82,9 +80,24 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     @Override
     public void deleteWarehouse(Long id) {
         Warehouse warehouse = warehouseRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + id));
-        warehouseRepository.delete(warehouse);
+                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+
+        // Check if warehouse is referenced in any orders
+        Long orderCount = orderRepository.countBySourceWarehouseOrDestinationWarehouse(warehouse, warehouse);
+
+        if (orderCount > 0) {
+            // Option 1: Soft delete
+            warehouse.setIsActive(false);
+            warehouseRepository.save(warehouse);
+
+            // Option 2: Or throw an exception if you prefer to prevent deletion
+            // throw new BusinessException("Cannot delete warehouse with associated orders");
+        } else {
+            // Only hard delete if no orders reference it
+            warehouseRepository.delete(warehouse);
+        }
     }
+
 
 
     @Override

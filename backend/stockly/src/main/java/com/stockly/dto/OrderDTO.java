@@ -26,4 +26,6 @@ public class OrderDTO {
     private Date updatedAt;
     private String description;
     private List<OrderItemDTO> items;
+    private String sourceWarehouseName;
+    private String destinationWarehouseName;
 }

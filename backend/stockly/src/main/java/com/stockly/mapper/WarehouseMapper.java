@@ -32,6 +32,7 @@ public class WarehouseMapper {
         dto.setId(warehouse.getId());
         dto.setName(warehouse.getName());
         dto.setCompanyId(warehouse.getCompany().getId());
+        dto.setIsActive(warehouse.getIsActive());
 
         if(warehouse.getWarehouseProducts() != null &&
                 !warehouse.getWarehouseProducts().isEmpty()) {

@@ -36,6 +36,8 @@ public class OrderMapper {
         dto.setShipmentId(order.getShipmentId());
         dto.setUpdatedAt(order.getUpdatedAt());
         dto.setDescription(order.getDescription());
+        dto.setDestinationWarehouseName(order.getDestinationWarehouseName());
+        dto.setSourceWarehouseName(order.getSourceWarehouseName());
 
         if (order.getBuyer() != null) {
             dto.setBuyerId(order.getBuyer().getId());
@@ -61,6 +63,8 @@ public class OrderMapper {
                     .collect(Collectors.toList());
             dto.setItems(itemDTOs);
         }
+
+
 
         return dto;
     }

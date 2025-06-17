@@ -16,4 +16,5 @@ public class WarehouseDTO {
     private AddressDTO address;
     private Long companyId;
     private List<WarehouseProductDTO> products;
+    private Boolean isActive;
 }

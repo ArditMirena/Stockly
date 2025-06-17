@@ -2,6 +2,7 @@ package com.stockly.repository;
 
 import com.stockly.dto.OrderExportDTO;
 import com.stockly.model.Order;
+import com.stockly.model.Warehouse;
 import com.stockly.model.enums.OrderStatus;
 import com.stockly.projection.FlatOrderProjection;
 import com.stockly.projection.OrderExportProjection;
@@ -39,6 +40,8 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
     // Find orders by buyer and status
     List<Order> findByBuyerIdAndStatus(Long buyerId, String status);
+
+    Long countBySourceWarehouseOrDestinationWarehouse(Warehouse destination, Warehouse source);
 
     // Find orders by supplier and status
     List<Order> findBySupplierIdAndStatus(Long supplierId, String status);

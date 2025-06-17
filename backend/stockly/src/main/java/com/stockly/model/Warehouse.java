@@ -30,6 +30,8 @@ public class Warehouse {
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WarehouseProduct> warehouseProducts = new ArrayList<>();

@@ -11,6 +11,8 @@ CREATE TABLE orders (
     total_price DECIMAL(19,4) NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description VARCHAR(250),
+    source_warehouse_name VARCHAR(255),
+    destination_warehouse_name VARCHAR(255),
 
     CONSTRAINT fk_order_buyer
         FOREIGN KEY (buyer_id) REFERENCES company(id),
