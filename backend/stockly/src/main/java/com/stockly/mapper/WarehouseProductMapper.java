@@ -40,9 +40,9 @@ public class WarehouseProductMapper {
 
         // Add prediction fields if prediction exists
         if (prediction != null && prediction.getStockData() != null && prediction.getDemandForecast() != null && prediction.getRecommendation() != null) {
-            builder.daysRemaining(prediction.getStockData().getDaysRemaining())
-                    .weeklyPredictedDemand(prediction.getDemandForecast().getWeeklyPredicted7d())
-                    .suggestedRestock(prediction.getRecommendation().getSuggestedRestock());
+            builder.daysRemaining(prediction.getDaysRemaining())
+                    .weeklyPredictedDemand(prediction.getWeeklyPredicted7d())
+                    .suggestedRestock(prediction.getRecommendationRestock());
         }
 
         return builder.build();
