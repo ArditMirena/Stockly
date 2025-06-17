@@ -202,14 +202,40 @@ const OrdersDashboard = () => {
       console.log('1. Starting order creation...');
 
       // 1. Create the Order
-      const payload: any = {
-        buyerId: parseInt(buyerId!, 10),
-        sourceWarehouseId: parseInt(warehouseId!, 10),
-        items: [{
+    const payload = {
+      buyerId: parseInt(buyerId!, 10),
+      sourceWarehouseId: parseInt(warehouseId!, 10),
+      items: [
+        {
           productId: parseInt(productId!, 10),
           quantity: Number(quantity)
-        }]
-      };
+        }
+      ],
+      totalPrice: Math.round(totalPrice * 100), // Must be here
+      successUrl: 'http://localhost:5173/payment-success',
+    };
+
+    // Log it to check before sending:
+    console.log("Payload for Stripe:", payload);
+
+    const response = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+       credentials: "include", // <-- this makes cookies go with the request
+      body: JSON.stringify(payload),
+    });
+
+     // Log to verify before sending
+     console.log("Payload to backend:", payload);
+
+     fetch('/api/stripe/create-checkout-session', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify(payload),
+     })
+     .then(res => res.json())
+     .then(data => console.log("Stripe session response:", data))
+     .catch(console.error);
 
       if (destinationWarehouseId) {
         payload.destinationWarehouseId = parseInt(destinationWarehouseId, 10);
@@ -226,16 +252,20 @@ const OrdersDashboard = () => {
 
       // 2. Create Stripe Checkout Session
       console.log('2. Creating Stripe session...');
+
+
+
+
+      const stripePayload = {
+        orderId: orderResponse.id,
+        totalPrice: Math.round(orderResponse.totalPrice * 100), // amount in cents, from order
+        successUrl: window.location.origin + '/payment-success',
+      };
       const stripeResponse = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          orderId: orderResponse.id,
-         successUrl: window.location.origin + '/payment-success',
-        }),
+        body: JSON.stringify(stripePayload),
       });
 
       if (!stripeResponse.ok) {
