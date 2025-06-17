@@ -9,7 +9,6 @@ import {
     Card,
     LoadingOverlay,
     Alert,
-    Pagination,
     Text,
     Container,
     Stack,
@@ -19,7 +18,6 @@ import {
     ActionIcon,
     Tooltip,
     Box,
-    Flex,
     Paper,
     ThemeIcon,
     Divider,
@@ -456,6 +454,7 @@ export const PredictionsDashboard: React.FC = () => {
                         <>
                             <Box style={{ overflowX: 'auto' }}>
                                 <DashboardTable<PredictionResult>
+                                    title="Predictions"
                                     tableData={paginatedData}
                                     allColumns={columns}
                                     enableSort={true}
@@ -464,20 +463,6 @@ export const PredictionsDashboard: React.FC = () => {
                                     fetchData={handlePageChange}
                                 />
                             </Box>
-                            
-                            {totalPages > 1 && (
-                                <Flex justify="center" mt="lg">
-                                    <Pagination
-                                        total={totalPages}
-                                        value={currentPage + 1}
-                                        onChange={handlePageChange}
-                                        siblings={1}
-                                        boundaries={1}
-                                        size="sm"
-                                        withEdges
-                                    />
-                                </Flex>
-                            )}
                         </>
                     )}
                 </Card>

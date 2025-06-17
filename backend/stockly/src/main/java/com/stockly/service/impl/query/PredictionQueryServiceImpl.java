@@ -26,7 +26,7 @@ public class PredictionQueryServiceImpl implements PredictionQueryService {
     @Override
     public List<PredictionResult> getPredictions(String month) {
         validateMonthFormat(month);
-        String collectionName = COLLECTION_PREFIX + "202505";
+        String collectionName = COLLECTION_PREFIX + month;
         return mongoTemplate.findAll(PredictionResult.class, collectionName);
     }
 
