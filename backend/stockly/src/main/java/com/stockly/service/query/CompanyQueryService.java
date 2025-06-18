@@ -15,7 +15,7 @@ public interface CompanyQueryService {
     boolean companyExistsByEmail(String email);
     boolean companyExistsByName(String companyName);
     List<CompanyDTO> searchCompanies(String searchTerm);
-    Page<CompanyDTO> getAllCompaniesWithPagination(PageRequest pageRequest);
+    Page<CompanyDTO> getAllCompaniesWithPagination(PageRequest pageRequest, String companyType, Long managerId, String searchTerm);
     Long getCompanyCount();
     List<CompanyDTO> getCompaniesByManager(Long managerId);
     Page<CompanyDTO> getCompaniesWithFilters(String companyType, Long managerId, Pageable pageable);

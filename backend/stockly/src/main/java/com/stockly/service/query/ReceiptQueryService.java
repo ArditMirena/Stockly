@@ -18,7 +18,8 @@ public interface ReceiptQueryService {
                                  Long warehouseId,
                                  Long managerId,
                                  Long buyerManagerId,
-                                 Long supplierManagerId);
+                                 Long supplierManagerId,
+                                 String searchTerm);
 
     List<ReceiptDTO> searchReceipts(String searchTerm);
 

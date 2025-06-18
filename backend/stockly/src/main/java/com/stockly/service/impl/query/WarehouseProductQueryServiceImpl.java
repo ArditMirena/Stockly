@@ -2,17 +2,22 @@ package com.stockly.service.impl.query;
 
 import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.mapper.WarehouseProductMapper;
+import com.stockly.model.Company;
 import com.stockly.model.PredictionResult;
 import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.PredictionResultRepository;
 import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.service.query.PredictionQueryService;
 import com.stockly.service.query.WarehouseProductQueryService;
+import com.stockly.specification.CompanySpecification;
+import com.stockly.specification.WarehouseProductSpecification;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,30 +31,21 @@ public class WarehouseProductQueryServiceImpl implements WarehouseProductQuerySe
     private final PredictionQueryService predictionQueryService;
 
     @Override
-    public Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest) {
-        Page<WarehouseProduct> warehouseProducts = warehouseProductRepository.findAll(pageRequest);
+    public Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest, Long warehouseId, String searchTerm) {
+        Specification<WarehouseProduct> spec = Specification.where(null);
+        if (StringUtils.isNotEmpty(searchTerm)) {
+            spec = spec.and(WarehouseProductSpecification.unifiedSearch(searchTerm));
+        }
 
-        List<WarehouseProductDTO> wPDTOs = warehouseProducts.stream()
-                .map(warehouseProductMapper::toDTO)
-                .collect(Collectors.toList());
+        if (warehouseId != null) {
+            spec = spec.and(WarehouseProductSpecification.byWarehouseId(warehouseId));
+        }
 
-        return new PageImpl<>(wPDTOs, pageRequest, warehouseProducts.getTotalElements());
-    }
+        Page<WarehouseProduct> warehouseProducts = warehouseProductRepository.findAll(spec, pageRequest);
 
-
-    @Override
-    public Page<WarehouseProductDTO> getWarehouseProductsWithFilters(
-            Long warehouseId,
-            Long managerId,
-            Pageable pageable
-    ) {
-        Page<WarehouseProduct> warehouseProducts = warehouseProductRepository.findByFilters(
-                managerId,
-                warehouseId,
-                pageable
-        );
         return warehouseProducts.map(warehouseProductMapper::toDTO);
     }
+
 
     @Override
     public void orderAutomationWarehouseProducts(String month){

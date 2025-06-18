@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { StockLevelChart } from '../../components/StockLevelChart.tsx';
 import { RestockPieChart } from '../../components/RestockPieChart.tsx';
 import DashboardTable, { Column } from '../../components/DashboardTable.tsx';
@@ -16,7 +17,7 @@ import {
     Badge,
     Group,
     ActionIcon,
-    Tooltip,
+    Tooltip as MantineTooltip,
     Box,
     Paper,
     ThemeIcon,
@@ -42,6 +43,151 @@ import {
     PiFunnel
 } from 'react-icons/pi';
 
+interface StockLevelChartProps {
+    data: any[];
+    warehouseId?: number;
+}
+
+const StockLevelChartComponent: React.FC<StockLevelChartProps> = ({ data, warehouseId }) => {
+    // Group data by warehouse or product depending on selection
+    const getGroupedData = () => {
+        if (warehouseId) {
+            // If warehouse is selected, group by product
+            const productMap = new Map<number, {
+                name: string;
+                current: number;
+                safety: number;
+                restockNeeded: number;
+                items: number;
+            }>();
+
+            data.forEach(item => {
+                const existing = productMap.get(item.product_id) || {
+                    name: `Product ${item.product_id}`,
+                    current: 0,
+                    safety: 0,
+                    restockNeeded: 0,
+                    items: 0
+                };
+
+                productMap.set(item.product_id, {
+                    name: existing.name,
+                    current: existing.current + item.stock_data.current,
+                    safety: existing.safety + item.recommendation.safety_stock,
+                    restockNeeded: existing.restockNeeded + (item.recommendation.suggested_restock > 0 ? 1 : 0),
+                    items: existing.items + 1
+                });
+            });
+
+            return Array.from(productMap.values())
+                .sort((a, b) => b.current - a.current)
+                .slice(0, 10); // Limit to top 10 products
+        } else {
+            // Otherwise group by warehouse
+            const warehouseMap = new Map<number, {
+                name: string;
+                current: number;
+                safety: number;
+                criticalItems: number;
+                items: number;
+            }>();
+
+            data.forEach(item => {
+                const existing = warehouseMap.get(item.warehouse_id) || {
+                    name: `WH-${item.warehouse_id}`,
+                    current: 0,
+                    safety: 0,
+                    criticalItems: 0,
+                    items: 0
+                };
+
+                warehouseMap.set(item.warehouse_id, {
+                    name: existing.name,
+                    current: existing.current + item.stock_data.current,
+                    safety: existing.safety + item.recommendation.safety_stock,
+                    criticalItems: existing.criticalItems + (item.stock_data.days_remaining < 7 ? 1 : 0),
+                    items: existing.items + 1
+                });
+            });
+
+            return Array.from(warehouseMap.values())
+                .sort((a, b) => b.current - a.current);
+        }
+    };
+
+    const chartData = getGroupedData();
+
+    if (chartData.length === 0) {
+        return (
+            <Paper p="xl" ta="center">
+                <Text c="dimmed">No data available for the selected filters</Text>
+            </Paper>
+        );
+    }
+
+    return (
+        <div style={{ height: 400 }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                    data={chartData}
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+                    barCategoryGap={10}
+                    barGap={2}
+                >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis
+                        dataKey="name"
+                        type="category"
+                        width={80}
+                        tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip
+                        formatter={(value, name) => {
+                            if (name === 'restockNeeded') {
+                                return [`${value} of ${chartData.find(d => d.name === name)?.items} items`, 'Needs Restock'];
+                            }
+                            if (name === 'criticalItems') {
+                                return [`${value} of ${chartData.find(d => d.name === name)?.items} items`, 'Critical Items'];
+                            }
+                            return [value, name];
+                        }}
+                    />
+                    <Legend />
+                    <Bar
+                        dataKey="current"
+                        name="Current Stock"
+                        fill="#8884d8"
+                        radius={[0, 4, 4, 0]}
+                    />
+                    <Bar
+                        dataKey="safety"
+                        name="Safety Stock"
+                        fill="#82ca9d"
+                        radius={[0, 4, 4, 0]}
+                    />
+                    {warehouseId ? (
+                        <Bar
+                            dataKey="restockNeeded"
+                            name="Items Needing Restock"
+                            fill="#ffc658"
+                            radius={[0, 4, 4, 0]}
+                        />
+                    ) : (
+                        <Bar
+                            dataKey="criticalItems"
+                            name="Critical Items"
+                            fill="#ff8042"
+                            radius={[0, 4, 4, 0]}
+                        />
+                    )}
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
+
 export const PredictionsDashboard: React.FC = () => {
     const { data: predictions = [], isLoading, isError, refetch } = useGetCurrentPredictionsQuery();
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null);
@@ -52,17 +198,17 @@ export const PredictionsDashboard: React.FC = () => {
     if (isLoading) return <LoadingOverlay visible />;
     if (isError) return (
         <Container size="xl" p="md">
-            <Alert 
-                color="red" 
-                title="Error Loading Predictions" 
+            <Alert
+                color="red"
+                title="Error Loading Predictions"
                 icon={<PiXCircle size={20} />}
                 variant="filled"
             >
                 Unable to load prediction data. Please try again.
-                <Button 
-                    variant="white" 
-                    size="xs" 
-                    mt="sm" 
+                <Button
+                    variant="white"
+                    size="xs"
+                    mt="sm"
                     leftSection={<PiArrowCounterClockwise size={14} />}
                     onClick={() => refetch()}
                 >
@@ -178,7 +324,7 @@ export const PredictionsDashboard: React.FC = () => {
                         ) : (
                             <PiArrowDown color="green" size={16} />
                         )}
-                        <Text 
+                        <Text
                             c={needsRestock ? 'red' : 'green'}
                             fw={needsRestock ? 'bold' : 'normal'}
                         >
@@ -196,12 +342,12 @@ export const PredictionsDashboard: React.FC = () => {
                 const stockData = getValue() as { days_remaining: number };
                 const recommendation = row.original.recommendation;
                 const status = getStockStatus(stockData.days_remaining, recommendation.suggested_restock);
-                
+
                 return (
                     <Group gap="xs">
-                        <Badge 
-                            color={status.color} 
-                            variant="light" 
+                        <Badge
+                            color={status.color}
+                            variant="light"
                             size="sm"
                             leftSection={status.icon}
                         >
@@ -214,7 +360,7 @@ export const PredictionsDashboard: React.FC = () => {
     ];
 
     const handlePageChange = (page: number) => {
-        setCurrentPage(page - 1); // Mantine Pagination is 1-based
+        setCurrentPage(page);
     };
 
     const clearFilters = () => {
@@ -243,21 +389,21 @@ export const PredictionsDashboard: React.FC = () => {
                             </Text>
                         </div>
                         <Group gap="sm">
-                            <Tooltip label="Refresh Data">
-                                <ActionIcon 
-                                    variant="light" 
+                            <MantineTooltip label="Refresh Data">
+                                <ActionIcon
+                                    variant="light"
                                     size="lg"
                                     onClick={() => refetch()}
                                     loading={isLoading}
                                 >
                                     <PiArrowCounterClockwise size={18} />
                                 </ActionIcon>
-                            </Tooltip>
-                            <Tooltip label="Export Data">
+                            </MantineTooltip>
+                            <MantineTooltip label="Export Data">
                                 <ActionIcon variant="light" size="lg" color="green">
                                     <PiDownload size={18} />
                                 </ActionIcon>
-                            </Tooltip>
+                            </MantineTooltip>
                         </Group>
                     </Group>
                 </Paper>
@@ -326,9 +472,9 @@ export const PredictionsDashboard: React.FC = () => {
                             <Text fw={500}>Filters</Text>
                         </Group>
                         {(selectedWarehouse || selectedProduct) && (
-                            <Button 
-                                variant="subtle" 
-                                size="xs" 
+                            <Button
+                                variant="subtle"
+                                size="xs"
                                 onClick={clearFilters}
                                 leftSection={<PiXCircle size={14} />}
                             >
@@ -336,7 +482,7 @@ export const PredictionsDashboard: React.FC = () => {
                             </Button>
                         )}
                     </Group>
-                    
+
                     <Grid gutter="md">
                         <Grid.Col span={{ base: 12, sm: 6 }}>
                             <Select
@@ -386,8 +532,8 @@ export const PredictionsDashboard: React.FC = () => {
                                 <Text fw={500}>Stock Level Trends</Text>
                             </Group>
                             <Divider mb="md" />
-                            <StockLevelChart 
-                                data={filteredPredictions} 
+                            <StockLevelChartComponent
+                                data={filteredPredictions}
                                 warehouseId={selectedWarehouse || undefined}
                             />
                         </Card>
@@ -424,9 +570,9 @@ export const PredictionsDashboard: React.FC = () => {
                             </Text>
                         </Group>
                     </Group>
-                    
+
                     <Divider mb="md" />
-                    
+
                     {filteredPredictions.length === 0 ? (
                         <Paper p="xl" ta="center">
                             <ThemeIcon size="xl" variant="light" color="gray" mx="auto" mb="md">
@@ -434,15 +580,15 @@ export const PredictionsDashboard: React.FC = () => {
                             </ThemeIcon>
                             <Text size="lg" fw={500} mb="xs">No predictions found</Text>
                             <Text c="dimmed" size="sm">
-                                {(selectedWarehouse || selectedProduct) 
+                                {(selectedWarehouse || selectedProduct)
                                     ? "Try adjusting your filters to see more results"
                                     : "No prediction data available at the moment"
                                 }
                             </Text>
                             {(selectedWarehouse || selectedProduct) && (
-                                <Button 
-                                    variant="light" 
-                                    mt="md" 
+                                <Button
+                                    variant="light"
+                                    mt="md"
                                     onClick={clearFilters}
                                     leftSection={<PiXCircle size={16} />}
                                 >
@@ -500,4 +646,3 @@ export const PredictionsDashboard: React.FC = () => {
 };
 
 export default PredictionsDashboard;
-

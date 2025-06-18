@@ -15,6 +15,7 @@ import com.stockly.specification.WarehouseSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -72,17 +73,21 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
     }
 
     @Override
-    public Page<WarehouseDTO> getAllWarehousesWithPagination(Long companyId, Long managerId, Pageable pageable) {
-        Page<Warehouse> warehouses = warehouseRepository.findWithFilters(companyId, managerId, pageable);
-        return warehouses.map(warehouseMapper::toDto);
-    }
+    public Page<WarehouseDTO> getAllWarehousesWithPagination(PageRequest pageRequest, Long companyId, Long managerId, String searchTerm) {
+        Specification<Warehouse> spec = WarehouseSpecification.unifiedSearch(searchTerm);
+        if(managerId != null) {
+            spec = spec.and(WarehouseSpecification.byManagerId(managerId));
+        }
 
-    @Override
-    public Page<WarehouseDTO> getWarehousesByCompanyWithPagination(Long companyId, Pageable pageable) {
-        Specification<Warehouse> spec = WarehouseSpecification.byCompanyId(companyId);
-        Page<Warehouse> warehouses = warehouseRepository.findAll(spec, pageable);
+        if(companyId != null) {
+            spec = spec.and(WarehouseSpecification.byCompanyId(companyId));
+        }
+        Page<Warehouse> warehouses = warehouseRepository.findAll(spec, pageRequest);
+        List<WarehouseDTO> warehouseDTOs = warehouses.stream()
+                .map(warehouseMapper::toDto)
+                .collect(Collectors.toList());
 
-        return warehouses.map(warehouseMapper::toDto);
+        return new PageImpl<>(warehouseDTOs, pageRequest, warehouses.getTotalElements());
     }
 
     @Override

@@ -51,27 +51,22 @@ public class CompanyQueryController {
 
     @GetMapping("/page")
     public ResponseEntity<Page<CompanyDTO>> getAllCompaniesWithPagination(
-            @RequestParam(value = "offset", required = false) Integer offset,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction,
             @RequestParam(value = "companyType", required = false) String companyType,
-            @RequestParam(value = "managerId", required = false) Long managerId
+            @RequestParam(value = "managerId", required = false) Long managerId,
+            @RequestParam(value = "searchTerm", required = false) String searchTerm
     ) {
-        if(null == offset) offset = 0;
-        if(null == pageSize) pageSize = 10;
-        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
 
-        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, sort);
 
-        if(StringUtils.isNotEmpty(companyType) || managerId != null) {
-            return ResponseEntity.ok(companyQueryService.getCompaniesWithFilters(
-                    companyType,
-                    managerId,
-                    pageRequest
-            ));
-        } else {
-            return ResponseEntity.ok(companyQueryService.getAllCompaniesWithPagination(pageRequest));
-        }
+        return ResponseEntity.ok(companyQueryService.getAllCompaniesWithPagination(
+                pageRequest, companyType, managerId, searchTerm));
     }
 
     @GetMapping("/count")

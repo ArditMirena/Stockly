@@ -63,10 +63,16 @@ public class ReceiptQueryController {
             @RequestParam(value = "warehouseId", required = false) Long warehouseId,
             @RequestParam(value = "managerId", required = false) Long managerId,
             @RequestParam(value = "buyerManagerId", required = false) Long buyerManagerId,
-            @RequestParam(value = "supplierManagerId", required = false) Long supplierManagerId) {
+            @RequestParam(value = "supplierManagerId", required = false) Long supplierManagerId,
+            @RequestParam(value = "searchTerm", required = false) String searchTerm,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction) {
 
-        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
-        Page<ReceiptDTO> receipts = receiptQueryService.getReceipts(
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, sort);
+        return ResponseEntity.ok(receiptQueryService.getReceipts(
                 pageRequest,
                 buyerCompanyId,
                 supplierCompanyId,
@@ -76,9 +82,9 @@ public class ReceiptQueryController {
                 warehouseId,
                 managerId,
                 buyerManagerId,
-                supplierManagerId
-        );
-        return ResponseEntity.ok(receipts);
+                supplierManagerId,
+                searchTerm
+        ));
     }
 
     @GetMapping("/company/{companyId}")

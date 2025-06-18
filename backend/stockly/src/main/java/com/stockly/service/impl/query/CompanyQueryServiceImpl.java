@@ -7,6 +7,7 @@ import com.stockly.model.Company;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.service.query.CompanyQueryService;
 import com.stockly.specification.CompanySpecification;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -72,14 +73,25 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
     }
 
     @Override
-    public Page<CompanyDTO> getAllCompaniesWithPagination(PageRequest pageRequest) {
-        Page<Company> companies = companyRepository.findAll(pageRequest);
+    public Page<CompanyDTO> getAllCompaniesWithPagination(PageRequest pageRequest,
+                                                          String companyType, Long managerId, String searchTerm) {
+        Specification<Company> spec = Specification.where(null);
 
-        List<CompanyDTO> companyDTOS = companies.stream()
-                .map(companyMapper::toDto)
-                .collect(Collectors.toList());
+        if (StringUtils.isNotEmpty(searchTerm)) {
+            spec = spec.and(CompanySpecification.unifiedSearch(searchTerm));
+        }
 
-        return new PageImpl<>(companyDTOS, pageRequest, companies.getTotalElements());
+        if (StringUtils.isNotEmpty(companyType)) {
+            spec = spec.and(CompanySpecification.hasCompanyType(companyType));
+        }
+
+        if (managerId != null) {
+            spec = spec.and(CompanySpecification.hasManagerId(managerId));
+        }
+
+        Page<Company> companies = companyRepository.findAll(spec, pageRequest);
+
+        return companies.map(companyMapper::toDto);
     }
 
 

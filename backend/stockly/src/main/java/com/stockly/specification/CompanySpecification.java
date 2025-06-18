@@ -9,6 +9,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 public class CompanySpecification {
+    public static Specification<Company> hasCompanyType(String companyType) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("companyType"), companyType);
+    }
+
+    public static Specification<Company> hasManagerId(Long managerId) {
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("manager").get("id"), managerId);
+    }
     public static Specification<Company> unifiedSearch(String searchTerm) {
         return (root, query, criteriaBuilder) -> {
             if(StringUtils.isBlank(searchTerm)) {

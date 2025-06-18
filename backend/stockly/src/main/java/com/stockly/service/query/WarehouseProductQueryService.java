@@ -6,11 +6,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 public interface WarehouseProductQueryService {
-    Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest);
-    Page<WarehouseProductDTO> getWarehouseProductsWithFilters(
-            Long warehouseId,
-            Long managerId,
-            Pageable pageable
-    );
+    Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest, Long warehouseId, String searchTerm);
     void orderAutomationWarehouseProducts(String month);
 }

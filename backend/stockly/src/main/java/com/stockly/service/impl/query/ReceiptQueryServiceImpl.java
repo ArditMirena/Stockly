@@ -5,7 +5,9 @@ import com.stockly.mapper.ReceiptMapper;
 import com.stockly.model.Receipt;
 import com.stockly.repository.ReceiptRepository;
 import com.stockly.service.query.ReceiptQueryService;
+import com.stockly.specification.CompanySpecification;
 import com.stockly.specification.ReceiptSpecification;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,12 +52,15 @@ public class ReceiptQueryServiceImpl implements ReceiptQueryService {
             Long warehouseId,
             Long managerId,
             Long buyerManagerId,
-            Long supplierManagerId
+            Long supplierManagerId,
+            String searchTerm
     ) {
         // Create a typed Specification<Receipt>
         Specification<Receipt> spec = Specification.where(null);
 
-        // Chain the specifications with proper typing
+        if (StringUtils.isNotEmpty(searchTerm)) {
+            spec = spec.and(ReceiptSpecification.unifiedSearch(searchTerm));
+        }
         if (buyerCompanyId != null) {
             spec = spec.and(ReceiptSpecification.byBuyerCompanyId(buyerCompanyId));
         }

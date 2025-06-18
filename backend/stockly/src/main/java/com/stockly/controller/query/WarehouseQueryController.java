@@ -1,17 +1,11 @@
 package com.stockly.controller.query;
 
-import com.stockly.dto.ProductDTO;
 import com.stockly.dto.WarehouseDTO;
 import com.stockly.dto.WarehouseProductDTO;
-import com.stockly.exception.ResourceNotFoundException;
-import com.stockly.model.Product;
-import com.stockly.model.Warehouse;
-import com.stockly.model.WarehouseProduct;
 import com.stockly.repository.WarehouseRepository;
 import com.stockly.service.command.WarehouseProductService;
 import com.stockly.service.query.WarehouseProductQueryService;
 import com.stockly.service.query.WarehouseQueryService;
-import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -72,20 +66,25 @@ public class WarehouseQueryController {
 
     @GetMapping("/page")
     public ResponseEntity<Page<WarehouseDTO>> getAllWarehousesWithPagination(
-            @RequestParam(value = "offset", required = false) Integer offset,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction,
             @RequestParam(value = "companyId", required = false) Long companyId,
-            @RequestParam(value = "managerId", required = false) Long managerId
+            @RequestParam(value = "managerId", required = false) Long managerId,
+            @RequestParam(value = "searchTerm", required = false) String searchTerm
     ) {
-        if(null == offset) offset = 0;
-        if(null == pageSize) pageSize = 10;
-        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, sort);
 
         return ResponseEntity.ok(warehouseQueryService.getAllWarehousesWithPagination(
+                pageRequest,
                 companyId,
                 managerId,
-                PageRequest.of(offset, pageSize, Sort.by(sortBy))
+                searchTerm
         ));
     }
 
@@ -96,22 +95,23 @@ public class WarehouseQueryController {
 
     @GetMapping("/products/page")
     public ResponseEntity<Page<WarehouseProductDTO>> getProductsByWarehouseWithPagination(
-            @RequestParam(value = "offset", required = false) Integer offset,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize,
-            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(value = "direction", defaultValue = "asc") String direction,
             @RequestParam(value = "warehouseId", required = false) Long warehouseId,
-            @RequestParam(value = "managerId", required = false) Long managerId
+            @RequestParam(value = "searchTerm", required = false) String searchTerm
     ) {
-        if(null == offset) offset = 0;
-        if(null == pageSize) pageSize = 10;
-        if(StringUtils.isEmpty(sortBy)) sortBy = "id";
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
 
-        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, sort);
 
-        return ResponseEntity.ok(warehouseProductQueryService.getWarehouseProductsWithFilters(
+        return ResponseEntity.ok(warehouseProductQueryService.getAllWarehouseProductsWithPagination(
+                pageRequest,
                 warehouseId,
-                managerId,
-                pageRequest
+                searchTerm
         ));
     }
 
