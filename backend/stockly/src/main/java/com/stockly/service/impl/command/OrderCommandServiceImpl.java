@@ -2,6 +2,7 @@ package com.stockly.service.impl.command;
 
 import com.stockly.dto.OrderDTO;
 import com.stockly.dto.OrderItemDTO;
+import com.stockly.exception.BusinessException;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.OrderMapper;
 import com.stockly.model.*;
@@ -53,6 +54,9 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
                     Warehouse warehouse = warehouseRepository.findById(dto.getDestinationWarehouseId())
                             .orElseThrow(() -> new ResourceNotFoundException("Destination Warehouse not found with id: " + dto.getDestinationWarehouseId()));
+                    if (!warehouse.getIsActive()){
+                        throw new BusinessException("Destination Warehouse is not active");
+                    }
                     order.setDestinationWarehouse(warehouse);
                 }
             }
@@ -69,6 +73,9 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         if (dto.getSourceWarehouseId() != null) {
             Warehouse warehouse = warehouseRepository.findById(dto.getSourceWarehouseId())
                     .orElseThrow(() -> new ResourceNotFoundException("Source Warehouse not found with id: " + dto.getSourceWarehouseId()));
+            if (!warehouse.getIsActive()){
+                throw new BusinessException("Source Warehouse is not active");
+            }
             order.setSourceWarehouse(warehouse);
         }
 

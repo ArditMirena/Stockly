@@ -51,10 +51,12 @@ public class OrderMapper {
 
         if(order.getSourceWarehouse() != null) {
             dto.setSourceWarehouseId(order.getSourceWarehouse().getId());
+            dto.setSourceWarehouseName(order.getSourceWarehouse().getName());
         }
 
         if(order.getDestinationWarehouse() != null) {
             dto.setDestinationWarehouseId(order.getDestinationWarehouse().getId());
+            dto.setDestinationWarehouseName(order.getDestinationWarehouse().getName());
         }
 
         if (order.getItems() != null && !order.getItems().isEmpty()) {

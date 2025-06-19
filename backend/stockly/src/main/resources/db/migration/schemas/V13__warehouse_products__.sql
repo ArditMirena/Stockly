@@ -12,6 +12,6 @@ CREATE TABLE warehouse_products (
 
     automated_restock boolean NOT NULL DEFAULT FALSE,
 
-    CONSTRAINT fk_wp_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+    CONSTRAINT fk_wp_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE,
     CONSTRAINT fk_wp_product FOREIGN KEY (product_id) REFERENCES products(id)
 );

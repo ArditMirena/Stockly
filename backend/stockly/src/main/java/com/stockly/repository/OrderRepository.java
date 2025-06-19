@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -60,8 +61,16 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     Long countByStatus(@Param("status") String status);
 
+    boolean existsBySourceWarehouseId(Long warehouseId);
+    boolean existsByDestinationWarehouseId(Long warehouseId);
 
+    @Modifying
+    @Query("UPDATE Order o SET o.sourceWarehouse = null WHERE o.sourceWarehouse.id = :id")
+    void nullifySourceReferences(@Param("id") Long id);
 
+    @Modifying
+    @Query("UPDATE Order o SET o.destinationWarehouse = null WHERE o.destinationWarehouse.id = :id")
+    void nullifyDestinationReferences(@Param("id") Long id);
 
     // New: Advanced search with pagination
     @Query("SELECT o FROM Order o WHERE " +

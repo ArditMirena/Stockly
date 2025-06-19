@@ -14,7 +14,8 @@ import {
     Button,
     Modal,
     Avatar,
-    Loader
+    Loader,
+    Switch
 } from '@mantine/core';
 import { useLocation } from 'react-router-dom';
 import { useDebouncedValue } from '@mantine/hooks';
@@ -27,7 +28,9 @@ import {
     PiWarningBold,
     PiBuildingsBold,
     PiMapPinBold,
-    PiFactoryBold
+    PiFactoryBold,
+    PiXBold,
+    PiCheckBold
 } from 'react-icons/pi';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import {
@@ -99,6 +102,7 @@ const WarehousesDashboard = () => {
     const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
     const [sortBy, setSortBy] = useState<string>('id');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [isActive, setIsActive] = useState<boolean>(true);
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [warehouseToDelete, setWarehouseToDelete] = useState<WarehouseDTO | null>(null);
@@ -140,6 +144,7 @@ const WarehousesDashboard = () => {
         direction: sortDirection,
         searchTerm: debouncedSearch,
         companyId: companyFilter || undefined,
+        isActive: isActive,
         ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
     });
 
@@ -496,9 +501,82 @@ const WarehousesDashboard = () => {
                                 {companies.find(c => c.id === companyFilter)?.companyName || `Company ${companyFilter}`}
                             </Badge>
                         )}
+
+                        <Group gap="sm" align="center">
+                            <Switch
+                                size="lg"
+                                checked={isActive}
+                                onChange={(event) => {
+                                    const isChecked = event.currentTarget.checked;
+                                    setIsActive(isChecked);
+                                    setPage(0);
+                                    refetchWarehouses();
+                                }}
+                                onLabel={
+                                    <Group gap={6} align="center">
+                                        <PiCheckBold size={14} />
+                                        <Text size="sm" fw={500}>
+                                            Active
+                                        </Text>
+                                    </Group>
+                                }
+                                offLabel={
+                                    <Group gap={6} align="center">
+                                        <PiXBold size={14} />
+                                        <Text size="sm" fw={500}>
+                                            Inactive
+                                        </Text>
+                                    </Group>
+                                }
+                                thumbIcon={
+                                    isActive ? (
+                                        <PiCheckBold size={12} color="white" />
+                                    ) : (
+                                        <PiXBold size={12} color="white" />
+                                    )
+                                }
+                                styles={{
+                                    track: {
+                                        cursor: 'pointer',
+                                        width: 120,
+                                        padding: 2,
+                                        backgroundColor: isActive
+                                            ? 'var(--mantine-color-green-4)'
+                                            : 'var(--mantine-color-red-4)',
+                                        border: `1px solid ${
+                                            isActive
+                                                ? 'var(--mantine-color-green-6)'
+                                                : 'var(--mantine-color-red-6)'
+                                        }`,
+                                        transition: 'background-color 150ms ease, border-color 150ms ease',
+                                    },
+                                    thumb: {
+                                        width: 26,
+                                        height: 26,
+                                        backgroundColor: isActive
+                                            ? 'var(--mantine-color-green-6)'
+                                            : 'var(--mantine-color-red-6)',
+                                        borderColor: 'transparent',
+                                        transition: 'background-color 150ms ease',
+                                    },
+                                    label: {
+                                        color: isActive
+                                            ? 'var(--mantine-color-green-9)'
+                                            : 'var(--mantine-color-red-9)',
+                                        fontWeight: 500,
+                                        fontSize: 13,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.5,
+                                    },
+                                }}
+                            />
+                        </Group>
+
                     </Group>
                 </Group>
             </Card>
+
+
 
             {/* Enhanced Table with all functionality built-in */}
             <DashboardTable
@@ -789,7 +867,7 @@ const WarehousesDashboard = () => {
                         color="red"
                         variant="light"
                     >
-                        This action cannot be undone. The warehouse will be permanently removed from the system.
+                        This action cannot be undone. The warehouse will be deactivated first, then permanently removed from the system.
                     </Alert>
                     {warehouseToDelete && (
                         <Card withBorder p="md">

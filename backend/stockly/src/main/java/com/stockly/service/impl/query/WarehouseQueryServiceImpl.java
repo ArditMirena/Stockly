@@ -73,8 +73,14 @@ public class WarehouseQueryServiceImpl implements WarehouseQueryService {
     }
 
     @Override
-    public Page<WarehouseDTO> getAllWarehousesWithPagination(PageRequest pageRequest, Long companyId, Long managerId, String searchTerm) {
+    public Page<WarehouseDTO> getAllWarehousesWithPagination(PageRequest pageRequest, Long companyId, Long managerId, Boolean isActive, String searchTerm) {
         Specification<Warehouse> spec = WarehouseSpecification.unifiedSearch(searchTerm);
+
+        if(isActive != null) {
+
+            spec = spec.and(WarehouseSpecification.byIsActive(isActive));
+        }
+
         if(managerId != null) {
             spec = spec.and(WarehouseSpecification.byManagerId(managerId));
         }

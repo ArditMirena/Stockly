@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,6 +23,13 @@ import java.util.Set;
 
 @Repository
 public interface WarehouseProductRepository extends JpaRepository<WarehouseProduct, Long>, JpaSpecificationExecutor<WarehouseProduct> {
+
+    @Modifying
+    @Query("DELETE FROM WarehouseProduct wp WHERE wp.warehouse.id = :warehouseId")
+    void deleteByWarehouseId(@Param("warehouseId") Long warehouseId);
+
+    @Query("SELECT COUNT(wp) FROM WarehouseProduct wp WHERE wp.warehouse.id = :warehouseId")
+    long countByWarehouseId(@Param("warehouseId") Long warehouseId);
 
     List<WarehouseProduct> findByWarehouseId(Long warehouseId);
 

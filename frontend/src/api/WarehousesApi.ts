@@ -13,6 +13,7 @@ export interface WarehouseDTO {
     name: string;
     address: AddressDTO;
     companyId: number;
+    isActive: boolean;
 }
 
 export interface WarehouseProductDTO {
@@ -95,6 +96,7 @@ interface PaginationParams {
     companyId?: number;
     managerId?: number;
     warehouseId?: number;
+    isActive?: boolean;
 }
 
 interface SearchParams {
@@ -131,7 +133,8 @@ export const warehousesApi = createApi({
                     direction: params?.direction || 'asc',
                     searchTerm: params?.searchTerm || '',
                     companyId: params?.companyId,
-                    managerId: params?.managerId
+                    managerId: params?.managerId,
+                    isActive: params?.isActive
                 }
             })
         }),

@@ -72,6 +72,7 @@ public class WarehouseQueryController {
             @RequestParam(value = "direction", defaultValue = "asc") String direction,
             @RequestParam(value = "companyId", required = false) Long companyId,
             @RequestParam(value = "managerId", required = false) Long managerId,
+            @RequestParam(value = "isActive", required = false, defaultValue = "true") Boolean isActive,
             @RequestParam(value = "searchTerm", required = false) String searchTerm
     ) {
         Sort sort = direction.equalsIgnoreCase("desc")
@@ -84,6 +85,7 @@ public class WarehouseQueryController {
                 pageRequest,
                 companyId,
                 managerId,
+                isActive,
                 searchTerm
         ));
     }

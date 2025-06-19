@@ -2,6 +2,8 @@ package com.stockly.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,6 +36,7 @@ public class Warehouse {
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<WarehouseProduct> warehouseProducts = new ArrayList<>();
 
     public void addWarehouseProduct(WarehouseProduct warehouseProduct) {

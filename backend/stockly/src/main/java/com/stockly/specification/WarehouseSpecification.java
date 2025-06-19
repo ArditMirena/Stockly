@@ -10,6 +10,13 @@ import org.springframework.data.jpa.domain.Specification;
 
 public class WarehouseSpecification {
 
+    public static Specification<Warehouse> byIsActive(Boolean isActive) {
+        return (root, query, cb) -> {
+            if (isActive == null) return cb.conjunction();
+            return cb.equal(root.get("isActive"), isActive);
+        };
+    }
+
     public static Specification<Warehouse> byManagerId(Long managerId) {
         return (root, query, cb) -> {
             if (managerId == null) return null;
@@ -39,29 +46,25 @@ public class WarehouseSpecification {
                     criteriaBuilder.lower(addressJoin.get("street")), likePattern
             );
 
-            Predicate addressCityPredicate = criteriaBuilder.like(
-                    criteriaBuilder.lower(addressJoin.get("city")), likePattern
-            );
+//            Predicate addressCityPredicate = criteriaBuilder.like(
+//                    criteriaBuilder.lower(addressJoin.get("city")), likePattern
+//            );
 
-            Predicate addressStatePredicate = criteriaBuilder.like(
-                    criteriaBuilder.lower(addressJoin.get("state")), likePattern
-            );
+//            Predicate addressStatePredicate = criteriaBuilder.like(
+//                    criteriaBuilder.lower(addressJoin.get("state")), likePattern
+//            );
 
-            Predicate addressZipPredicate = criteriaBuilder.like(
-                    criteriaBuilder.lower(addressJoin.get("zipCode")), likePattern
-            );
+//            Predicate addressZipPredicate = criteriaBuilder.like(
+//                    criteriaBuilder.lower(addressJoin.get("zipCode")), likePattern
+//            );
 
-            Predicate addressCountryPredicate = criteriaBuilder.like(
-                    criteriaBuilder.lower(addressJoin.get("country")), likePattern
-            );
+//            Predicate addressCountryPredicate = criteriaBuilder.like(
+//                    criteriaBuilder.lower(addressJoin.get("country")), likePattern
+//            );
 
             return criteriaBuilder.or(
                     namePredicate,
-                    addressStreetPredicate,
-                    addressCityPredicate,
-                    addressStatePredicate,
-                    addressZipPredicate,
-                    addressCountryPredicate
+                    addressStreetPredicate
             );
         };
     }

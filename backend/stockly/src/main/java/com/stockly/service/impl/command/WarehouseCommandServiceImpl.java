@@ -5,17 +5,16 @@ import com.stockly.dto.WarehouseProductDTO;
 import com.stockly.exception.BusinessException;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.WarehouseMapper;
-import com.stockly.model.Company;
-import com.stockly.model.Product;
-import com.stockly.model.Warehouse;
-import com.stockly.model.WarehouseProduct;
+import com.stockly.model.*;
 import com.stockly.repository.*;
 import com.stockly.service.command.WarehouseCommandService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,6 +22,7 @@ import java.util.Optional;
 @Transactional
 public class WarehouseCommandServiceImpl implements WarehouseCommandService {
 
+    private final EntityManager entityManager;
     private final WarehouseRepository warehouseRepository;
     private final WarehouseMapper warehouseMapper;
     private final CompanyRepository companyRepository;
@@ -31,6 +31,8 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     private ProductRepository productRepository;
     @Autowired
     private WarehouseProductRepository warehouseProductRepository;
+    @Autowired
+    private ReceiptRepository receiptRepository;
 
     @Override
     public WarehouseDTO createWarehouse(WarehouseDTO warehouseDTO) {
@@ -78,24 +80,37 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     }
 
     @Override
+    @Transactional
     public void deleteWarehouse(Long id) {
+        // 1. First check if warehouse exists
         Warehouse warehouse = warehouseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+                .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + id));
 
-        // Check if warehouse is referenced in any orders
-        Long orderCount = orderRepository.countBySourceWarehouseOrDestinationWarehouse(warehouse, warehouse);
+        // 2. For inactive warehouses - perform hard delete
+        if (!warehouse.getIsActive()) {
+            // Execute all deletions in optimal order
+            warehouseProductRepository.deleteByWarehouseId(id);  // Direct SQL delete
+            orderRepository.nullifySourceReferences(id);
+            orderRepository.nullifyDestinationReferences(id);
+            receiptRepository.nullifySourceReferences(id);
+            receiptRepository.nullifyDestinationReferences(id);
 
-        if (orderCount > 0) {
-            // Option 1: Soft delete
+            // Clear persistence context
+            entityManager.clear();
+
+            // Final delete with native query to bypass any JPA issues
+            warehouseRepository.deleteByIdNative(id);
+
+            return;
+        }
             warehouse.setIsActive(false);
             warehouseRepository.save(warehouse);
 
-            // Option 2: Or throw an exception if you prefer to prevent deletion
-            // throw new BusinessException("Cannot delete warehouse with associated orders");
-        } else {
-            // Only hard delete if no orders reference it
-            warehouseRepository.delete(warehouse);
-        }
+    }
+
+    private boolean hasActiveReferences(Warehouse warehouse) {
+        return (orderRepository.existsBySourceWarehouseId(warehouse.getId()) || orderRepository.existsByDestinationWarehouseId(warehouse.getId())) ||
+                (receiptRepository.existsBySourceWarehouseId(warehouse.getId()) || receiptRepository.existsByDestinationWarehouseId(warehouse.getId()));
     }
 
 
@@ -104,6 +119,10 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     public void assignProductToWarehouse(Long productId, Integer quantity, Long warehouseId) {
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new RuntimeException("Warehouse not found with id: " + warehouseId));
+
+        if(!warehouse.getIsActive()) {
+            throw new BusinessException("Warehouse is not active");
+        }
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));

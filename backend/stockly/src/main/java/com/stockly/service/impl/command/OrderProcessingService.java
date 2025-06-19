@@ -45,6 +45,10 @@ public class OrderProcessingService {
         Warehouse sourceWarehouse = warehouseRepository.findById(request.getSourceWarehouseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: "+ request.getSourceWarehouseId()));
 
+        if (!sourceWarehouse.getIsActive()) {
+            throw new BusinessException("Warehouse is not active");
+        }
+
         // 2. Check product availability in warehouse
         checkProductAvailability(sourceWarehouse, request.getItems());
 
@@ -53,6 +57,9 @@ public class OrderProcessingService {
         if (request.getDestinationWarehouseId() != null) {
             Warehouse destinationWarehouse = warehouseRepository.findById(request.getDestinationWarehouseId())
                     .orElseThrow(() -> new ResourceNotFoundException("Destination Warehouse not found with id: " + request.getDestinationWarehouseId()));
+            if(!destinationWarehouse.getIsActive()) {
+                throw new BusinessException("Destination Warehouse is not active");
+            }
             orderDTO.setDestinationWarehouseId(destinationWarehouse.getId());
         }
         Order order = orderCommandService.createOrder(orderDTO);
