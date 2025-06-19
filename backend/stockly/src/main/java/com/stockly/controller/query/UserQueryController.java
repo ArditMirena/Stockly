@@ -51,9 +51,14 @@ public class UserQueryController {
     public ResponseEntity<Page<UserDTO>> getAllUsersWithPagination(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(required = false) String searchTerm
     ) {
-        PageRequest pageRequest = PageRequest.of(page, size);
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
         return ResponseEntity.ok(userQueryService.getAllUsersWithPagination(pageRequest, searchTerm));
     }
 

@@ -92,7 +92,8 @@ const WarehouseProductsDashboard = () => {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
-  const pageSize = 10;
+  const [sortBy, setSortBy] = useState<string>('id');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -136,8 +137,10 @@ const WarehouseProductsDashboard = () => {
     error: warehouseProductsError
   } = useGetWarehouseProductsWithPaginationQuery({
     offset: page,
-    pageSize,
-    sortBy: 'id',
+    pageSize: 10,
+    searchTerm: debouncedSearch,
+    sortBy: sortBy,
+    direction: sortDirection,
     ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
   });
 
@@ -327,6 +330,18 @@ const WarehouseProductsDashboard = () => {
     }
   };
 
+  const handleSort = (columnKey: string) => {
+    if (sortBy === columnKey) {
+      // If clicking the same column, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking a different column, set new column and default to asc
+      setSortBy(columnKey);
+      setSortDirection('asc');
+    }
+    setPage(0); // Reset to first page when sorting changes
+  };
+
   // Generate sample Excel template
   const generateSampleTemplate = () => {
     const sampleData = [
@@ -405,7 +420,7 @@ const WarehouseProductsDashboard = () => {
     {
       accessorKey: 'daysRemaining',
       header: 'Days Left',
-      enableSorting: true,
+      enableSorting: false,
       cell: (info) => {
         const days = info.getValue() as number | null;
         if (days === null) {
@@ -515,7 +530,7 @@ const WarehouseProductsDashboard = () => {
     {
       accessorKey: 'warehouseName',
       header: 'Warehouse',
-      enableSorting: true,
+      enableSorting: false,
       cell: (info) => (
         <Text fw={500} size="sm">
           {info.getValue() as string}
@@ -601,6 +616,9 @@ const WarehouseProductsDashboard = () => {
         error={warehouseProductsError}
         enableSort
         enableSearch
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
 
       {/* Import Modal */}

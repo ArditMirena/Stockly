@@ -8,8 +8,7 @@ import {
   getSortedRowModel,
   getGroupedRowModel,
   getExpandedRowModel,
-  getPaginationRowModel,
-  SortingState
+  getPaginationRowModel
 } from '@tanstack/react-table';
 import {
   Table,
@@ -73,6 +72,11 @@ interface DashboardTableProps<T> {
   currentPage: number;
   fetchData: (page: number) => void;
   totalItems?: number; // New prop for showing total items
+
+  // Add these new sorting props
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+  onSort?: (columnKey: string) => void;
   
   // Search props
   searchTerm?: string;
@@ -140,9 +144,11 @@ const DashboardTable = <T extends WithId>({
   emptyStateMessage = 'No data available',
   emptyStateIcon = <PiTableBold size={48} />,
   showQuickJump = true,
+  sortBy,
+  sortDirection,
+  onSort,
 }: DashboardTableProps<T>) => {
   const theme = useMantineTheme();
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
   const columnHelper = createColumnHelper<T>();
@@ -211,27 +217,26 @@ const DashboardTable = <T extends WithId>({
     data: tableData,
     columns: enhancedColumns,
     state: {
-      sorting,
       globalFilter,
     },
     getRowId: (row) => String(row.id),
     getCoreRowModel: getCoreRowModel(),
     onGlobalFilterChange: setGlobalFilter,
     getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     getGroupedRowModel: getGroupedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const getSortIcon = (column: any) => {
-    const sortDirection = column.getIsSorted();
-    if (sortDirection === 'asc') {
-      return <PiCaretUpBold size={14} style={{ color: theme.colors.blue[6] }} />;
-    }
-    if (sortDirection === 'desc') {
-      return <PiCaretDownBold size={14} style={{ color: theme.colors.blue[6] }} />;
+  const getSortIcon = (columnKey: string) => {
+    if (sortBy === columnKey) {
+      if (sortDirection === 'asc') {
+        return <PiCaretUpBold size={14} style={{ color: theme.colors.blue[6] }} />;
+      }
+      if (sortDirection === 'desc') {
+        return <PiCaretDownBold size={14} style={{ color: theme.colors.blue[6] }} />;
+      }
     }
     return <PiArrowsDownUpBold size={14} style={{ opacity: 0.5 }} />;
   };
@@ -409,20 +414,25 @@ const DashboardTable = <T extends WithId>({
                             align="center"
                             justify="center"
                             gap="xs"
-                            onClick={header.column.getToggleSortingHandler()}
+                            onClick={() => {
+                              // Use server-side sorting instead of tanstack sorting
+                              if (header.column.columnDef.enableSorting && onSort) {
+                                onSort(header.column.id);
+                              }
+                            }}
                             style={{
-                              cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                              cursor: (header.column.columnDef.enableSorting && onSort) ? 'pointer' : 'default',
                               userSelect: 'none',
                               transition: 'all 0.2s ease',
                               borderRadius: theme.radius.sm,
                               padding: '4px 8px',
-                              '&:hover': header.column.getCanSort() ? {
+                              '&:hover': (header.column.columnDef.enableSorting && onSort) ? {
                                 backgroundColor: theme.colors.gray[2],
                               } : undefined,
                             }}
                           >
                             {flexRender(header.column.columnDef.header, header.getContext())}
-                            {header.column.getCanSort() && getSortIcon(header.column)}
+                            {header.column.columnDef.enableSorting && onSort && getSortIcon(header.column.id)}
                           </Flex>
                         </th>
                       ))}

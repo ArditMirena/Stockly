@@ -66,6 +66,8 @@ interface PaginationParams {
     offset?: number;
     pageSize?: number;
     sortBy?: string;
+    direction?: string;
+    searchTerm?: string;
     companyType?: string;
     managerId?: number;
 }
@@ -101,6 +103,8 @@ export const companiesApi = createApi({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id',
+                    direction: params?.direction || 'asc',
+                    searchTerm: params?.searchTerm || '',
                     companyType: params?.companyType,
                     managerId: params?.managerId
                 }

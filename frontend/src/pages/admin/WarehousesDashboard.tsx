@@ -32,7 +32,6 @@ import {
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import {
     useGetAllWarehousesWithPaginationQuery,
-    useSearchWarehousesQuery,
     useDeleteWarehouseMutation,
     useAddWarehouseMutation,
     WarehouseDTO
@@ -98,6 +97,8 @@ const WarehousesDashboard = () => {
     const [selectedCity, setSelectedCity] = useState<string | null>(null);
     const [selectedCompanyType, setSelectedCompanyType] = useState<'SUPPLIER' | 'MANUFACTURER'>('SUPPLIER');
     const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+    const [sortBy, setSortBy] = useState<string>('id');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [warehouseToDelete, setWarehouseToDelete] = useState<WarehouseDTO | null>(null);
@@ -135,25 +136,12 @@ const WarehousesDashboard = () => {
     } = useGetAllWarehousesWithPaginationQuery({
         offset: page,
         pageSize: 10,
-        sortBy: 'id',
+        sortBy: sortBy,
+        direction: sortDirection,
+        searchTerm: debouncedSearch,
         companyId: companyFilter || undefined,
         ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
     });
-
-    const {
-        data: searchedWarehouses = [],
-        isFetching: isSearchLoading,
-        error: searchError
-    } = useSearchWarehousesQuery(
-        {
-            searchTerm: debouncedSearch.trim(),
-            companyId: companyFilter || undefined
-        },
-        {
-            skip: debouncedSearch.trim().length === 0,
-            refetchOnMountOrArgChange: true
-        }
-    );
 
     // Mutations
     const [deleteWarehouse] = useDeleteWarehouseMutation();
@@ -357,6 +345,18 @@ const WarehousesDashboard = () => {
         }
     };
 
+    const handleSort = (columnKey: string) => {
+        if (sortBy === columnKey) {
+        // If clicking the same column, toggle direction
+        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+        // If clicking a different column, set new column and default to asc
+        setSortBy(columnKey);
+        setSortDirection('asc');
+        }
+        setPage(0); // Reset to first page when sorting changes
+    };
+
     // Get selected company details for display
     const selectedCompanyDetails = selectedCompany ? 
         companies.find(c => c.id.toString() === selectedCompany) : null;
@@ -450,19 +450,12 @@ const WarehousesDashboard = () => {
         }
     ];
 
-    const tableData = useMemo(() => {
-        if (debouncedSearch.trim().length > 0) {
-            return searchedWarehouses || [];
-        }
-        return paginatedResponse?.content || [];
-    }, [debouncedSearch, searchedWarehouses, paginatedResponse]);
+    const tableData = paginatedResponse?.content || [];
 
-    const totalPages = debouncedSearch.length > 0
-        ? 1
-        : paginatedResponse?.totalPages || 1;
+    const totalPages = paginatedResponse?.totalPages || 1;
 
-    const isLoading = isPaginatedLoading || isSearchLoading;
-    const hasError = warehousesError || searchError;
+    const isLoading = isPaginatedLoading;
+    const hasError = warehousesError;
 
     return (
         <>
@@ -535,6 +528,9 @@ const WarehousesDashboard = () => {
                 error={hasError}
                 enableSort
                 enableSearch
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={handleSort}
             />
 
             {/* Enhanced Modal with comprehensive form */}

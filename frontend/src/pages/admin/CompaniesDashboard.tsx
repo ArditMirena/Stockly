@@ -34,7 +34,6 @@ import {
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import {
     useGetCompaniesWithPaginationQuery,
-    useSearchCompaniesQuery,
     useDeleteCompanyMutation,
     useAddCompanyMutation,
     useUpdateCompanyMutation,
@@ -114,7 +113,6 @@ const CompaniesDashboard = () => {
     const [page, setPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
-    const pageSize = 10;
     const navigate = useNavigate();
 
     // Modal state
@@ -134,6 +132,8 @@ const CompaniesDashboard = () => {
     const [businessType, setBusinessType] = useState('');
     const [selectedManager, setSelectedManager] = useState<number | null>(null);
     const [hasProductionFacility, setHasProductionFacility] = useState(false);
+    const [sortBy, setSortBy] = useState<string>('id');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
     // Error and loading state
     const [formErrors, setFormErrors] = useState<string[]>([]);
@@ -164,18 +164,12 @@ const CompaniesDashboard = () => {
         error: companiesError
     } = useGetCompaniesWithPaginationQuery({
             offset: page,
-            pageSize,
-            sortBy: 'id',
+            pageSize: 10,
+            searchTerm: debouncedSearch,
+            sortBy: sortBy,
+            direction: sortDirection,
             ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
         });
-
-    const {
-        data: searchedCompanies,
-        isFetching: isSearchLoading,
-        error: searchError
-    } = useSearchCompaniesQuery(debouncedSearch, {
-        skip: debouncedSearch.length === 0,
-    });
 
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -375,6 +369,16 @@ const CompaniesDashboard = () => {
         }
     };
 
+    const handleSort = (columnKey: string) => {
+        if (sortBy === columnKey) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(columnKey);
+            setSortDirection('asc');
+        }
+            setPage(0);
+    };
+
     // Define table columns
     const columns: Column<Company>[] = [
         {
@@ -401,7 +405,7 @@ const CompaniesDashboard = () => {
         {
             accessorKey: 'email',
             header: 'Email',
-            enableSorting: false,
+            enableSorting: true,
             cell: (info) => (
                 <Text size="sm" c="dimmed">
                     {info.getValue() as string}
@@ -509,10 +513,10 @@ const CompaniesDashboard = () => {
         }
     ];
 
-    const tableData = debouncedSearch.length > 0 ? searchedCompanies || [] : paginatedResponse?.content || [];
-    const totalPages = debouncedSearch.length > 0 ? 1 : paginatedResponse?.totalPages || 1;
-    const isLoading = isPaginatedLoading || isSearchLoading;
-    const hasError = companiesError || searchError;
+    const tableData = paginatedResponse?.content || [];
+    const totalPages = paginatedResponse?.totalPages || 1;
+    const isLoading = isPaginatedLoading;
+    const hasError = companiesError;
 
     return (
         <>
@@ -539,6 +543,9 @@ const CompaniesDashboard = () => {
                 error={hasError}
                 enableSort
                 enableSearch
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={handleSort}
             />
 
             {/* Delete Confirmation Modal */}

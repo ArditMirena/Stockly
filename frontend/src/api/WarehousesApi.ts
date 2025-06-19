@@ -90,6 +90,8 @@ interface PaginationParams {
     offset?: number;
     pageSize?: number;
     sortBy?: string;
+    direction?: string;
+    searchTerm?: string;
     companyId?: number;
     managerId?: number;
     warehouseId?: number;
@@ -126,6 +128,8 @@ export const warehousesApi = createApi({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id',
+                    direction: params?.direction || 'asc',
+                    searchTerm: params?.searchTerm || '',
                     companyId: params?.companyId,
                     managerId: params?.managerId
                 }
@@ -181,6 +185,8 @@ export const warehousesApi = createApi({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id',
+                    direction: params?.direction || 'asc',
+                    searchTerm: params?.searchTerm || '',
                     warehouseId: params?.warehouseId,
                     managerId: params?.managerId
                 }

@@ -70,6 +70,7 @@ interface PaginationParams {
   offset?: number;
   pageSize?: number;
   sortBy?: string;
+  direction?: string;
   buyerManagerId?: number;
   supplierManagerId?: number;
   managerId?: number;
@@ -99,6 +100,7 @@ export const ordersApi = createApi({
           offset: params?.offset || 0,
           pageSize: params?.pageSize || 10,
           sortBy: params?.sortBy || 'id',
+          direction: params?.direction || 'asc',
           buyerManagerId: params?.buyerManagerId,
           supplierManagerId: params?.supplierManagerId,
           managerId: params?.managerId,

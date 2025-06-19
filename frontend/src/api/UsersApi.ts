@@ -39,6 +39,7 @@ interface PaginationParams {
     offset?: number;
     pageSize?: number;
     sortBy?: string;
+    direction?: string;
     searchTerm?: string;
 }
 
@@ -60,6 +61,7 @@ export const usersApi = createApi ({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'id',
+                    direction: params?.direction || 'asc',
                     searchTerm: params?.searchTerm || '',
                 }
             })

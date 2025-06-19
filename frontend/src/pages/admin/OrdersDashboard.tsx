@@ -67,6 +67,9 @@ const OrdersDashboard = () => {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
+  // Sorting state
+  const [sortBy, setSortBy] = useState<string>('id');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -121,6 +124,8 @@ const OrdersDashboard = () => {
   } = useGetOrdersWithPaginationQuery({
     offset: page,
     pageSize: 10,
+    sortBy: sortBy,
+    direction: sortDirection,
     ...(user?.role === ROLES.BUYER && { managerId: user.id }),
     ...(user?.role === ROLES.SUPPLIER && { managerId: user.id}),
     searchTerm: debouncedSearch,
@@ -202,7 +207,7 @@ const OrdersDashboard = () => {
       console.log('1. Starting order creation...');
 
       // 1. Create the Order
-    const payload = {
+    const payload: any = {
       buyerId: parseInt(buyerId!, 10),
       sourceWarehouseId: parseInt(warehouseId!, 10),
       items: [
@@ -218,7 +223,7 @@ const OrdersDashboard = () => {
     // Log it to check before sending:
     console.log("Payload for Stripe:", payload);
 
-    const response = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
+    const response = await fetch('http://localhost:8080/api/stripe/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
        credentials: "include", // <-- this makes cookies go with the request
@@ -261,7 +266,7 @@ const OrdersDashboard = () => {
         totalPrice: Math.round(orderResponse.totalPrice * 100), // amount in cents, from order
         successUrl: window.location.origin + '/payment-success',
       };
-      const stripeResponse = await fetch('http://localhost:8081/api/stripe/create-checkout-session', {
+      const stripeResponse = await fetch('http://localhost:8080/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -277,7 +282,7 @@ const OrdersDashboard = () => {
       console.log('✅ Stripe session created:', stripeData);
 
       // 3. Redirect to Stripe Checkout
-      const stripe = await loadStripe('pk_test_51RSOJhRs6J5EqLQsNzbpo1hWYfC5wjSghPWrGUfdDgdf6b6h6rDCmaGiEAbae5jAIuGxNeahSqob6ZydO4JmjXuu00Qmidd6oC');
+      const stripe = await loadStripe('pk_test_51PNVyoRqSAR71OeKk1wMxzw7nlM9fYS3OtQbQe4n28HS0sHF6XdgpeArPOnVeA0JFhZ9HsqTDSo6odeEnAbyOVJW00vRGrYyIU');
       if (!stripe) {
         throw new Error('Stripe failed to initialize');
       }
@@ -356,6 +361,18 @@ const OrdersDashboard = () => {
     }
   };
 
+  const handleSort = (columnKey: string) => {
+    if (sortBy === columnKey) {
+      // If clicking the same column, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking a different column, set new column and default to asc
+      setSortBy(columnKey);
+      setSortDirection('asc');
+    }
+    setPage(0); // Reset to first page when sorting changes
+  };
+
   // Get selected product details
   const selectedProduct = productId ? warehouseProducts.find(product => product.productId === Number(productId)) : undefined;
   const unitPrice = selectedProduct?.unitPrice || 0;
@@ -367,13 +384,13 @@ const OrdersDashboard = () => {
     {
       accessorKey: 'id',
       header: 'Order ID',
-      enableSorting: false,
+      enableSorting: true,
       cell: (info) => (
         <Text fw={500} c="blue">
           #{info.getValue() as string}
         </Text>
       ),
-      size: 100,
+      // size: 100,
     },
     {
       accessorKey: 'buyerName',
@@ -439,7 +456,7 @@ const OrdersDashboard = () => {
     {
       accessorKey: 'status',
       header: 'Status',
-      enableSorting: true,
+      enableSorting: false,
       cell: (info) => {
         const status = info.getValue() as string;
         return (
@@ -456,7 +473,7 @@ const OrdersDashboard = () => {
     {
       accessorKey: 'shipmentId',
       header: 'Shipment',
-      enableSorting: true,
+      enableSorting: false,
       cell: (info) => {
         const shipmentId = info.getValue() as string | undefined;
         return shipmentId ? (
@@ -532,6 +549,9 @@ const OrdersDashboard = () => {
         error={hasError}
         enableSort
         enableSearch
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
 
       {/* Enhanced Modal with error handling built-in */}

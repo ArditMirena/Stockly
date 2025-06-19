@@ -58,6 +58,8 @@ const ReceiptsDashboard = () => {
     const [page, setPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
+    const [sortBy, setSortBy] = useState<string>('orderId');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
     // Modal state
     const [modalOpen, setModalOpen] = useState(false);
@@ -77,20 +79,15 @@ const ReceiptsDashboard = () => {
     } = useGetReceiptsWithPaginationQuery({
         offset: page,
         pageSize: 10,
+        searchTerm: debouncedSearch,
+        sortBy: sortBy,
+        direction: sortDirection,
         ...(user?.role === ROLES.BUYER && { 
             managerId: user.id
         }),
         ...(user?.role === ROLES.SUPPLIER && { 
             managerId: user.id
         }),
-    });
-
-    const {
-        data: searchedReceipts,
-        isFetching: isSearchLoading,
-        error: searchError
-    } = useSearchReceiptsQuery(debouncedSearch, {
-        skip: debouncedSearch.length === 0,
     });
 
     const handleOpenModal = (receipt: ReceiptDTO, type: ModalType) => {
@@ -172,18 +169,27 @@ const ReceiptsDashboard = () => {
         }
     };
 
+    const handleSort = (columnKey: string) => {
+        if (sortBy === columnKey) {
+        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+        setSortBy(columnKey);
+        setSortDirection('asc');
+        }
+        setPage(0);
+    };
+
     // Define table columns
     const columns: Column<ReceiptDTO>[] = [
         {
             accessorKey: 'orderId',
             header: 'Order ID',
-            enableSorting: false,
+            enableSorting: true,
             cell: (info) => (
                 <Text fw={500} c="blue">
                     #{info.getValue() as string}
                 </Text>
             ),
-            size: 100,
         },
         {
             accessorKey: 'buyer.companyName',
@@ -254,7 +260,7 @@ const ReceiptsDashboard = () => {
         {
             accessorKey: 'status',
             header: 'Status',
-            enableSorting: true,
+            enableSorting: false,
             cell: (info) => {
                 const status = info.getValue() as string;
                 return (
@@ -305,10 +311,10 @@ const ReceiptsDashboard = () => {
         }
     ];
 
-    const tableData = debouncedSearch.length > 0 ? searchedReceipts || [] : paginatedResponse?.content || [];
-    const totalPages = debouncedSearch.length > 0 ? 1 : paginatedResponse?.totalPages || 1;
-    const isLoading = isPaginatedLoading || isSearchLoading;
-    const hasError = receiptsError || searchError;
+    const tableData = paginatedResponse?.content || [];
+    const totalPages = paginatedResponse?.totalPages || 1;
+    const isLoading = isPaginatedLoading;
+    const hasError = receiptsError;
 
     return (
         <>
@@ -332,6 +338,9 @@ const ReceiptsDashboard = () => {
                 error={hasError}
                 enableSort
                 enableSearch
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={handleSort}
             />
 
             {/* Receipt Details Modal */}

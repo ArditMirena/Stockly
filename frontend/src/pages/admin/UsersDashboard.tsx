@@ -104,6 +104,8 @@ const UsersDashboard = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>('id');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
@@ -125,6 +127,8 @@ const UsersDashboard = () => {
     offset: page,
     pageSize: 10,
     searchTerm: debouncedSearch,
+    sortBy: sortBy,
+    direction: sortDirection,
   });
 
   // Clear form errors when form values change
@@ -235,12 +239,24 @@ const UsersDashboard = () => {
     }
   };
 
+  const handleSort = (columnKey: string) => {
+    if (sortBy === columnKey) {
+      // If clicking the same column, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking a different column, set new column and default to asc
+      setSortBy(columnKey);
+      setSortDirection('asc');
+    }
+    setPage(0); // Reset to first page when sorting changes
+  };
+
   // Define table columns with enhanced styling
   const columns: Column<User>[] = [
     {
       accessorKey: 'id',
       header: 'ID',
-      enableSorting: false,
+      enableSorting: true,
       cell: (info) => (
         <Text fw={500} c="dimmed" size="sm">
           #{info.getValue() as string}
@@ -290,7 +306,7 @@ const UsersDashboard = () => {
     {
       accessorKey: 'role',
       header: 'Role',
-      enableSorting: true,
+      enableSorting: false,
       cell: (info) => {
         const role = info.getValue() as keyof typeof ROLE_CONFIG;
         const config = ROLE_CONFIG[role] || ROLE_CONFIG.USER;
@@ -361,6 +377,9 @@ const UsersDashboard = () => {
         enableSort
         enableSearch
         searchWidth={350}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
 
       {/* Enhanced Modal */}

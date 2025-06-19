@@ -46,6 +46,8 @@ interface PaginationParams {
     offset?: number;
     pageSize?: number;
     sortBy?: string;
+    direction?: string;
+    searchTerm?: string;
     buyerManagerId?: number;
     supplierManagerId?: number;
     buyerCompanyId?: number;
@@ -100,6 +102,8 @@ export const receiptsApi = createApi({
                     offset: params?.offset || 0,
                     pageSize: params?.pageSize || 10,
                     sortBy: params?.sortBy || 'orderId',
+                    direction: params?.direction || 'asc',
+                    searchTerm: params?.searchTerm,
                     buyerManagerId: params?.buyerManagerId,
                     supplierManagerId: params?.supplierManagerId,
                     buyerCompanyId: params?.buyerCompanyId,

@@ -89,6 +89,7 @@ public class OrderQueryController {
             @RequestParam(value = "offset", defaultValue = "0") Integer offset,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
             @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(value = "buyerManagerId", required = false) Long buyerManagerId,
             @RequestParam(value = "supplierManagerId", required = false) Long supplierManagerId,
             @RequestParam(value = "managerId", required = false) Long managerId,
@@ -98,7 +99,10 @@ public class OrderQueryController {
             @RequestParam(value = "destinationWarehouseId", required = false) Long destinationWarehouseId,
             @RequestParam(required = false) String searchTerm
     ) {
-        PageRequest pageRequest = PageRequest.of(offset, pageSize, Sort.by(sortBy));
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        PageRequest pageRequest = PageRequest.of(offset, pageSize, sort);
         Page<OrderDTO> orders = orderQueryService.getAllOrdersWithPagination(
                 pageRequest,
                 buyerManagerId,
