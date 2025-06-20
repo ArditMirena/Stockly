@@ -12,10 +12,12 @@ import com.stockly.model.Order;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
+import com.stockly.model.enums.InventoryLogAction;
 import com.stockly.repository.OrderRepository;
 import com.stockly.repository.ProductRepository;
 import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.repository.WarehouseRepository;
+import com.stockly.service.command.InventoryLogCommandService;
 import com.stockly.service.command.OrderCommandService;
 import com.stockly.service.command.ReceiptCommandService;
 import com.stockly.service.command.WarehouseCommandService;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +42,7 @@ public class OrderProcessingService {
     private final WarehouseProductRepository warehouseProductRepository;
     private final OrderMapper orderMapper;
     private final ReceiptCommandService receiptCommandService;
+    private final InventoryLogCommandService inventoryLoggingService;
 
     public OrderDTO processOrder(OrderRequest request) {
         // 1. Validate warehouse
@@ -65,7 +69,7 @@ public class OrderProcessingService {
         Order order = orderCommandService.createOrder(orderDTO);
 
         // 4. Update warehouse inventory
-        updateWarehouseInventory(sourceWarehouse, request.getItems());
+        updateWarehouseInventory(sourceWarehouse, request.getItems(), order);
 
         // 5. Create receipt
         createReceiptForOrder(order.getId());
@@ -125,10 +129,37 @@ public class OrderProcessingService {
         return orderDTO;
     }
 
-    public void updateWarehouseInventory(Warehouse warehouse, List<OrderItemRequest> items) {
+    private void updateWarehouseInventory(Warehouse warehouse, List<OrderItemRequest> items, Order order) {
         for (OrderItemRequest item : items) {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+            WarehouseProduct warehouseProduct = warehouseProductRepository
+                    .findByWarehouseAndProduct(warehouse, product)
+                    .orElseThrow(() -> new BusinessException("Product not available in warehouse"));
+
+            int previousQuantity = warehouseProduct.getQuantity();
+            int newQuantity = previousQuantity - item.getQuantity();
+
+
+            // Log inventory change
+            inventoryLoggingService.logInventoryChange(
+                    InventoryLogAction.ORDER,
+                    warehouse.getId(),
+                    warehouse.getName(),
+                    product.getId(),
+                    product.getSku(),
+                    product.getTitle(),
+                    -item.getQuantity(),
+                    previousQuantity,
+                    newQuantity,
+                    order.getId().toString(),
+                    "ORDER",
+                    order.getSupplier().getManager().getId(),
+                    order.getSupplier().getManager().getUsername(),
+                    "Order fulfillment",
+                    Map.of("orderNumber", order.getId())
+            );
 
             warehouseCommandService.assignProductToWarehouse(
                     product.getId(),
