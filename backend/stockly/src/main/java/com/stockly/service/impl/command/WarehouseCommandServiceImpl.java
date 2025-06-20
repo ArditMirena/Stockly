@@ -6,7 +6,9 @@ import com.stockly.exception.BusinessException;
 import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.WarehouseMapper;
 import com.stockly.model.*;
+import com.stockly.model.enums.InventoryLogAction;
 import com.stockly.repository.*;
+import com.stockly.service.command.InventoryLogCommandService;
 import com.stockly.service.command.WarehouseCommandService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     private WarehouseProductRepository warehouseProductRepository;
     @Autowired
     private ReceiptRepository receiptRepository;
+    private final InventoryLogCommandService inventoryLogCommandService;
 
     @Override
     public WarehouseDTO createWarehouse(WarehouseDTO warehouseDTO) {
@@ -108,12 +111,6 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
 
     }
 
-    private boolean hasActiveReferences(Warehouse warehouse) {
-        return (orderRepository.existsBySourceWarehouseId(warehouse.getId()) || orderRepository.existsByDestinationWarehouseId(warehouse.getId())) ||
-                (receiptRepository.existsBySourceWarehouseId(warehouse.getId()) || receiptRepository.existsByDestinationWarehouseId(warehouse.getId()));
-    }
-
-
 
     @Override
     public void assignProductToWarehouse(Long productId, Integer quantity, Long warehouseId) {
@@ -146,6 +143,25 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
             warehouseProduct.setProduct(product);
             warehouseProduct.setQuantity(quantity);
             warehouse.getWarehouseProducts().add(warehouseProduct);
+
+            inventoryLogCommandService.logInventoryChange(
+                    InventoryLogAction.PRODUCT_ASSIGN,
+                    warehouse.getId(),
+                    warehouse.getName(),
+                    product.getId(),
+                    product.getSku(),
+                    product.getTitle(),
+                    warehouseProduct.getQuantity(),
+                    0,
+                    warehouseProduct.getQuantity(),
+                    null,
+                    "ASSIGN",
+                    warehouse.getCompany().getManager().getId(),
+                    warehouse.getCompany().getManager().getUsername(),
+                    "Assigned Product to Warehouse",
+                    null
+            );
+
             warehouseProductRepository.save(warehouseProduct);
         }
     }

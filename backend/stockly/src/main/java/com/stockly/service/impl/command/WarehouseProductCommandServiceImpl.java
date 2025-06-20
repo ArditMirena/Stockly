@@ -5,11 +5,15 @@ import com.stockly.dto.WarehouseProductExcelDTO;
 import com.stockly.model.Product;
 import com.stockly.model.Warehouse;
 import com.stockly.model.WarehouseProduct;
+import com.stockly.model.enums.InventoryLogAction;
 import com.stockly.repository.ProductRepository;
 import com.stockly.repository.WarehouseProductRepository;
 import com.stockly.repository.WarehouseRepository;
+import com.stockly.service.command.InventoryLogCommandService;
 import com.stockly.service.command.WarehouseProductCommandService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,6 +28,8 @@ public class WarehouseProductCommandServiceImpl implements WarehouseProductComma
     private final WarehouseProductRepository warehouseProductRepository;
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
+    @Qualifier("inventoryLogCommandService")
+    private final InventoryLogCommandService inventoryLogCommandService;
 
     @Override
     public WarehouseProduct createWarehouseProduct(WarehouseProductDTO warehouseProductDTO) {
@@ -37,6 +43,15 @@ public class WarehouseProductCommandServiceImpl implements WarehouseProductComma
         warehouseProduct.setWarehouse(warehouse);
         warehouseProduct.setProduct(product);
         warehouseProduct.setQuantity(warehouseProductDTO.getQuantity());
+
+        inventoryLogCommandService.logInventoryChange(
+                InventoryLogAction.RESTOCK,
+                warehouse.getId(), warehouse.getName(),
+                product.getId(), product.getSku(), product.getTitle(),
+                warehouseProductDTO.getQuantity(), 0, warehouseProductDTO.getQuantity(),
+                null, "INITIAL_STOCK",
+                warehouse.getCompany().getManager().getId(), "System", "Initial stock setup", null
+        );
 
         return warehouseProductRepository.save(warehouseProduct);
     }
@@ -104,13 +119,16 @@ public class WarehouseProductCommandServiceImpl implements WarehouseProductComma
 
         if (existing.isPresent()) {
             WarehouseProduct wp = existing.get();
+            int quantity = wp.getQuantity();
             wp.setQuantity(wp.getQuantity() + dto.getQuantity());
+            createInventoryLog(wp, "IMPORT RESTOCK EXCEL", quantity, InventoryLogAction.RESTOCK);
             return warehouseProductRepository.save(wp);
         } else {
             WarehouseProduct wp = new WarehouseProduct();
             wp.setWarehouse(warehouse);
             wp.setProduct(product);
             wp.setQuantity(dto.getQuantity());
+            createInventoryLog(wp, "IMPORT EXCEL", 0, InventoryLogAction.PRODUCT_ASSIGN);
             return warehouseProductRepository.save(wp);
         }
     }
@@ -124,5 +142,29 @@ public class WarehouseProductCommandServiceImpl implements WarehouseProductComma
         }
         return saved;
     }
+
+    public void createInventoryLog(WarehouseProduct warehouseProduct, String referenceType, int previousQuantity, InventoryLogAction action) {
+        Warehouse warehouse = warehouseProduct.getWarehouse();
+        Product product = warehouseProduct.getProduct();
+
+        inventoryLogCommandService.logInventoryChange(
+                action,
+                warehouse.getId(),
+                warehouse.getName(),
+                product.getId(),
+                product.getSku(),
+                product.getTitle(),
+                warehouseProduct.getQuantity(),
+                previousQuantity,
+                warehouseProduct.getQuantity(),
+                null,
+                referenceType,
+                warehouse.getCompany().getManager().getId(),
+                warehouse.getCompany().getManager().getUsername(),
+                "Restock Existing Product in Warehouse",
+                null
+        );
+    }
+
 
 }
