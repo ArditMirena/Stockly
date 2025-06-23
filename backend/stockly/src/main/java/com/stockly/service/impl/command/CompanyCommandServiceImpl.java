@@ -1,8 +1,8 @@
 package com.stockly.service.impl.command;
 
 import com.stockly.dto.CompanyDTO;
-import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.exception.OperationNotAllowedException;
+import com.stockly.exception.ResourceNotFoundException;
 import com.stockly.mapper.AddressMapper;
 import com.stockly.mapper.CompanyMapper;
 import com.stockly.mapper.UserMapper;
@@ -11,6 +11,7 @@ import com.stockly.repository.CityRepository;
 import com.stockly.repository.CompanyRepository;
 import com.stockly.repository.RoleRepository;
 import com.stockly.repository.UserRepository;
+import com.stockly.service.CompanyLogService;
 import com.stockly.service.command.CompanyCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final CompanyLogService companyLogService;
 
     @Override
     @Transactional
@@ -47,6 +49,7 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
         // Save first to ensure ID is generated
         company = companyRepository.saveAndFlush(company);
         assignCompanyToUser(manager, company);
+        companyLogService.logCompanyAction(company.getId(), "CREATE", companyDTO);
 
         return companyMapper.toDto(companyRepository.save(company));
     }
@@ -65,6 +68,10 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
         existingCompany.determineCompanyType();
 
         Company updatedCompany = companyRepository.saveAndFlush(existingCompany);
+        CompanyDTO updatedDTO = companyMapper.toDto(updatedCompany);
+
+        companyLogService.logCompanyAction(id, "UPDATE", updatedDTO);
+
         return companyMapper.toDto(updatedCompany);
     }
 
@@ -92,8 +99,10 @@ public class CompanyCommandServiceImpl implements CompanyCommandService {
         if (!company.getOrdersAsBuyer().isEmpty() || !company.getOrdersAsSupplier().isEmpty()) {
             throw new OperationNotAllowedException("Cannot delete company with existing orders");
         }
-
+        CompanyDTO dto = companyMapper.toDto(company);
         companyRepository.delete(company);
+
+        companyLogService.logCompanyAction(id, "DELETE", dto);
     }
 
     private void validateCompanyCreation(CompanyDTO companyDTO) {
