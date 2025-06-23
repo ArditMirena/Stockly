@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.stockly.service.WarehouseLogService;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +29,7 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
     private final WarehouseMapper warehouseMapper;
     private final CompanyRepository companyRepository;
     private final OrderRepository orderRepository;
+    private final WarehouseLogService warehouseLogService;
     @Autowired
     private ProductRepository productRepository;
     @Autowired
@@ -64,7 +65,7 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
         company.addWarehouse(warehouse);
 
         Warehouse saved = warehouseRepository.save(warehouse);
-
+        warehouseLogService.logWarehouseAction(saved.getId(), "CREATE", warehouseDTO);
         companyRepository.saveAndFlush(company);
 
         return warehouseMapper.toDto(saved);
@@ -78,7 +79,7 @@ public class WarehouseCommandServiceImpl implements WarehouseCommandService {
         Warehouse updated = warehouseMapper.toEntity(warehouseDTO);
         updated.setId(existing.getId()); // Keep existing ID
         Warehouse saved = warehouseRepository.save(updated);
-
+        warehouseLogService.logWarehouseAction(id, "UPDATE", warehouseDTO);
         return warehouseMapper.toDto(saved);
     }
 
