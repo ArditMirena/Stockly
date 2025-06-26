@@ -18,6 +18,7 @@ import WarehousesDashboard from './pages/admin/WarehousesDashboard'
 import TrackShipment from './pages/admin/TrackShipment'
 import PredictionsDashboard from './pages/admin/PredictionsDashboard'
 import WarehouseProductsDashboard from './pages/admin/WarehouseProductsDashboard'
+import InventoryLogsDashboard from "./pages/admin/InventoryLogsDashboard.tsx";
 import ReceiptsDashboard from "./pages/admin/ReceiptsDashboard.tsx";
 import PaymentSuccess from './pages/PaymentSuccess';
 import ProtectedRoute from './components/PrivateRoute'
@@ -138,6 +139,14 @@ function App() {
                 <WarehouseProductsDashboard />
               </ProtectedRoute>
             }
+          />
+          <Route
+          path="inventory/logs"
+          element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.SUPPLIER]}>
+                  <InventoryLogsDashboard />
+              </ProtectedRoute>
+          }
           />
         </Route>
 

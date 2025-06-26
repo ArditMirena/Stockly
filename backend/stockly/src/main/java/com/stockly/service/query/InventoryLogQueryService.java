@@ -16,4 +16,14 @@ public interface InventoryLogQueryService {
     Page<InventoryLog> getLogsByActionType(String actionType, Pageable pageable);
     List<InventoryLog> getRecentActivity(Long warehouseId, int limit);
     InventoryLog getLastRestockForProduct(Long warehouseId, Long productId);
+    Page<InventoryLog> getInventoryLogsWithPagination(
+            Pageable pageable,
+            Long warehouseId,
+            Long productId,
+            String actionType,
+            String source,
+            Long userId,
+            Instant startDate,
+            Instant endDate,
+            String searchTerm);
 }
