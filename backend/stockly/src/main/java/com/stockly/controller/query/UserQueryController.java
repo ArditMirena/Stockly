@@ -31,7 +31,6 @@ public class UserQueryController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
@@ -39,7 +38,6 @@ public class UserQueryController {
     }
 
     @GetMapping()
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> userDTOs = userQueryService.getAllUsers();
         return ResponseEntity.ok(userDTOs);
@@ -47,7 +45,6 @@ public class UserQueryController {
 
 
     @GetMapping("/page")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Page<UserDTO>> getAllUsersWithPagination(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

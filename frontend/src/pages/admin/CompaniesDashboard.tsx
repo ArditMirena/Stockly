@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import {
     Divider,
@@ -38,6 +39,8 @@ import {
     useAddCompanyMutation,
     useUpdateCompanyMutation,
     Company,
+    Country,
+    City,
     AddressDTO,
     useGetCountriesQuery,
     useGetCitiesByCountryQuery,
@@ -109,6 +112,95 @@ const validateCompanyForm = (
     return errors;
 };
 
+// Memoized Country Select Component
+const CountrySelect = React.memo(({ 
+    selectedCountry, 
+    onCountryChange, 
+    countries, 
+    isCountriesLoading, 
+    modalType, 
+    formErrors 
+}: {
+    selectedCountry: string | null;
+    onCountryChange: (value: string | null) => void;
+    countries: Country[];
+    isCountriesLoading: boolean;
+    modalType: string;
+    formErrors: string[];
+}) => {
+    const countryOptions = useMemo(() => 
+        countries
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(country => ({
+                value: country.id.toString(),
+                label: country.name,
+            })), 
+        [countries]
+    );
+
+    return (
+        <Select
+            label="Country"
+            placeholder="Select country"
+            value={selectedCountry}
+            onChange={onCountryChange}
+            data={countryOptions}
+            disabled={modalType === 'view'}
+            required
+            searchable
+            error={formErrors.includes('Country is required') ? 'Country is required' : null}
+            rightSection={isCountriesLoading ? <Loader size="xs"/> : null}
+            maxDropdownHeight={200}
+            limit={50}
+        />
+    );
+});
+
+// Memoized City Select Component
+const CitySelect = React.memo(({ 
+    selectedCity, 
+    onCityChange, 
+    cities, 
+    isCitiesLoading, 
+    modalType, 
+    formErrors,
+    selectedCountry 
+}: {
+    selectedCity: number | null;
+    onCityChange: (value: string | null) => void;
+    cities: City[];
+    isCitiesLoading: boolean;
+    modalType: string;
+    formErrors: string[];
+    selectedCountry: string | null;
+}) => {
+    const cityOptions = useMemo(() => 
+        cities.map(city => ({
+            value: city.id.toString(),
+            label: city.name,
+        })), 
+        [cities]
+    );
+
+    return (
+        <Select
+            label="City"
+            placeholder={selectedCountry ? "Select city" : "Select country first"}
+            value={selectedCity?.toString() || null}
+            onChange={onCityChange}
+            data={cityOptions}
+            disabled={modalType === 'view' || !selectedCountry}
+            required
+            searchable
+            error={formErrors.includes('City is required') ? 'City is required' : null}
+            rightSection={isCitiesLoading ? <Loader size="xs"/> : null}
+            maxDropdownHeight={200}
+            limit={50}
+        />
+    );
+});
+
 const CompaniesDashboard = () => {
     const [page, setPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
@@ -155,6 +247,15 @@ const CompaniesDashboard = () => {
         skip: !selectedCountry
     });
 
+    const handleCountryChange = useCallback((value: string | null) => {
+        setSelectedCountry(value);
+        setSelectedCity(null); // Reset city when country changes
+    }, []);
+
+    const handleCityChange = useCallback((value: string | null) => {
+        setSelectedCity(value ? Number(value) : null);
+    }, []);
+
     const { data: users = [], isLoading: isUsersLoading } = useGetUsersQuery();
 
     const {
@@ -187,19 +288,6 @@ const CompaniesDashboard = () => {
             setSelectedCity(null);
         }
     }, [selectedCountry]);
-
-    const countryOptions = countries
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(country => ({
-            value: country.id.toString(),
-            label: country.name,
-        }));
-
-    const cityOptions = cities.map(city => ({
-        value: city.id.toString(),
-        label: city.name,
-    }));
 
     const managerOptions = users.map(user => ({
         value: user.id.toString(),
@@ -257,6 +345,7 @@ const CompaniesDashboard = () => {
         setModalOpen(true);
 
         if (company && type !== 'create') {
+            // Populate form with existing company data
             setCompanyName(company.companyName);
             setEmail(company.email);
             setPhoneNumber(company.phoneNumber);
@@ -280,6 +369,7 @@ const CompaniesDashboard = () => {
                 setSelectedCountry(company.address.country?.toString() || null);
             }
         } else {
+            // Reset form for new company
             resetForm();
             // Auto-set manager ID for buyer/supplier users
             if (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) {
@@ -297,54 +387,66 @@ const CompaniesDashboard = () => {
     };
 
     const handleSubmit = async () => {
-        console.log('handleSubmit called!');
         setError(null);
-        setIsSubmitting(true);
+        setIsSubmitting(true); // Use isSubmitting instead of separate loading state
 
-        // Validate form
-        const errors = validateCompanyForm(
-            companyName,
-            email,
-            phoneNumber,
-            street,
-            postalCode,
-            selectedCity,
-            selectedManager,
-            activeTab,
-            businessType,
-            user?.role
-        );
+        // Common validation for all company types
+        const commonErrors = [];
+        if (!companyName) commonErrors.push('Company name is required');
+        if (!email) commonErrors.push('Email is required');
+        if (!phoneNumber) commonErrors.push('Phone number is required');
+        if (!street) commonErrors.push('Street address is required');
+        if (!postalCode) commonErrors.push('Postal code is required');
+        if (!selectedCity) commonErrors.push('City is required');
+        if (!selectedManager) commonErrors.push('Manager is required');
 
-        if (errors.length > 0) {
-            setFormErrors(errors);
+        // Tab-specific validation
+        if (activeTab === 'buyer' && !businessType) {
+            commonErrors.push('Business type is required for buyers');
+        }
+
+        if (commonErrors.length > 0) {
+            setError(commonErrors.join(', '));
             setIsSubmitting(false);
             return;
         }
 
         try {
             const companyData: any = {
-                companyName: companyName.trim(),
-                email: email.trim(),
-                phoneNumber: phoneNumber.trim(),
+                companyName,
+                email,
+                phoneNumber,
                 address: {
-                    street: street.trim(),
-                    postalCode: postalCode.trim(),
+                    street,
+                    postalCode,
                     cityId: selectedCity,
                 },
-                manager: selectedManager || user?.id, // Use current user ID if no manager selected
-                ...(activeTab === 'buyer' && { businessType: businessType.trim() }),
-                ...(activeTab === 'manufacturer' && { hasProductionFacility: true }),
+                manager: selectedManager,
+                ...(activeTab === 'buyer' && { 
+                    businessType,
+                    companyType: 'BUYER' 
+                }),
+                ...(activeTab === 'manufacturer' && { 
+                    hasProductionFacility: true,
+                    companyType: 'MANUFACTURER' 
+                }),
+                ...(activeTab === 'supplier' && { 
+                    companyType: 'SUPPLIER' 
+                }),
             };
-            console.log('Company Data:', companyData);
+
+            console.log('Submitting company data:', companyData);
 
             if (selectedCompany && modalType === 'edit') {
+                // UPDATE existing company
                 await updateCompany({ id: selectedCompany.id, ...companyData }).unwrap();
                 showNotification({
                     title: 'Success',
                     message: 'Company updated successfully',
                     color: 'green',
                 });
-            } else {
+            } else if (modalType === 'create') {
+                // CREATE new company
                 await addCompany(companyData).unwrap();
                 showNotification({
                     title: 'Success',
@@ -596,10 +698,12 @@ const CompaniesDashboard = () => {
                     `Company Details - ${selectedCompany?.companyName}`
                 }
                 onClose={handleCloseModal}
-                onSubmit={handleSubmit}
-                modalType={modalType}
+                onSubmit={modalType !== 'view' ? handleSubmit : undefined}
+                submitLabel={modalType === 'create' ? 'Create' : 'Update'} // Add explicit submitLabel
+                modalType={modalType} // ADD THIS LINE - you're missing this prop!
                 isSubmitting={isSubmitting}
                 errors={formErrors}
+                showSubmitButton={modalType !== 'view'} // ADD THIS LINE - you're missing this prop!
                 size="lg"
             >
     <Stack gap="md">
@@ -689,7 +793,7 @@ const CompaniesDashboard = () => {
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
-                                {user?.role === ROLES.ADMIN ? (
+                                {user?.role === ROLES.SUPER_ADMIN ? (
                                     <Select
                                         label="Manager"
                                         placeholder="Select manager"
@@ -772,31 +876,24 @@ const CompaniesDashboard = () => {
                         <Text fw={600} mb="sm">Address Information</Text>
                         <Grid>
                             <Grid.Col span={6}>
-                                <Select
-                                    label="Country"
-                                    placeholder="Select country"
-                                    value={selectedCountry}
-                                    onChange={(value) => setSelectedCountry(value)}
-                                    data={countryOptions}
-                                    disabled={modalType === 'view'}
-                                    required
-                                    searchable
-                                    error={formErrors.includes('Country is required') ? 'Country is required' : null}
-                                    rightSection={isCountriesLoading ? <Loader size="xs"/> : null}
+                                <CountrySelect
+                                    selectedCountry={selectedCountry}
+                                    onCountryChange={handleCountryChange}
+                                    countries={countries}
+                                    isCountriesLoading={isCountriesLoading}
+                                    modalType={modalType}
+                                    formErrors={formErrors}
                                 />
                             </Grid.Col>
                             <Grid.Col span={6}>
-                                <Select
-                                    label="City"
-                                    placeholder={selectedCountry ? "Select city" : "Select country first"}
-                                    value={selectedCity?.toString() || null}
-                                    onChange={(value) => setSelectedCity(value ? Number(value) : null)}
-                                    data={cityOptions}
-                                    disabled={modalType === 'view' || !selectedCountry}
-                                    required
-                                    searchable
-                                    error={formErrors.includes('City is required') ? 'City is required' : null}
-                                    rightSection={isCitiesLoading ? <Loader size="xs"/> : null}
+                                <CitySelect
+                                    selectedCity={selectedCity}
+                                    onCityChange={handleCityChange}
+                                    cities={cities}
+                                    isCitiesLoading={isCitiesLoading}
+                                    modalType={modalType}
+                                    formErrors={formErrors}
+                                    selectedCountry={selectedCountry}
                                 />
                             </Grid.Col>
                             <Grid.Col span={8}>
@@ -842,7 +939,7 @@ const CompaniesDashboard = () => {
                                             {selectedCompany.companyType}
                                         </Badge>
                                     </Grid.Col>
-                                    <Grid.Col span={6}>
+                                    {/* <Grid.Col span={6}>
                                         <Text size="sm" c="dimmed">Created Date:</Text>
                                         <Text fw={500}>
                                             {new Date(selectedCompany.createdAt).toLocaleDateString('en-US', {
@@ -853,7 +950,7 @@ const CompaniesDashboard = () => {
                                                 minute: '2-digit'
                                             })}
                                         </Text>
-                                    </Grid.Col>
+                                    </Grid.Col> */}
                                     {selectedCompany.businessType && (
                                         <Grid.Col span={6}>
                                             <Text size="sm" c="dimmed">Business Type:</Text>

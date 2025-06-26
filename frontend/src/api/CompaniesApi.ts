@@ -30,8 +30,8 @@ export interface Company {
     address: AddressDTO;
     companyType: string;
     manager: number;
-    createdAt: string;
-    updatedAt: string;
+    createdAt?: string;
+    updatedAt?: string;
     businessType?: string;
     hasProductionFacility?: boolean;
 }
@@ -125,14 +125,15 @@ export const companiesApi = createApi({
                 url: `/companies`,
                 method: 'POST',
                 data: company,
-            })
+            }),
+            invalidatesTags: ['Company']
         }),
 
         updateCompany: builder.mutation<Company, { id: number, company: Partial<Company> }>({
             query: ({ id, ...company }) => ({
                 url: `/companies/${id}`,
                 method: 'PUT',
-                body: company,
+                data: company,
             }),
             invalidatesTags: (result, error, { id }) => [{ type: 'Company', id }]
         }),

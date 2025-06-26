@@ -62,14 +62,19 @@ export default function DashboardCrudModal({
       }}
       styles={{
         overlay: {
-          zIndex: 20 // Also need to set overlay zIndex
+          zIndex: 20
         }
       }}
     >
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit?.();
-      }}>
+      {/* ADD noValidate to disable HTML5 validation */}
+      <form 
+        noValidate 
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log('Form submitted in DashboardCrudModal');
+          onSubmit?.();
+        }}
+      >
         <Stack>
           {/* Form Errors */}
           {errors.length > 0 && (
