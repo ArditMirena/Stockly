@@ -22,7 +22,8 @@ import {
     Paper,
     ThemeIcon,
     Divider,
-    Button
+    Button,
+    Progress
 } from '@mantine/core';
 import {
     PiWarehouse,
@@ -49,10 +50,8 @@ interface StockLevelChartProps {
 }
 
 const StockLevelChartComponent: React.FC<StockLevelChartProps> = ({ data, warehouseId }) => {
-    // Group data by warehouse or product depending on selection
     const getGroupedData = () => {
         if (warehouseId) {
-            // If warehouse is selected, group by product
             const productMap = new Map<number, {
                 name: string;
                 current: number;
@@ -81,9 +80,8 @@ const StockLevelChartComponent: React.FC<StockLevelChartProps> = ({ data, wareho
 
             return Array.from(productMap.values())
                 .sort((a, b) => b.current - a.current)
-                .slice(0, 10); // Limit to top 10 products
+                .slice(0, 10);
         } else {
-            // Otherwise group by warehouse
             const warehouseMap = new Map<number, {
                 name: string;
                 current: number;
@@ -130,18 +128,18 @@ const StockLevelChartComponent: React.FC<StockLevelChartProps> = ({ data, wareho
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={chartData}
-                    layout="vertical"
                     margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
-                    barCategoryGap={10}
-                    barGap={2}
+                    barCategoryGap={15}
+                    barGap={10}
+                    barSize={40}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis
+                    <XAxis
                         dataKey="name"
-                        type="category"
-                        width={80}
                         tick={{ fontSize: 12 }}
+                    />
+                    <YAxis
+                        type="number"
                     />
                     <Tooltip
                         formatter={(value, name) => {
@@ -159,32 +157,78 @@ const StockLevelChartComponent: React.FC<StockLevelChartProps> = ({ data, wareho
                         dataKey="current"
                         name="Current Stock"
                         fill="#8884d8"
-                        radius={[0, 4, 4, 0]}
+                        radius={[4, 4, 0, 0]}
                     />
                     <Bar
                         dataKey="safety"
                         name="Safety Stock"
                         fill="#82ca9d"
-                        radius={[0, 4, 4, 0]}
+                        radius={[4, 4, 0, 0]}
                     />
                     {warehouseId ? (
                         <Bar
                             dataKey="restockNeeded"
                             name="Items Needing Restock"
                             fill="#ffc658"
-                            radius={[0, 4, 4, 0]}
+                            radius={[4, 4, 0, 0]}
                         />
                     ) : (
                         <Bar
                             dataKey="criticalItems"
                             name="Critical Items"
                             fill="#ff8042"
-                            radius={[0, 4, 4, 0]}
+                            radius={[4, 4, 0, 0]}
                         />
                     )}
                 </BarChart>
             </ResponsiveContainer>
         </div>
+    );
+};
+
+const RestockProgressChart: React.FC<{ data: PredictionResult[] }> = ({ data }) => {
+    const totalItems = data.length;
+    const needsRestock = data.filter(item => item.recommendation.suggested_restock > 0).length;
+    const criticalItems = data.filter(item => item.stock_data.days_remaining < 7).length;
+    const healthyItems = totalItems - needsRestock;
+
+    if (totalItems === 0) {
+        return (
+            <Paper p="xl" ta="center">
+                <Text c="dimmed">No data available for the selected filters</Text>
+            </Paper>
+        );
+    }
+
+    return (
+        <Box p="md">
+                <div>
+                    <Text size="sm" c="dimmed" mb="xs">Stock Health Distribution</Text>
+                    <Progress.Root size={46}>
+                        <MantineTooltip label={`${healthyItems} healthy items (${((healthyItems / totalItems) * 100).toFixed(1)}%)`}>
+                            <Progress.Section
+                                value={(healthyItems / totalItems) * 100}
+                                color="green"
+                                label={`${healthyItems} healthy`}
+                            />
+                        </MantineTooltip>
+                        <MantineTooltip label={`${needsRestock - criticalItems} low stock items (${(((needsRestock - criticalItems) / totalItems) * 100).toFixed(1)}%)`}>
+                            <Progress.Section
+                                value={((needsRestock - criticalItems) / totalItems) * 100}
+                                color="yellow"
+                                label={`${needsRestock - criticalItems} low`}
+                            />
+                        </MantineTooltip>
+                        <MantineTooltip label={`${criticalItems} critical items (${((criticalItems / totalItems) * 100).toFixed(1)}%)`}>
+                            <Progress.Section
+                                value={(criticalItems / totalItems) * 100}
+                                color="red"
+                                label={`${criticalItems} critical`}
+                            />
+                        </MantineTooltip>
+                    </Progress.Root>
+                </div>
+        </Box>
     );
 };
 
@@ -235,13 +279,11 @@ export const PredictionsDashboard: React.FC = () => {
         ))
         : Array.from(new Set(predictions.map(p => p.product_id)));
 
-    // Calculate summary statistics
     const totalProducts = filteredPredictions.length;
     const lowStockItems = filteredPredictions.filter(p => p.recommendation.suggested_restock > 0).length;
     const criticalItems = filteredPredictions.filter(p => p.stock_data.days_remaining < 7).length;
     const healthyItems = totalProducts - lowStockItems;
 
-    // Pagination logic
     const totalPages = Math.ceil(filteredPredictions.length / itemsPerPage);
     const paginatedData = filteredPredictions.slice(
         currentPage * itemsPerPage,
@@ -324,15 +366,12 @@ export const PredictionsDashboard: React.FC = () => {
                         ) : (
                             <PiArrowDown color="green" size={16} />
                         )}
-                        <Text
-                            c={needsRestock ? 'red' : 'green'}
-                            fw={needsRestock ? 'bold' : 'normal'}
-                        >
-                            {recommendation.suggested_restock.toLocaleString()}
-                        </Text>
-                    </Group>
-                );
-            }
+                        <Text c={needsRestock ? 'red' : 'green'} fw={needsRestock ? 'bold' : 'normal'} >
+                                {recommendation.suggested_restock.toLocaleString()}
+                                </Text>
+                                </Group>
+                                );
+                            }
         },
         {
             accessorKey: 'stock_data',
@@ -521,36 +560,32 @@ export const PredictionsDashboard: React.FC = () => {
                     </Grid>
                 </Card>
 
-                {/* Charts */}
-                <Grid gutter="md">
-                    <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Card withBorder radius="md" p="md" h="100%">
-                            <Group gap="sm" mb="md">
-                                <ThemeIcon size="sm" variant="light" color="blue">
-                                    <PiChartBar size={16} />
-                                </ThemeIcon>
-                                <Text fw={500}>Stock Level Trends</Text>
-                            </Group>
-                            <Divider mb="md" />
-                            <StockLevelChartComponent
-                                data={filteredPredictions}
-                                warehouseId={selectedWarehouse || undefined}
-                            />
-                        </Card>
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Card withBorder radius="md" p="md" h="100%">
-                            <Group gap="sm" mb="md">
-                                <ThemeIcon size="sm" variant="light" color="grape">
-                                    <PiChartPie size={16} />
-                                </ThemeIcon>
-                                <Text fw={500}>Restock Distribution</Text>
-                            </Group>
-                            <Divider mb="md" />
-                            <RestockPieChart data={filteredPredictions} />
-                        </Card>
-                    </Grid.Col>
-                </Grid>
+                {/* Bar Chart */}
+                <Card withBorder radius="md" p="md">
+                    <Group gap="sm" mb="md">
+                        <ThemeIcon size="sm" variant="light" color="blue">
+                            <PiChartBar size={16} />
+                        </ThemeIcon>
+                        <Text fw={500}>Stock Level Trends</Text>
+                    </Group>
+                    <Divider mb="md" />
+                    <StockLevelChartComponent
+                        data={filteredPredictions}
+                        warehouseId={selectedWarehouse || undefined}
+                    />
+                </Card>
+
+                {/* Progress Bar Chart */}
+                <Card withBorder radius="md" p="md">
+                    <Group gap="sm" mb="md">
+                        <ThemeIcon size="sm" variant="light" color="grape">
+                            <PiChartPie size={16} />
+                        </ThemeIcon>
+                        <Text fw={500}>Stock Health & Restock Distribution</Text>
+                    </Group>
+                    <Divider mb="md" />
+                    <RestockProgressChart data={filteredPredictions} />
+                </Card>
 
                 {/* Data Table */}
                 <Card withBorder radius="md" p="md">
