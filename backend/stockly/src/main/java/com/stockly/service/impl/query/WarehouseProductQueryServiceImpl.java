@@ -41,6 +41,10 @@ public class WarehouseProductQueryServiceImpl implements WarehouseProductQuerySe
             spec = spec.and(WarehouseProductSpecification.byWarehouseId(warehouseId));
         }
 
+
+        spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("warehouse").get("isActive"), true));
+
+
         Page<WarehouseProduct> warehouseProducts = warehouseProductRepository.findAll(spec, pageRequest);
 
         return warehouseProducts.map(warehouseProductMapper::toDTO);
