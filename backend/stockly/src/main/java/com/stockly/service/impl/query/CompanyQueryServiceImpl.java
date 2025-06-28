@@ -123,4 +123,11 @@ public class CompanyQueryServiceImpl implements CompanyQueryService {
     public Long getCompanyCount(){
         return companyRepository.count();
     }
+
+    @Override
+    public List<CompanyDTO> getCompaniesWithWarehouses() {
+        return companyRepository.findByWarehousesIsNotEmpty().stream()
+                .map(companyMapper::toDto)
+                .collect(Collectors.toList());
+    }
 }

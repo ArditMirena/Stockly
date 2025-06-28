@@ -19,4 +19,5 @@ public interface CompanyQueryService {
     Long getCompanyCount();
     List<CompanyDTO> getCompaniesByManager(Long managerId);
     Page<CompanyDTO> getCompaniesWithFilters(String companyType, Long managerId, Pageable pageable);
+    List<CompanyDTO> getCompaniesWithWarehouses();
 }

@@ -79,4 +79,10 @@ public class CompanyQueryController {
         List<CompanyDTO> companies = companyQueryService.getCompaniesByManager(managerId);
         return ResponseEntity.ok(companies);
     }
+
+    @GetMapping("/with-warehouses")
+    public ResponseEntity<List<CompanyDTO>> getCompanyWithWarehouses() {
+        List <CompanyDTO> companies = companyQueryService.getCompaniesWithWarehouses();
+        return ResponseEntity.ok(companies);
+    }
 }
