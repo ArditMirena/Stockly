@@ -94,10 +94,29 @@ export const inventoryLogsApi = createApi({
                 params: { limit }
             })
         }),
+        // Add this to your endpoints in inventoryLogsApi
+        exportInventoryLogsExcel: builder.mutation<Blob, InventoryLogPaginationParams>({
+            query: (params) => ({
+                url: 'inventory-logs/export/excel',
+                method: 'GET',
+                params: {
+                    warehouseId: params?.warehouseId,
+                    productId: params?.productId,
+                    actionType: params?.actionType,
+                    source: params?.source,
+                    userId: params?.userId,
+                    startDate: params?.startDate,
+                    endDate: params?.endDate,
+                    searchTerm: params?.searchTerm
+                },
+                responseType: 'blob' // Important for file downloads
+            })
+        }),
     }),
 });
 
 export const {
     useGetInventoryLogsWithPaginationQuery,
-    useGetRecentActivityQuery
+    useGetRecentActivityQuery,
+    useExportInventoryLogsExcelMutation
 } = inventoryLogsApi;

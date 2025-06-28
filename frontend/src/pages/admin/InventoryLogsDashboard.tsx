@@ -20,11 +20,12 @@ import {
     MultiSelect
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { PiTrashBold, PiPencilSimpleLineBold, PiEyeBold, PiWarehouseBold, PiWarningBold, PiPackageBold, PiClockBold } from 'react-icons/pi';
+import { PiTrashBold, PiPencilSimpleLineBold, PiEyeBold, PiWarehouseBold, PiWarningBold, PiPackageBold, PiClockBold, PiFileXls } from 'react-icons/pi';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
-import { useGetInventoryLogsWithPaginationQuery } from '../../api/InventoryLogsApi';
-import { useGetAllWarehousesQuery } from '../../api/WarehousesApi';
+import { useGetInventoryLogsWithPaginationQuery, useExportInventoryLogsExcelMutation } from '../../api/InventoryLogsApi';
+import { useGetWarehousesByManagerQuery } from '../../api/WarehousesApi';
 import { useGetProductsQuery } from '../../api/ProductsApi';
+import { saveAs } from 'file-saver';
 import { RootState } from '../../redux/store';
 import { InventoryLog } from '../../api/InventoryLogsApi.ts';
 import { DateValue } from '@mantine/dates';
@@ -51,6 +52,8 @@ const InventoryLogsDashboard = () => {
     const [debouncedSearch] = useDebouncedValue(searchTerm, 300);
     const [sortBy, setSortBy] = useState('timestamp');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [exportInventoryLogs] = useExportInventoryLogsExcelMutation();
+    const [isExporting, setIsExporting] = useState(false);
 
     // Filter state
     const [selectedWarehouse, setSelectedWarehouse] = useState<string | null>(null);
@@ -62,7 +65,7 @@ const InventoryLogsDashboard = () => {
     const user = useSelector((state: RootState) => state.auth.user);
 
     // API hooks
-    const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetAllWarehousesQuery();
+    const { data: warehouses = [], isLoading: isLoadingWarehouses } = useGetWarehousesByManagerQuery(user.id);
     const { data: products = [], isLoading: isLoadingProducts } = useGetProductsQuery();
 
     const {
@@ -83,6 +86,39 @@ const InventoryLogsDashboard = () => {
         startDate: dateRange[0]?.toISOString(),
         endDate: dateRange[1]?.toISOString()
     });
+
+    const handleExportToExcel = async () => {
+        setIsExporting(true);
+        try {
+            const response = await exportInventoryLogs({
+                warehouseId: selectedWarehouse ? Number(selectedWarehouse) : undefined,
+                productId: selectedProduct ? Number(selectedProduct) : undefined,
+                actionType: selectedActionTypes.length > 0 ? selectedActionTypes.join(',') : undefined,
+                source: selectedSources.length > 0 ? selectedSources.join(',') : undefined,
+                userId: user?.id,
+                startDate: dateRange[0]?.toISOString(),
+                endDate: dateRange[1]?.toISOString(),
+                searchTerm: debouncedSearch
+            }).unwrap();
+
+            // Create blob from response
+            const blob = new Blob([response], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+
+            // Create filename with current date
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const filename = `inventory_logs_${dateStr}.xlsx`;
+
+            // Use file-saver to download the file
+            saveAs(blob, filename);
+
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     // Warehouse options for select
     const warehouseOptions = warehouses.map(warehouse => ({
@@ -266,6 +302,16 @@ const InventoryLogsDashboard = () => {
 
     return (
         <>
+            <Group justify="space-between" mb="md" align="center">
+                <Button
+                    variant="outline"
+                    leftSection={<PiFileXls size={16} />}
+                    onClick={handleExportToExcel}
+                    loading={isExporting}
+                >
+                    Export to Excel
+                </Button>
+            </Group>
             {/* Filter Section */}
             <Card withBorder mb="md" p="md">
                 <Group justify="space-between" align="flex-start">
