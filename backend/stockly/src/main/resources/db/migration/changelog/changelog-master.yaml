@@ -37,3 +37,5 @@ databaseChangeLog:
       file: db/migration/schemas/V19__receipts.sql
   - include:
       file: db/migration/schemas/V20__receipt_item.sql
+  - include:
+      file: db/migration/schemas/V21__role_requests.sql

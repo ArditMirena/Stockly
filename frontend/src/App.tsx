@@ -11,6 +11,7 @@ import NotFound from './pages/NotFound'
 import AdminLayout from './components/layouts/AdminLayout'
 import AdminHome from './pages/admin/AdminHome'
 import UsersDashboard from './pages/admin/UsersDashboard'
+import RoleRequestsDashboard from './pages/admin/RoleRequestsDashboard'
 import ProductsDashboard from './pages/admin/ProductsDashboard'
 import CompaniesDashboard from './pages/admin/CompaniesDashboard'
 import OrdersDashboard from './pages/admin/OrdersDashboard'
@@ -66,7 +67,7 @@ function App() {
           path="/admin/*"
           element={
             <ProtectedRoute
-              allowedRoles={[ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER]}
+              allowedRoles={[ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER, ROLES.USER]}
             >
               <AdminLayout />
             </ProtectedRoute>
@@ -85,6 +86,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
                 <UsersDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path="role-requests"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+                <RoleRequestsDashboard />
               </ProtectedRoute>
             }
           />

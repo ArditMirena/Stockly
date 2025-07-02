@@ -13,7 +13,8 @@ import {
   PiShoppingCartBold,
   PiTruckBold,
   PiFileTextBold,
-  PiTagBold
+  PiTagBold,
+  PiUserCircleGearBold
 } from "react-icons/pi";
 import {
   ScrollArea,
@@ -50,6 +51,12 @@ const menuData: MenuItem[] = [
     label: 'Users',
     icon: PiUsersBold,
     link: '/admin/users',
+    roles: [ROLES.SUPER_ADMIN],
+  },
+  {
+    label: 'User Role requests',
+    icon: PiUserCircleGearBold,
+    link: '/admin/role-requests',
     roles: [ROLES.SUPER_ADMIN],
   },
   {
