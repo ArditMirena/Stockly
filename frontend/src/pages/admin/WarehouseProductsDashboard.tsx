@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Divider,
@@ -95,6 +96,11 @@ const WarehouseProductsDashboard = () => {
   const [sortBy, setSortBy] = useState<string>('id');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
+  const location = useLocation();
+  const [selectedWarehouseFilter, setSelectedWarehouseFilter] = useState<number | null>(
+      location.state?.preselectedWarehouse?.id || null
+  );
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<ModalType>('create');
@@ -130,8 +136,9 @@ const WarehouseProductsDashboard = () => {
         : useGetAllWarehousesQuery();
   const { data: products = [], isLoading: isProductsLoading } = useGetProductsQuery();
 
-  const { 
-    data: paginatedResponse, 
+  // useGeetWarehouseProductsWithPagination call
+  const {
+    data: paginatedResponse,
     isLoading: isPaginatedLoading,
     refetch: refetchWarehouseProducts,
     error: warehouseProductsError
@@ -141,6 +148,7 @@ const WarehouseProductsDashboard = () => {
     searchTerm: debouncedSearch,
     sortBy: sortBy,
     direction: sortDirection,
+    warehouseId: selectedWarehouseFilter || undefined,
     ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
   });
 
@@ -154,10 +162,13 @@ const WarehouseProductsDashboard = () => {
     }
   }, [selectedProduct, selectedWarehouse, quantity]);
 
-  const warehouseOptions = warehouses.map(warehouse => ({
-    value: warehouse.id.toString(),
-    label: warehouse.name,
-  }));
+  const warehouseOptions = [
+    { value: '', label: 'All Warehouses' },
+    ...warehouses.map(warehouse => ({
+      value: warehouse.id.toString(),
+      label: warehouse.name,
+    }))
+  ];
 
   const productOptions = products.map(product => ({
     value: product.id.toString(),
@@ -575,17 +586,46 @@ const WarehouseProductsDashboard = () => {
         <Group justify="space-between" align="flex-end">
           <div>
             <Group gap="sm" mb="xs">
-              
+              <Select
+                  placeholder="Filter by warehouse"
+                  value={selectedWarehouseFilter?.toString() || null}
+                  onChange={(value) => {
+                    setSelectedWarehouseFilter(value ? Number(value) : null);
+                    setPage(0); // Reset to first page when filter changes
+                  }}
+                  data={warehouseOptions}
+                  clearable
+                  disabled={isWarehousesLoading}
+                  style={{ width: 250 }}
+                  rightSection={isWarehousesLoading ? <Loader size="xs" /> : null}
+              />
+              {selectedWarehouseFilter && (
+                  <Badge
+                      variant="outline"
+                      color="blue"
+                      rightSection={
+                        <ActionIcon
+                            size="xs"
+                            color="blue"
+                            variant="transparent"
+                            onClick={() => setSelectedWarehouseFilter(null)}
+                        >
+                          <PiTrashBold size={12} />
+                        </ActionIcon>
+                      }
+                  >
+                    {warehouses.find(w => w.id === selectedWarehouseFilter)?.name || 'Selected Warehouse'}
+                  </Badge>
+              )}
             </Group>
-            
           </div>
           <Group gap="sm">
             <Button
-              leftSection={<PiUploadBold size={16} />}
-              variant="light"
-              color="pink"
-              onClick={handleOpenImportModal}
-              disabled={isWarehousesLoading || isProductsLoading}
+                leftSection={<PiUploadBold size={16} />}
+                variant="light"
+                color="pink"
+                onClick={handleOpenImportModal}
+                disabled={isWarehousesLoading || isProductsLoading}
             >
               Import from Excel
             </Button>
@@ -595,30 +635,52 @@ const WarehouseProductsDashboard = () => {
 
       {/* Enhanced Table with all functionality built-in */}
       <DashboardTable
-        tableData={tableData}
-        allColumns={columns}
-        actions={actions}
-        totalPages={totalPages}
-        currentPage={page}
-        fetchData={setPage}
-        searchTerm={searchTerm}
-        onSearchChange={(term) => {
-          setPage(0);
-          setSearchTerm(term);
-        }}
-        title="Warehouse Products Dashboard"
-        subtitle="Manage inventory across all warehouses with AI-powered demand forecasting"
-        titleIcon={<PiPackageBold size={28} />}
-        onCreateNew={() => handleOpenModal(null, 'create')}
-        createButtonLabel="Add Product to Warehouse"
-        createButtonLoading={isWarehousesLoading || isProductsLoading}
-        isLoading={isLoading}
-        error={warehouseProductsError}
-        enableSort
-        enableSearch
-        sortBy={sortBy}
-        sortDirection={sortDirection}
-        onSort={handleSort}
+          tableData={tableData}
+          allColumns={columns}
+          actions={actions}
+          totalPages={totalPages}
+          currentPage={page}
+          fetchData={setPage}
+          searchTerm={searchTerm}
+          onSearchChange={(term) => {
+            setPage(0);
+            setSearchTerm(term);
+          }}
+          title="Warehouse Products Dashboard"
+          subtitle={
+            <Group gap="xs">
+              <Text>Manage inventory across all warehouses with AI-powered demand forecasting</Text>
+              {selectedWarehouseFilter && (
+                  <Badge
+                      variant="outline"
+                      color="blue"
+                      rightSection={
+                        <ActionIcon
+                            size="xs"
+                            color="blue"
+                            variant="transparent"
+                            onClick={() => setSelectedWarehouseFilter(null)}
+                        >
+                          <PiTrashBold size={12} />
+                        </ActionIcon>
+                      }
+                  >
+                    {warehouses.find(w => w.id === selectedWarehouseFilter)?.name || 'Selected Warehouse'}
+                  </Badge>
+              )}
+            </Group>
+          }
+          titleIcon={<PiPackageBold size={28} />}
+          onCreateNew={() => handleOpenModal(null, 'create')}
+          createButtonLabel="Add Product to Warehouse"
+          createButtonLoading={isWarehousesLoading || isProductsLoading}
+          isLoading={isLoading}
+          error={warehouseProductsError}
+          enableSort
+          enableSearch
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSort={handleSort}
       />
 
       {/* Import Modal */}

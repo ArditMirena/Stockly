@@ -17,7 +17,7 @@ import {
     Loader,
     Switch
 } from '@mantine/core';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebouncedValue } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import {
@@ -30,7 +30,8 @@ import {
     PiMapPinBold,
     PiFactoryBold,
     PiXBold,
-    PiCheckBold
+    PiCheckBold,
+    PiPackageBold
 } from 'react-icons/pi';
 import DashboardTable, { Column, DashboardAction } from '../../components/DashboardTable';
 import {
@@ -116,6 +117,8 @@ const WarehousesDashboard = () => {
     // Delete confirmation state
 
     const user = useSelector((state: RootState) => state.auth.user);
+
+    const navigate = useNavigate();
 
     // API hooks
     const { data: companies = [], isLoading: isLoadingCompanies } = 
@@ -435,6 +438,14 @@ const WarehousesDashboard = () => {
 
     // Define table actions
     const actions: DashboardAction<WarehouseDTO>[] = [
+        {
+            icon: <PiPackageBold size={16} />,
+            color: 'teal',
+            title: 'View Products',
+            onClick: (warehouse) => navigate(`/admin/warehouse/products`, {
+                state: { preselectedWarehouse: warehouse }
+            })
+        },
         {
             icon: <PiEyeBold size={16} />,
             color: 'green',
