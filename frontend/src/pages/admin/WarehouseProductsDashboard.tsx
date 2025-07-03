@@ -148,7 +148,7 @@ const WarehouseProductsDashboard = () => {
     searchTerm: debouncedSearch,
     sortBy: sortBy,
     direction: sortDirection,
-    warehouseId: selectedWarehouseFilter || undefined,
+    warehouseId: selectedWarehouseFilter,
     ...((user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) && { managerId: user.id }),
   });
 
@@ -162,13 +162,10 @@ const WarehouseProductsDashboard = () => {
     }
   }, [selectedProduct, selectedWarehouse, quantity]);
 
-  const warehouseOptions = [
-    { value: '', label: 'All Warehouses' },
-    ...warehouses.map(warehouse => ({
-      value: warehouse.id.toString(),
-      label: warehouse.name,
-    }))
-  ];
+  const warehouseOptions = warehouses.map(warehouse => ({
+    value: warehouse.id.toString(),
+    label: warehouse.name,
+  }));
 
   const productOptions = products.map(product => ({
     value: product.id.toString(),
@@ -587,36 +584,18 @@ const WarehouseProductsDashboard = () => {
           <div>
             <Group gap="sm" mb="xs">
               <Select
-                  placeholder="Filter by warehouse"
+                  placeholder="Select warehouse"
                   value={selectedWarehouseFilter?.toString() || null}
                   onChange={(value) => {
                     setSelectedWarehouseFilter(value ? Number(value) : null);
-                    setPage(0); // Reset to first page when filter changes
+                    setPage(0);
                   }}
                   data={warehouseOptions}
-                  clearable
+                  required
                   disabled={isWarehousesLoading}
                   style={{ width: 250 }}
                   rightSection={isWarehousesLoading ? <Loader size="xs" /> : null}
               />
-              {selectedWarehouseFilter && (
-                  <Badge
-                      variant="outline"
-                      color="blue"
-                      rightSection={
-                        <ActionIcon
-                            size="xs"
-                            color="blue"
-                            variant="transparent"
-                            onClick={() => setSelectedWarehouseFilter(null)}
-                        >
-                          <PiTrashBold size={12} />
-                        </ActionIcon>
-                      }
-                  >
-                    {warehouses.find(w => w.id === selectedWarehouseFilter)?.name || 'Selected Warehouse'}
-                  </Badge>
-              )}
             </Group>
           </div>
           <Group gap="sm">
@@ -647,29 +626,7 @@ const WarehouseProductsDashboard = () => {
             setSearchTerm(term);
           }}
           title="Warehouse Products Dashboard"
-          subtitle={
-            <Group gap="xs">
-              <Text>Manage inventory across all warehouses with AI-powered demand forecasting</Text>
-              {selectedWarehouseFilter && (
-                  <Badge
-                      variant="outline"
-                      color="blue"
-                      rightSection={
-                        <ActionIcon
-                            size="xs"
-                            color="blue"
-                            variant="transparent"
-                            onClick={() => setSelectedWarehouseFilter(null)}
-                        >
-                          <PiTrashBold size={12} />
-                        </ActionIcon>
-                      }
-                  >
-                    {warehouses.find(w => w.id === selectedWarehouseFilter)?.name || 'Selected Warehouse'}
-                  </Badge>
-              )}
-            </Group>
-          }
+          subtitle="Manage inventory in your warehouses with AI-powered demand forecasting"
           titleIcon={<PiPackageBold size={28} />}
           onCreateNew={() => handleOpenModal(null, 'create')}
           createButtonLabel="Add Product to Warehouse"

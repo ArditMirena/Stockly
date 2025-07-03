@@ -32,18 +32,24 @@ public class WarehouseProductQueryServiceImpl implements WarehouseProductQuerySe
 
     @Override
     public Page<WarehouseProductDTO> getAllWarehouseProductsWithPagination(PageRequest pageRequest, Long warehouseId, String searchTerm) {
+        // Return empty page immediately if warehouseId is null
+        if (warehouseId == null) {
+            return new PageImpl<>(List.of(), pageRequest, 0);
+        }
+
         Specification<WarehouseProduct> spec = Specification.where(null);
+
+        // Always filter by warehouseId (since we've already checked it's not null)
+        spec = spec.and(WarehouseProductSpecification.byWarehouseId(warehouseId));
+
+        // Add search term filter if provided
         if (StringUtils.isNotEmpty(searchTerm)) {
             spec = spec.and(WarehouseProductSpecification.unifiedSearch(searchTerm));
         }
 
-        if (warehouseId != null) {
-            spec = spec.and(WarehouseProductSpecification.byWarehouseId(warehouseId));
-        }
-
-
-        spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("warehouse").get("isActive"), true));
-
+        // Only show products from active warehouses
+        spec = spec.and((root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("warehouse").get("isActive"), true));
 
         Page<WarehouseProduct> warehouseProducts = warehouseProductRepository.findAll(spec, pageRequest);
 
