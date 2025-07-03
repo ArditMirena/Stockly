@@ -14,7 +14,8 @@ import {
   PiTruckBold,
   PiFileTextBold,
   PiTagBold,
-  PiUserCircleGearBold
+  PiUserCircleGearBold,
+  PiListMagnifyingGlassBold
 } from "react-icons/pi";
 import {
   ScrollArea,
@@ -125,6 +126,12 @@ const menuData: MenuItem[] = [
   //   link: '/admin/settings',
   //   roles: [ROLES.SUPER_ADMIN, ROLES.BUYER, ROLES.SUPPLIER],
   // },
+  {
+    label: 'Inventory Logs',
+    icon: PiListMagnifyingGlassBold,
+    link: '/admin/inventory/logs',
+    roles: [ROLES.SUPER_ADMIN, ROLES.SUPPLIER]
+  }
 ];
 
 export function Sidebar({ children }: { children: React.ReactNode }) {

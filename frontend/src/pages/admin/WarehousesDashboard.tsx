@@ -38,6 +38,7 @@ import {
     useGetAllWarehousesWithPaginationQuery,
     useDeleteWarehouseMutation,
     useAddWarehouseMutation,
+    useUpdateWarehouseMutation,
     WarehouseDTO
 } from '../../api/WarehousesApi';
 import { useGetCompaniesQuery, useGetCountriesQuery, useGetCitiesByCountryQuery, useGetCompaniesByManagerIdQuery } from '../../api/CompaniesApi';
@@ -68,13 +69,13 @@ const validateWarehouseForm = (
     selectedCompany: string | null
 ) => {
     const errors: string[] = [];
-    
+
     if (!name.trim()) errors.push('Warehouse name is required');
     if (!street.trim()) errors.push('Street address is required');
     if (!postalCode.trim()) errors.push('Postal code is required');
     if (!selectedCity) errors.push('City is required');
     if (!selectedCompany) errors.push('Company is required');
-    
+
     return errors;
 };
 
@@ -114,18 +115,14 @@ const WarehousesDashboard = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Delete confirmation state
-
     const user = useSelector((state: RootState) => state.auth.user);
-
     const navigate = useNavigate();
 
     // API hooks
-    const { data: companies = [], isLoading: isLoadingCompanies } = 
-        (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER) 
-          ? useGetCompaniesByManagerIdQuery(user.id)
-          : useGetCompaniesQuery();
-
+    const { data: companies = [], isLoading: isLoadingCompanies } =
+        (user?.role === ROLES.BUYER || user?.role === ROLES.SUPPLIER)
+            ? useGetCompaniesByManagerIdQuery(user.id)
+            : useGetCompaniesQuery();
 
     const { data: countries = [], isLoading: isCountriesLoading } = useGetCountriesQuery();
     const {
@@ -154,6 +151,7 @@ const WarehousesDashboard = () => {
     // Mutations
     const [deleteWarehouse] = useDeleteWarehouseMutation();
     const [addWarehouse] = useAddWarehouseMutation();
+    const [updateWarehouse] = useUpdateWarehouseMutation();
 
     // Filter companies based on type
     const filteredCompanies = useMemo(() => {
@@ -223,6 +221,7 @@ const WarehousesDashboard = () => {
         setSelectedCity(null);
         setSelectedCompany(null);
         setSelectedCompanyType('SUPPLIER');
+        setIsActive(true);
         setFormErrors([]);
         setError(null);
     };
@@ -237,14 +236,15 @@ const WarehousesDashboard = () => {
             setName(warehouse.name);
             setStreet(warehouse.address?.street || '');
             setPostalCode(warehouse.address?.postalCode || '');
-            
+            setIsActive(warehouse.isActive ?? true);
+
             // Find the country for this warehouse's city
             const warehouseCity = cities.find(city => city.id.toString() === warehouse.address?.cityId?.toString());
             if (warehouseCity) {
                 setSelectedCountry(warehouseCity.country?.toString() || null);
                 setSelectedCity(warehouse.address?.cityId?.toString() || null);
             }
-            
+
             // Set company
             const company = companies.find(c => c.id === warehouse.companyId);
             if (company) {
@@ -287,18 +287,17 @@ const WarehousesDashboard = () => {
                     cityId: Number(selectedCity),
                 },
                 companyId: Number(selectedCompany),
+                isActive: isActive,
             };
 
-            // if (modalType === 'edit' && selectedWarehouse) {
-            //     await updateWarehouse({
-            //         id: selectedWarehouse.id,
-            //         ...warehouseData
-            //     }).unwrap();
-            // } else {
-            //     await addWarehouse(warehouseData).unwrap();
-            // }
-
-            await addWarehouse(warehouseData).unwrap();
+            if (modalType === 'edit' && selectedWarehouse) {
+                await updateWarehouse({
+                    id: selectedWarehouse.id,
+                    ...warehouseData
+                }).unwrap();
+            } else {
+                await addWarehouse(warehouseData).unwrap();
+            }
 
             showNotification({
                 title: 'Success',
@@ -310,7 +309,7 @@ const WarehousesDashboard = () => {
             refetchWarehouses();
         } catch (err: any) {
             console.error('Failed to save warehouse:', err);
-            
+
             const errorMessage = err?.data?.message || `Failed to ${modalType === 'edit' ? 'update' : 'create'} warehouse. Please try again.`;
             showNotification({
                 title: 'Error',
@@ -329,7 +328,7 @@ const WarehousesDashboard = () => {
 
     const handleDeleteConfirm = async () => {
         if (!warehouseToDelete) return;
-        
+
         setIsDeleting(true);
         try {
             await deleteWarehouse(warehouseToDelete.id).unwrap();
@@ -355,18 +354,16 @@ const WarehousesDashboard = () => {
 
     const handleSort = (columnKey: string) => {
         if (sortBy === columnKey) {
-        // If clicking the same column, toggle direction
-        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
         } else {
-        // If clicking a different column, set new column and default to asc
-        setSortBy(columnKey);
-        setSortDirection('asc');
+            setSortBy(columnKey);
+            setSortDirection('asc');
         }
-        setPage(0); // Reset to first page when sorting changes
+        setPage(0);
     };
 
     // Get selected company details for display
-    const selectedCompanyDetails = selectedCompany ? 
+    const selectedCompanyDetails = selectedCompany ?
         companies.find(c => c.id.toString() === selectedCompany) : null;
 
     // Define table columns
@@ -403,8 +400,8 @@ const WarehousesDashboard = () => {
                         <Text size="sm" fw={500}>
                             {company.companyName}
                         </Text>
-                        <Badge 
-                            size="xs" 
+                        <Badge
+                            size="xs"
                             color={getCompanyTypeBadgeColor(company)}
                             variant="light"
                         >
@@ -423,7 +420,7 @@ const WarehousesDashboard = () => {
             cell: (info) => {
                 const address = info.getValue() as any;
                 if (!address) return <Text c="dimmed">No address</Text>;
-                
+
                 return (
                     <div>
                         <Text size="sm">{address.street}</Text>
@@ -433,6 +430,19 @@ const WarehousesDashboard = () => {
                     </div>
                 );
             },
+        },
+        {
+            accessorKey: 'isActive',
+            header: 'Status',
+            enableSorting: true,
+            cell: (info) => (
+                <Badge
+                    color={info.getValue() ? 'green' : 'red'}
+                    variant="light"
+                >
+                    {info.getValue() ? 'Active' : 'Inactive'}
+                </Badge>
+            ),
         },
     ];
 
@@ -467,9 +477,7 @@ const WarehousesDashboard = () => {
     ];
 
     const tableData = paginatedResponse?.content || [];
-
     const totalPages = paginatedResponse?.totalPages || 1;
-
     const isLoading = isPaginatedLoading;
     const hasError = warehousesError;
 
@@ -493,12 +501,12 @@ const WarehousesDashboard = () => {
                             leftSection={<PiBuildingsBold size={16} />}
                         />
                         {companyFilter && (
-                            <Badge 
-                                color="blue" 
+                            <Badge
+                                color="blue"
                                 variant="light"
                                 rightSection={
-                                    <Text 
-                                        size="xs" 
+                                    <Text
+                                        size="xs"
                                         style={{ cursor: 'pointer' }}
                                         onClick={() => {
                                             setCompanyFilter(null);
@@ -582,12 +590,9 @@ const WarehousesDashboard = () => {
                                 }}
                             />
                         </Group>
-
                     </Group>
                 </Group>
             </Card>
-
-
 
             {/* Enhanced Table with all functionality built-in */}
             <DashboardTable
@@ -627,8 +632,8 @@ const WarehousesDashboard = () => {
                 opened={modalOpen}
                 title={
                     modalType === 'create' ? 'Add New Warehouse' :
-                    modalType === 'edit' ? `Edit Warehouse: ${selectedWarehouse?.name}` :
-                    `Warehouse Details: ${selectedWarehouse?.name}`
+                        modalType === 'edit' ? `Edit Warehouse: ${selectedWarehouse?.name}` :
+                            `Warehouse Details: ${selectedWarehouse?.name}`
                 }
                 onClose={handleCloseModal}
                 onSubmit={handleSubmit}
@@ -640,9 +645,9 @@ const WarehousesDashboard = () => {
                 <Stack gap="md">
                     {/* Error Display */}
                     {error && (
-                        <Alert 
-                            icon={<PiWarningBold size={16} />} 
-                            title="Error" 
+                        <Alert
+                            icon={<PiWarningBold size={16} />}
+                            title="Error"
                             color="red"
                             variant="light"
                             onClose={() => setError(null)}
@@ -652,10 +657,38 @@ const WarehousesDashboard = () => {
                         </Alert>
                     )}
 
+                    {/* Status Switch (only for edit mode) */}
+                    {modalType === 'edit' && (
+                        <div>
+                            <Text fw={600} mb="sm">Status</Text>
+                            <Switch
+                                label={isActive ? 'Active' : 'Inactive'}
+                                checked={isActive}
+                                onChange={(event) => setIsActive(event.currentTarget.checked)}
+                                disabled={modalType === 'view'}
+                                thumbIcon={
+                                    isActive ? (
+                                        <PiCheckBold size={12} color="white" />
+                                    ) : (
+                                        <PiXBold size={12} color="white" />
+                                    )
+                                }
+                                styles={{
+                                    track: {
+                                        cursor: 'pointer',
+                                        backgroundColor: isActive
+                                            ? 'var(--mantine-color-green-6)'
+                                            : 'var(--mantine-color-red-6)',
+                                    },
+                                }}
+                            />
+                        </div>
+                    )}
+
                     {/* Company Selection Section */}
                     <div>
                         <Text fw={600} mb="sm">Company Information</Text>
-                        
+
                         {modalType !== 'view' && (
                             <Tabs
                                 value={selectedCompanyType}
@@ -666,7 +699,7 @@ const WarehousesDashboard = () => {
                                 mb="md"
                             >
                                 <Tabs.List>
-                                    <Tabs.Tab 
+                                    <Tabs.Tab
                                         value="SUPPLIER"
                                         leftSection={<PiBuildingsBold size={16} />}
                                     >
@@ -674,7 +707,7 @@ const WarehousesDashboard = () => {
                                             SUPPLIER
                                         </Badge>
                                     </Tabs.Tab>
-                                    <Tabs.Tab 
+                                    <Tabs.Tab
                                         value="MANUFACTURER"
                                         leftSection={<PiFactoryBold size={16} />}
                                     >
@@ -710,8 +743,8 @@ const WarehousesDashboard = () => {
                                     </Grid.Col>
                                     <Grid.Col span={6}>
                                         <Text size="xs" c="dimmed">Type</Text>
-                                        <Badge 
-                                            size="sm" 
+                                        <Badge
+                                            size="sm"
                                             color={getCompanyTypeBadgeColor(selectedCompanyDetails)}
                                             variant="light"
                                         >
@@ -840,8 +873,8 @@ const WarehousesDashboard = () => {
                                     </Grid.Col>
                                     <Grid.Col span={6}>
                                         <Text size="sm" c="dimmed">Status:</Text>
-                                        <Badge color="green" variant="light">
-                                            Active
+                                        <Badge color={selectedWarehouse.isActive ? 'green' : 'red'} variant="light">
+                                            {selectedWarehouse.isActive ? 'Active' : 'Inactive'}
                                         </Badge>
                                     </Grid.Col>
                                 </Grid>
@@ -850,6 +883,8 @@ const WarehousesDashboard = () => {
                     )}
                 </Stack>
             </DashboardCrudModal>
+
+            {/* Delete Confirmation Modal */}
             <Modal
                 opened={deleteModalOpen}
                 onClose={() => {
@@ -867,7 +902,7 @@ const WarehousesDashboard = () => {
                 }}
                 styles={{
                     overlay: {
-                    zIndex: 20 // Also need to set overlay zIndex
+                        zIndex: 20 // Also need to set overlay zIndex
                     }
                 }}
             >

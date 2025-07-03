@@ -160,6 +160,14 @@ export const warehousesApi = createApi({
                 method: 'GET',
             }),
         }),
+        updateWarehouse: builder.mutation<WarehouseDTO, Partial<WarehouseDTO> & { id: number }>({
+            query: ({ id, ...warehouse }) => ({
+                url: `/warehouses/${id}`,
+                method: 'PUT',
+                data: warehouse,
+            }),
+            invalidatesTags: ['Warehouse']
+        }),
         getWarehouseProducts: builder.query<WarehouseProductDTO[], { warehouseId: number }>({
             query: ({ warehouseId }) => ({
                 url: `/warehouses/${warehouseId}/products`,
@@ -247,5 +255,6 @@ export const {
     useAddWarehouseProductMutation,
     useUpdateWarehouseProductMutation,
     useDeleteWarehouseProductMutation,
-    useImportWarehouseProductsMutation
+    useImportWarehouseProductsMutation,
+    useUpdateWarehouseMutation
 } = warehousesApi;
