@@ -47,13 +47,13 @@ export const roleRequestApi = createApi ({
         createRoleRequest: builder.mutation<RoleRequest, Partial<RoleRequest>> ({
             query: (body) => ({
                 url: '/role-requests',
-                method: 'POST',
+                method: 'PUT',
                 data: body,
             }),
         }),
         approveRoleRequest: builder.mutation<void, number> ({
             query: (id) => ({
-                url: `/role-requests/${id}`,
+                url: `/role-requests/${id}/approve`,
                 method: 'PUT'
             }),
         }),

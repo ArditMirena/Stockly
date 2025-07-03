@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 public class RoleRequestCommandController {
     private final RoleRequestCommandService roleRequestCommandService;
 
-    @PostMapping
+    @PutMapping
     public ResponseEntity<RoleRequestDTO> createRoleRequest(
             @RequestBody RoleRequestDTO roleRequestDTO) {
         RoleRequestDTO createdRoleRequest = roleRequestCommandService.createRoleRequest(roleRequestDTO);

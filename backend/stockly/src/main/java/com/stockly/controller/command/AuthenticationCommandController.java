@@ -111,7 +111,7 @@ public class AuthenticationCommandController {
         ResponseCookie clearRefresh = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
                 .secure(true)
-                .path("/api/v1/auth/refresh")
+                .path("/")
                 .maxAge(0)
                 .build();
 

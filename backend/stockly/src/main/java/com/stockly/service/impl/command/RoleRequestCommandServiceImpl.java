@@ -21,14 +21,24 @@ public class RoleRequestCommandServiceImpl implements RoleRequestCommandService 
 
     @Override
     public RoleRequestDTO createRoleRequest(RoleRequestDTO roleRequestDTO) {
+        // Find user
         User user = userRepository.findById(roleRequestDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Find role
         RoleEnum roleEnum = RoleEnum.valueOf(roleRequestDTO.getRole().toUpperCase());
         Role role = roleRepository.findByName(roleEnum)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
-        RoleRequest roleRequest = new RoleRequest();
+
+        // Check if user already has a role request
+        RoleRequest roleRequest = roleRequestRepository.findByUser(user)
+                .orElse(new RoleRequest()); // If not found, create new
+
+        // Update the existing or new role request
         roleRequest.setUser(user);
         roleRequest.setRole(role);
+
+        // Save the role request (will update if exists, create if new)
         roleRequestRepository.save(roleRequest);
 
         return roleRequestDTO;
