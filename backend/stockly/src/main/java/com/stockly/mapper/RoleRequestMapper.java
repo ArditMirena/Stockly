@@ -15,6 +15,7 @@ public class RoleRequestMapper {
                 .id(roleRequest.getId())
                 .userId(roleRequest.getUser().getId())
                 .role(roleRequest.getRole().getName().name())
+                .approved(roleRequest.isApproved())
                 .build();
     }
 }

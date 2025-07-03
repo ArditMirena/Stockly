@@ -37,6 +37,7 @@ public class RoleRequestCommandServiceImpl implements RoleRequestCommandService 
         // Update the existing or new role request
         roleRequest.setUser(user);
         roleRequest.setRole(role);
+        roleRequest.setApproved(false); // Set to false by default
 
         // Save the role request (will update if exists, create if new)
         roleRequestRepository.save(roleRequest);

@@ -19,11 +19,11 @@ const AdminHome = () => {
   const [createRoleRequest, { isLoading, error }] = useCreateRoleRequestMutation();
 
   const roleOptions = Object.entries(ROLES)
-    .filter(([key, value]) => value !== ROLES.SUPER_ADMIN)
+    .filter(([key, value]) => value !== ROLES.SUPER_ADMIN && value !== user?.role)
     .map(([key, value]) => ({
       value: value,
       label: key.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-    }));
+  }));
 
   useEffect(() => {
     if (currentIndex < welcomeText.length) {

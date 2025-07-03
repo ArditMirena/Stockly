@@ -513,6 +513,7 @@ const CompaniesDashboard = () => {
                     {info.getValue() as string}
                 </Text>
             ),
+            size: 250,
         },
         {
             accessorKey: 'phoneNumber',
@@ -586,7 +587,7 @@ const CompaniesDashboard = () => {
                     </Group>
                 );
             },
-            size: 220
+            size: 150
         },
     ];
 
